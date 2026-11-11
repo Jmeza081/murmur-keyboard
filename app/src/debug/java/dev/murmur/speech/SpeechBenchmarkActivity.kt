@@ -25,7 +25,7 @@ class SpeechBenchmarkActivity : Activity() {
         out = TextView(this).apply { setPadding(48, 96, 48, 48); textSize = 15f }
         setContentView(ScrollView(this).apply { addView(out) })
 
-        val dir = File(filesDir, "models/parakeet")
+        val dir = ModelManager.dir(this)
         val wav = File(dir, intent.getStringExtra("wav") ?: "test.wav")
         thread(name = "speech-benchmark") { run(dir, wav) }
     }

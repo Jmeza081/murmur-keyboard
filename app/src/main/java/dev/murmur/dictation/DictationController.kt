@@ -15,11 +15,12 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import dev.murmur.speech.ModelActivity
+import dev.murmur.speech.ModelManager
 import dev.murmur.speech.SpeechEngine
 import helium314.keyboard.keyboard.KeyboardSwitcher
 import helium314.keyboard.latin.LatinIME
 import helium314.keyboard.latin.R
-import java.io.File
 import java.util.concurrent.Executors
 import kotlin.math.sqrt
 
@@ -36,7 +37,7 @@ class DictationController(private val ime: LatinIME) {
 
     private val main = Handler(Looper.getMainLooper())
     private val worker = Executors.newSingleThreadExecutor { Thread(it, "murmur-speech") }
-    private val modelDir get() = File(ime.filesDir, "models/parakeet")
+    private val modelDir get() = ModelManager.dir(ime)
 
     @Volatile private var engine: SpeechEngine? = null
     @Volatile private var recording = false
@@ -78,14 +79,12 @@ class DictationController(private val ime: LatinIME) {
             ime.startActivity(Intent(ime, MicPermissionActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             return
         }
-        val panel = showPanel() ?: return
-        val missing = SpeechEngine.missingFiles(modelDir)
-        if (missing.isNotEmpty()) {
-            panel.showMessage(ime.getString(R.string.murmur_dictation_model_missing))
-            state = State.TRANSCRIBING // ignore further mic taps until the panel closes
-            main.postDelayed({ closePanel() }, 4000)
+        if (!ModelManager.isInstalled(ime)) {
+            // First run: open the model screen, which explains the download.
+            ime.startActivity(Intent(ime, ModelActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             return
         }
+        val panel = showPanel() ?: return
         state = if (engine == null) State.LOADING else State.LISTENING
         panel.showListening(loading = engine == null)
         recording = true
