@@ -1,4 +1,4 @@
-# Android Keyboard (working name)
+# Murmur
 
 A personal Android keyboard with on-device dictation. Speech runs locally with NVIDIA Parakeet TDT v3, the model [FluidVoice](https://github.com/altic-dev/FluidVoice) uses. Holding the power button starts dictation from any app.
 

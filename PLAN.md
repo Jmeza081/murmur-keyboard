@@ -1,6 +1,6 @@
-# Android Keyboard: Plan
+# Murmur: Plan
 
-Working name: **Android-keyboard** (rename later).
+Name: **Murmur** (repo: `murmur-keyboard`).
 
 A personal Android keyboard with on-device dictation using the same speech model as FluidVoice, plus a power-button dictation shortcut. It's built for one user and installed directly from the APK, not through the Play Store.
 
