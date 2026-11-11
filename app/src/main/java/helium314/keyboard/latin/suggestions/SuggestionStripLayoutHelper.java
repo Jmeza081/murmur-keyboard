@@ -218,6 +218,19 @@ final class SuggestionStripLayoutHelper {
      * @return Non-negative integer of the position in the suggestion strip.
      *         Negative integer if the word of the index shouldn't be shown on the suggestion strip.
      */
+    /** Murmur: index of the suggestion shown in the right-hand slot, or -1. */
+    public int indexOfRightSlot(SuggestedWords suggestedWords) {
+        for (int i = 0; i < suggestedWords.size(); i++)
+            if (getPositionInSuggestionStrip(i, suggestedWords) == mCenterPositionInStrip + 1) return i;
+        return -1;
+    }
+
+    /** Murmur: whether the suggestion at this index is one of the three shown in the strip. */
+    public boolean isShownInStrip(int index, SuggestedWords suggestedWords) {
+        final int pos = getPositionInSuggestionStrip(index, suggestedWords);
+        return pos >= 0 && pos < mSuggestionsCountInStrip;
+    }
+
     private int getPositionInSuggestionStrip(int indexInSuggestedWords, SuggestedWords suggestedWords) {
         SettingsValues settingsValues = Settings.getValues();
         boolean shouldOmitTypedWord = shouldOmitTypedWord(suggestedWords.getInputStyle(),
@@ -389,9 +402,10 @@ final class SuggestionStripLayoutHelper {
         final TextView wordView = mWordViews.get(positionInStrip);
         final CharSequence word = wordView.getText();
         if (positionInStrip == mCenterPositionInStrip && mMoreSuggestionsAvailable) {
-            wordView.setCompoundDrawablesWithIntrinsicBounds(null, null, null, mMoreSuggestionsHint);
+            // Murmur: no "..." hint under the middle word; long-press or swipe up still shows more
+            wordView.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
             // HACK: Align with other TextViews that have no compound drawables.
-            wordView.setCompoundDrawablePadding(-mMoreSuggestionsHint.getIntrinsicHeight());
+            wordView.setCompoundDrawablePadding(0);
         } else {
             wordView.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
         }

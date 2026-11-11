@@ -34,6 +34,8 @@ Phase 6, step 1. Each gap names the step that fixes it. Compared against `design
 
 **Theme note:** the dark screenshots are Murmur dark. "Colors" in Appearance is the daytime theme; with the phone in dark mode, "Colors (night)" applies.
 
+**Fixed in step 4 (strip):** 1, 3, 4 (Enter icon contrast), 12, 13, 14.
+
 ## Still to capture
 
 The emoji panel and the light theme.

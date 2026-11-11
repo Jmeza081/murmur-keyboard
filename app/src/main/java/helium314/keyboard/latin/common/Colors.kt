@@ -272,6 +272,8 @@ class DynamicColors(context: Context, override val themeStyle: String, override 
             themeStyle == STYLE_HOLO -> keyTextFilter
             // the white icon may not have enough contrast, and can't be adjusted by the user
             isBrightColor(accent) -> colorFilter(Color.DKGRAY)
+            // Murmur: light accents such as Murmur dark's #8EA0FF need a dark icon too
+            androidx.core.graphics.ColorUtils.calculateLuminance(accent) > 0.3 -> colorFilter(0xFF0D1336.toInt())
             else -> null
         }
     }

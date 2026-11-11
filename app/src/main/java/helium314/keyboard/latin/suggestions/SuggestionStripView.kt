@@ -156,13 +156,14 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
 
         // toolbar keys setup (no need to hide them any more when locked, because then suggestion strip is gone anyway
         setupMurmurMic(colors)
-        for (key in getEnabledToolbarKeys(context.prefs()).filter { it != ToolbarKey.VOICE }) {
+        // Murmur: a fixed tools row from the mockups; HeliBoard's toolbar and pinned-key settings no longer apply
+        for (key in MURMUR_TOOLS) {
             val button = createToolbarKey(context, key)
             button.layoutParams = toolbarKeyLayoutParams
             setupKey(button, colors)
             toolbar.addView(button)
         }
-        for (pinnedKey in getPinnedToolbarKeys(context.prefs()).filter { it != ToolbarKey.VOICE }) {
+        for (pinnedKey in emptyList<ToolbarKey>()) {
             val button = createToolbarKey(context, pinnedKey)
             button.layoutParams = toolbarKeyLayoutParams
             setupKey(button, colors)
@@ -245,7 +246,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     fun setSuggestions(suggestions: SuggestedWords, isRtlLanguage: Boolean) {
         clear()
         setRtl(isRtlLanguage)
-        suggestedWords = suggestions
+        suggestedWords = reserveEmojiSlot(suggestions)
         startIndexOfMoreSuggestions = layoutHelper.layoutAndReturnStartIndexOfMoreSuggestions(
             context, suggestedWords, suggestionsStrip, this
         )
@@ -555,7 +556,27 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             cornerRadius = 20 * resources.displayMetrics.density
             setColor(colors.get(ColorType.ACTION_KEY_BACKGROUND))
         }
-        murmurMic.setColorFilter(colors.get(ColorType.ACTION_KEY_ICON))
+        val accent = colors.get(ColorType.ACTION_KEY_BACKGROUND)
+        murmurMic.setColorFilter(if (androidx.core.graphics.ColorUtils.calculateLuminance(accent) > 0.3) 0xFF0D1336.toInt() else android.graphics.Color.WHITE)
+        // Plain expand icon, no filled circle (design/mockups.html)
+        toolbarExpandKey.background = null
+    }
+
+    /**
+     * Murmur: SwiftKey-style emoji slot. If the best emoji suggestion didn't make the three visible
+     * slots, it takes the right-hand one.
+     */
+    private fun reserveEmojiSlot(words: SuggestedWords): SuggestedWords {
+        if (words.javaClass != SuggestedWords::class.java || words.size < 3) return words
+        val list = words.suggestedWordInfoList
+        val emoji = list.indices.firstOrNull { list[it].sourceDict.mDictType == helium314.keyboard.latin.dictionary.Dictionary.TYPE_EMOJI }
+            ?: return words
+        if (layoutHelper.isShownInStrip(emoji, words)) return words
+        val right = layoutHelper.indexOfRightSlot(words)
+        if (right < 0 || right == emoji) return words
+        val reordered = list.toMutableList().apply { this[right] = list[emoji]; this[emoji] = list[right] }
+        return SuggestedWords(reordered, words.rawSuggestions, words.typedWordInfo, words.typedWordValid,
+            words.willAutoCorrect, words.isObsoleteSuggestions, words.inputStyle, words.sequenceNumber)
     }
 
     private fun setupKey(view: ImageButton, colors: Colors) {
@@ -567,6 +588,9 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     companion object {
+        /** Murmur: the tools row, in mockup order. */
+        private val MURMUR_TOOLS = listOf(ToolbarKey.CLIPBOARD, ToolbarKey.EMOJI, ToolbarKey.SPLIT, ToolbarKey.SETTINGS)
+
         @JvmField
         var DEBUG_SUGGESTIONS = false
         private const val DEBUG_INFO_TEXT_SIZE_IN_DIP = 6.5f
