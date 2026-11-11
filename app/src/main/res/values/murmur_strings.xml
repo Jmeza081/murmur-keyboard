@@ -12,4 +12,9 @@
     <string name="murmur_dictation_nothing_heard" translatable="false">Didn\'t catch that. Nothing was typed.</string>
     <string name="murmur_mic_granted" translatable="false">Microphone allowed. Tap the mic key again to dictate.</string>
     <string name="murmur_mic_denied" translatable="false">Dictation needs the microphone. You can allow it in Settings › Apps › Murmur.</string>
+    <!-- Power-button assistant -->
+    <string name="murmur_assistant_name" translatable="false">Murmur dictation</string>
+    <string name="murmur_assistant_hint" translatable="false">Pause or tap stop to finish · Tap outside to cancel</string>
+    <string name="murmur_assistant_copied" translatable="false">Copied to clipboard</string>
+    <string name="murmur_assistant_clip_label" translatable="false">Murmur dictation</string>
 </resources>

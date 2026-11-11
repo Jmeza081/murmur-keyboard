@@ -2,15 +2,11 @@ package dev.murmur.dictation
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.RectF
 import android.graphics.drawable.GradientDrawable
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.MotionEvent
-import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -44,7 +40,7 @@ class DictationPanel(
         setPadding(dp(10), dp(4), dp(10), dp(4))
         background = pill(fnBackground)
     }
-    private val waveform = Waveform(context)
+    private val waveform = LevelBarsView(context, RECORDING, subtle)
 
     init {
         orientation = VERTICAL
@@ -104,42 +100,10 @@ class DictationPanel(
     private fun pill(color: Int) = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(color) }
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
-    /** Scrolling bars of recent mic levels. */
-    private inner class Waveform(context: Context) : View(context) {
-        private val levels = ArrayDeque<Float>()
-        private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = RECORDING }
-        private val idle = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = subtle; alpha = 90 }
-        private val rect = RectF()
-
-        fun clear() { levels.clear(); invalidate() }
-        fun add(rms: Float) {
-            levels.addLast(rms)
-            while (levels.size > BARS) levels.removeFirst()
-            invalidate()
-        }
-
-        override fun onDraw(canvas: Canvas) {
-            val barW = dp(4).toFloat()
-            val gap = dp(3).toFloat()
-            val count = minOf(BARS, ((width + gap) / (barW + gap)).toInt())
-            val startX = (width - (count * (barW + gap) - gap)) / 2
-            val mid = height / 2f
-            for (i in 0 until count) {
-                val idx = levels.size - count + i
-                val level = if (idx >= 0) levels.elementAt(idx) else 0f
-                val h = (dp(6) + (height * 0.8f) * minOf(1f, level * 8f)).coerceAtMost(height.toFloat())
-                val x = startX + i * (barW + gap)
-                rect.set(x, mid - h / 2, x + barW, mid + h / 2)
-                canvas.drawRoundRect(rect, barW / 2, barW / 2, if (idx >= 0) paint else idle)
-            }
-        }
-    }
-
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent?) = true
 
-    private companion object {
-        const val BARS = 48
+    companion object {
         /** Recording orange; reads on both light and dark keyboards. */
         val RECORDING = Color.parseColor("#E8590C")
     }
