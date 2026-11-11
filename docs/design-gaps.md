@@ -20,6 +20,20 @@ Phase 6, step 1. Each gap names the step that fixes it. Compared against `design
 
 **Note on 11:** Android draws the keyboard-switch and hide buttons below a keyboard when gesture navigation is on and more than one keyboard is enabled. Murmur can't remove them. Disabling unused keyboards (Samsung, Gboard, the debug builds) under Settings › Keyboard list makes the switch button go away.
 
+## Typing with suggestions, clipboard, listening (dark) — screenshots 2026-11-11
+
+| # | Area | Now | Mockup | Step |
+|---|---|---|---|---|
+| 12 | Strip, typing | Three suggestions, middle one bold with "•••", chevron in a filled circle on the left | No dots under the middle word; plain grid icon instead of the filled-circle chevron | 4 |
+| 13 | Emoji access | No emoji key or toolbar button by default | Emoji in the tools row, and on long-press of the comma | 4 |
+| 14 | Toolbar | Expands to gear and clipboard only, with a back chevron in a filled circle | Tools row: clipboard, emoji, split, settings; plain icons | 4, 6 |
+| 15 | Clipboard panel | Row of 11 editing icons (clear, arrows, undo, cut, copy, paste, select, close), shrug face when empty, ABC / space / backspace row at the bottom | Strip shows ABC, "Clipboard" and Clear; "Pinned" and "Recent" sections of 2-column cards with source and age; friendly empty state | 5 |
+| 16 | Listening panel | Toolbar icons stay visible in the strip above; Cancel sits on top of Android's keyboard-switch button | Strip shows "Listening…" and the keyboard icon; Cancel and Stop clear of the bottom edge | 5 |
+| 17 | Listening panel | No live words; waveform fine; chip and timer fine | Live words in grey in the field; same chip and timer | 5 (live words later) |
+| 18 | Settings defaults | Changed defaults only apply to settings never touched before | Murmur owns the strip, tools and panels, so they don't depend on old HeliBoard settings | 6 |
+
+**Theme note:** the dark screenshots are Murmur dark. "Colors" in Appearance is the daytime theme; with the phone in dark mode, "Colors (night)" applies.
+
 ## Still to capture
 
-Typing with suggestions, the toolbar open, the emoji panel, the clipboard panel, dictation listening, and the light theme.
+The emoji panel and the light theme.
