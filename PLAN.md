@@ -51,7 +51,7 @@ Each phase ends with something installed and usable on your phone, and with the 
 | 3 | Power button | Hold power, speak, release: text lands where you're typing |
 | 4 | Cleanup | Filler words gone with no noticeable delay |
 | 5 | Keyboard extras | Emoji, clipboard and swipe match what you use in SwiftKey |
-| 6 | Apply the design | The keyboard looks like the mockups, in light and dark |
+| 6 | Apply the design | The keyboard looks and behaves like the mockups; HeliBoard's extra features and settings are gone |
 | 7 | Settings app | Everything configurable without rebuilding, built to the mockups |
 
 ### Phase 0: Spike (1–2 days)
@@ -111,11 +111,21 @@ Each phase ends with something installed and usable on your phone, and with the 
   - Emoji prediction uses HeliBoard's `emoji_en.dict` (Settings › Dictionaries › Add dictionary from file). Emoji compete with words for the 3 strip slots, so they rarely show without expanding the strip; Phase 6 reserves a slot.
 
 ### Phase 6: Apply the design
-- A Murmur keyboard theme from `design/mockups.html`: colors, key shape and radius, type, light and dark, accent choices.
-- The strip: suggestions in the middle, the mic as a prominent pill on the right, tools when the field is empty. Reserve one slot for the best emoji suggestion when there is one, as SwiftKey does.
-- Restyle the listening panel, the emoji and clipboard panels, and the power-button sheet to match.
-- Tablet split layout per the mockup.
-- **Exit:** side by side with the mockups at phone and tablet sizes, in light and dark, the keyboard matches.
+Keep HeliBoard's engine (input logic, autocorrect, dictionaries, swipe, layouts) and replace everything you see and touch with Murmur's own, built from `design/mockups.html`. Remove what the mockups don't have.
+
+**Done so far:** Murmur light and dark color themes as defaults, rounded keys with borders (`00f1054`); the mic pill at the right edge of the strip (`8ef71f7`).
+
+Steps, each installed and compared against the mockups before the next:
+1. **Gap list.** Screenshots of the keyboard, strip, panels and sheet next to the mockup frames; every visible difference listed and assigned to a step below.
+2. **Design tokens.** One Kotlin source of truth for colors, radii, spacing, type sizes and motion from the mockups, used by every Murmur view. The bundled font (Roboto Flex) loads through it.
+3. **Keys.** A Murmur key renderer: key size, gap, 8 dp radius and 1 dp bottom shadow, label type, number hints, function-key and Enter styling, shift and backspace stroke icons, key preview popup.
+4. **Strip.** 48 dp strip with three suggestions, the middle one bold, thin separators; the mic pill styled as in the mockup; tools row when the field is empty (clipboard, emoji, split, settings); one slot reserved for the best emoji suggestion, as SwiftKey does.
+5. **Panels.** Listening panel, emoji panel (search, recents, category chips), clipboard panel (pinned and recent cards) and the power-button sheet, matched to the mockups.
+6. **Strip the bloat.** Remove toolbar keys, modes and options the mockups don't have (one-handed and floating modes, the toolbar key picker, gesture data gathering, layout editors). Hide HeliBoard's settings screens; Phase 7's settings app replaces them. Code that only existed for removed features is deleted, not just hidden.
+7. **Tablet split.** The split layout with the mic in the middle, per the mockup.
+8. **Motion and polish.** 200 ms ease-out for the panel swap and sheet, no animation on key presses, reduced-motion respected; light and dark both checked; touch targets at least 44 dp.
+
+- **Exit:** side by side with the mockups at phone and tablet sizes, in light and dark, the keyboard matches, and nothing on screen comes from a feature the mockups don't have.
 
 ### Phase 7: Settings app
 - Setup checklist, then settings for dictation (model, cleanup level, language, silence timeout), power button, theme, typing, dictionary and clipboard.
