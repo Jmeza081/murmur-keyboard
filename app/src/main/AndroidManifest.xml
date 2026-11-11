@@ -87,6 +87,18 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
                 android:resource="@xml/murmur_recognition" />
         </service>
 
+        <!-- Murmur: optional, types power-button dictation into fields that use another keyboard -->
+        <service android:name="dev.murmur.assistant.MurmurAccessibilityService"
+            android:label="@string/murmur_a11y_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data android:name="android.accessibilityservice"
+                android:resource="@xml/murmur_accessibility" />
+        </service>
+
         <!-- Murmur: download or delete the speech model -->
         <activity android:name="dev.murmur.speech.ModelActivity"
             android:exported="false"

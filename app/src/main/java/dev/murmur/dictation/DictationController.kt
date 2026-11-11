@@ -84,7 +84,15 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
      * The app whose text field had focus before the assistant sheet opened, or null if there was
      * none (or it's a password field). The keyboard can be hidden; the field just needs focus.
      */
-    fun focusedFieldPackage(): String? = lastField?.takeIf { isTextField(it) }?.packageName
+    fun focusedFieldPackage(): String? {
+        if (!isCurrentKeyboard()) return null // another keyboard is active; lastField is stale
+        return lastField?.takeIf { isTextField(it) }?.packageName
+    }
+
+    private fun isCurrentKeyboard(): Boolean {
+        val current = android.provider.Settings.Secure.getString(ime.contentResolver, android.provider.Settings.Secure.DEFAULT_INPUT_METHOD)
+        return current?.substringBefore('/') == ime.packageName
+    }
 
     /**
      * Types [text] into that field once focus returns to it after the sheet closes.

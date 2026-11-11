@@ -21,4 +21,7 @@
     <string name="murmur_assistant_target" translatable="false">Typing into %1$s</string>
     <string name="murmur_assistant_target_clipboard" translatable="false">No text field open · will copy to clipboard</string>
     <string name="murmur_assistant_clip_label" translatable="false">Murmur dictation</string>
+    <!-- Accessibility service -->
+    <string name="murmur_a11y_label" translatable="false">Murmur: type dictation into any app</string>
+    <string name="murmur_a11y_description" translatable="false">Lets power-button dictation type into text fields when you use a different keyboard. Murmur only looks for the focused text field at the moment you dictate. It doesn\'t read, store or send what\'s on your screen.</string>
 </resources>

@@ -36,7 +36,8 @@ import helium314.keyboard.latin.R
  * The listening sheet shown when you hold the power button. It listens until you pause or tap
  * Done, transcribes on the device, and delivers the text.
  *
- * Text goes into the focused field through Murmur's keyboard, or to the clipboard if there's none.
+ * Text goes into the focused field through Murmur's keyboard, else through the optional
+ * accessibility service (other keyboards), else to the clipboard.
  */
 class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRecorder.Listener {
 
@@ -58,6 +59,8 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
     private lateinit var bars: LevelBarsView
     private lateinit var hint: TextView
     private lateinit var target: TextView
+    /** The field the accessibility service saw when the sheet opened, before the sheet took focus. */
+    private var a11yTargetAtStart: String? = null
 
     override fun onCreateContentView(): View {
         val c = context
@@ -181,22 +184,32 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
     }
 
     /**
-     * Delivers the text: (1) through Murmur's keyboard into the focused field, else (2) the clipboard.
-     * An accessibility fallback for other keyboards slots in between later.
+     * Delivers the text: Murmur's keyboard, then the accessibility service, then the clipboard.
      */
     private fun deliver(text: String) {
         transcript.text = text
+        // 1. Murmur's keyboard, if it's the active keyboard and a field had focus.
         val keyboard = DictationController.active
-        val target = keyboard?.focusedFieldPackage()
-        if (keyboard == null || target == null) return copyToClipboard(text, toast = false)
-        // The field only gets its connection back once this sheet closes, so close first, then type.
+        val keyboardTarget = keyboard?.focusedFieldPackage()
+        if (keyboard != null && keyboardTarget != null) {
+            return closeThenType(keyboardTarget) { keyboard.typeWhenFieldReturns(text) { copyToClipboard(text, toast = true) } }
+        }
+        // 2. The accessibility service, for fields using another keyboard.
+        val a11y = MurmurAccessibilityService.instance
+        val a11yTarget = a11y?.focusedFieldPackage() ?: a11yTargetAtStart
+        if (a11y != null && a11yTarget != null) {
+            return closeThenType(a11yTarget) { a11y.typeWhenFocusReturns(text, a11yTarget) { copyToClipboard(text, toast = true) } }
+        }
+        // 3. The clipboard.
+        copyToClipboard(text, toast = false)
+    }
+
+    /** The field only gets focus back once this sheet closes, so confirm, close, then type. */
+    private fun closeThenType(targetPackage: String, type: () -> Unit) {
         status.setTextColor(ink)
-        status.text = context.getString(R.string.murmur_assistant_added, appLabel(target))
+        status.text = context.getString(R.string.murmur_assistant_added, appLabel(targetPackage))
         state = State.DONE
-        main.postDelayed({
-            hide()
-            keyboard.typeWhenFieldReturns(text) { copyToClipboard(text, toast = true) }
-        }, 600)
+        main.postDelayed({ hide(); type() }, 600)
     }
 
     private fun copyToClipboard(text: String, toast: Boolean) {
@@ -208,7 +221,8 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
 
     /** Shown while listening, so you know where the text will go before you speak. */
     private fun targetLine(): String {
-        val target = DictationController.active?.focusedFieldPackage()
+        a11yTargetAtStart = MurmurAccessibilityService.instance?.focusedFieldPackage()
+        val target = DictationController.active?.focusedFieldPackage() ?: a11yTargetAtStart
         return if (target != null) context.getString(R.string.murmur_assistant_target, appLabel(target))
         else context.getString(R.string.murmur_assistant_target_clipboard)
     }

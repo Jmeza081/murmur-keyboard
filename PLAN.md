@@ -85,6 +85,10 @@ Each phase ends with something installed and usable on your phone, and with the 
 - Delivery order: the active keyboard (through a bound service in the same app), then the accessibility service, then the clipboard.
 - Add an optional `AccessibilityService` for text fields that aren't using your keyboard.
 - **Exit:** holding the power button, speaking and releasing puts the text where you're typing.
+- **Result (2026-11-11): passed.** Murmur is the digital assistant; holding the side button opens the listening sheet over any app. Text goes into the focused field through Murmur's keyboard, else through the optional accessibility service (other keyboards), else to the clipboard. Tested in Notes, Amazon and with Samsung Keyboard.
+  - Deviation: it stops when you pause or tap Stop, not when you release the button. Android doesn't tell an assistant when the side button is released. Hold-to-talk on volume-down was offered and declined for now.
+  - The sheet takes window focus, so it closes first and types once the app's field regains focus (within 2 s, else clipboard).
+  - Murmur also provides Android's speech recognizer (required for an assistant), backed by the same on-device model.
 
 ### Phase 4: Cleanup
 - Rules: a filler-word list, collapsed repeats, simple handling of "scratch that" and "I mean," spacing and capitalization fixes, and dictionary replacements.
@@ -105,7 +109,6 @@ Each phase ends with something installed and usable on your phone, and with the 
 
 ## Open questions
 
-- Hold-to-talk or tap-to-start/tap-to-stop for the power-button flow?
 - Languages: English only, or Spanish too? Parakeet v3 covers about 25 European languages.
 
 ## References
