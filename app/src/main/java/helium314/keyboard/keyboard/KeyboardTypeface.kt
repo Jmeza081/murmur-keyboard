@@ -6,6 +6,7 @@ import android.content.Context
 import android.graphics.Typeface
 import android.widget.TextView
 import androidx.compose.ui.text.font.FontFamily
+import helium314.keyboard.latin.R
 import helium314.keyboard.latin.common.isEmoji
 import helium314.keyboard.latin.settings.Settings
 
@@ -25,6 +26,8 @@ object KeyboardTypeface {
         return runCatching {
             Typeface.createFromFile(Settings.getCustomFontFile(context))
         }.getOrNull()
+            // Murmur: without a user font, use the bundled Roboto Flex from the mockups
+            ?: runCatching { androidx.core.content.res.ResourcesCompat.getFont(context, R.font.roboto_flex) }.getOrNull()
     }
 
     private fun loadCustomEmojiTypeface(context: Context): Typeface? {
@@ -75,7 +78,8 @@ object KeyboardTypeface {
         return if (emojiTypeface != null && text != null && isEmoji(text)) {
             emojiTypeface
         } else {
-            customTypeface() ?: defaultTypeface
+            // Murmur: keep the caller's bold (middle suggestion, hints) when swapping in the font
+            customTypeface()?.let { if (defaultTypeface.isBold) Typeface.create(it, Typeface.BOLD) else it } ?: defaultTypeface
         }
     }
 

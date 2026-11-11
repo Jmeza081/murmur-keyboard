@@ -132,6 +132,8 @@ class ClipboardHistoryView @JvmOverloads constructor(
         val kls = KeyboardLayoutSet.Builder.buildEmojiClipBottomRow(context, editorInfo)
         val keyboard = kls.getKeyboard(KeyboardElement.CLIPBOARD_BOTTOM_ROW)
         keyboardView.setKeyboard(keyboard)
+        // Murmur: same bottom padding as the main keyboard, so the row doesn't sit under the system's buttons
+        keyboardView.setPadding(keyboardView.paddingLeft, keyboardView.paddingTop, keyboardView.paddingRight, clipboardLayoutParams.bottomPadding)
     }
 
     fun setHardwareAcceleratedDrawingEnabled(enabled: Boolean) {

@@ -5,6 +5,8 @@
  */
 package helium314.keyboard.keyboard
 
+import dev.murmur.design.MurmurTokens
+
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Color
@@ -160,26 +162,26 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                 THEME_MURMUR_LIGHT -> DefaultColors(
                     themeStyle,
                     hasBorders,
-                    accent = "#2F4BE0".toColorInt(),
-                    background = "#E8EBF1".toColorInt(),
-                    keyBackground = "#FFFFFF".toColorInt(),
-                    functionalKey = "#CFD5E0".toColorInt(),
-                    spaceBar = "#FFFFFF".toColorInt(),
-                    keyText = "#191B21".toColorInt(),
-                    keyHintText = "#6B7282".toColorInt(),
+                    accent = MurmurTokens.ACCENT,
+                    background = MurmurTokens.Light.BACKGROUND,
+                    keyBackground = MurmurTokens.Light.KEY,
+                    functionalKey = MurmurTokens.Light.FUNCTION_KEY,
+                    spaceBar = MurmurTokens.Light.KEY,
+                    keyText = MurmurTokens.Light.TEXT,
+                    keyHintText = MurmurTokens.Light.SUBTLE,
                     keyboardBackground = backgroundImage
                 )
                 // Murmur: dark keyboard from the mockups, with the same cobalt accent as light
                 THEME_MURMUR_DARK -> DefaultColors(
                     themeStyle,
                     hasBorders,
-                    accent = "#2F4BE0".toColorInt(),
-                    background = "#121419".toColorInt(),
-                    keyBackground = "#2A2E37".toColorInt(),
-                    functionalKey = "#1E2129".toColorInt(),
-                    spaceBar = "#2A2E37".toColorInt(),
-                    keyText = "#ECEEF3".toColorInt(),
-                    keyHintText = "#9AA1B0".toColorInt(),
+                    accent = MurmurTokens.ACCENT,
+                    background = MurmurTokens.Dark.BACKGROUND,
+                    keyBackground = MurmurTokens.Dark.KEY,
+                    functionalKey = MurmurTokens.Dark.FUNCTION_KEY,
+                    spaceBar = MurmurTokens.Dark.KEY,
+                    keyText = MurmurTokens.Dark.TEXT,
+                    keyHintText = MurmurTokens.Dark.SUBTLE,
                     keyboardBackground = backgroundImage
                 )
                 THEME_LIGHT -> DefaultColors(

@@ -38,6 +38,8 @@ Phase 6, step 1. Each gap names the step that fixes it. Compared against `design
 
 **Fixed in step 3, part 1 (keys):** 5 (hints), 7 (space bar label), 8 (8 dp corners; the 1 dp bottom edge was already there).
 
+**Fixed in step 3, part 2:** 9 (stroke icons), 10 (Roboto Flex), plus the cobalt accent in dark mode. **Moved to Phase 8:** panels overlapping Android's keyboard-switch and hide buttons.
+
 ## Still to capture
 
 The emoji panel and the light theme.

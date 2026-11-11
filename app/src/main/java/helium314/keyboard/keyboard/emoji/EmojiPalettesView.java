@@ -389,6 +389,9 @@ public final class EmojiPalettesView extends LinearLayout
         KeyboardLayoutSet kls = KeyboardLayoutSet.Builder.Companion.buildEmojiClipBottomRow(getContext(), editorInfo);
         Keyboard keyboard = kls.getKeyboard(KeyboardElement.EMOJI_BOTTOM_ROW);
         keyboardView.setKeyboard(keyboard);
+        // Murmur: same bottom padding as the main keyboard, so the row doesn't sit under the system's buttons
+        keyboardView.setPadding(keyboardView.getPaddingLeft(), keyboardView.getPaddingTop(),
+                keyboardView.getPaddingRight(), mEmojiLayoutParams.getBottomPadding());
     }
 
     private void setupSidePadding() {

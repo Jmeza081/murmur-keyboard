@@ -53,6 +53,7 @@ Each phase ends with something installed and usable on your phone, and with the 
 | 5 | Keyboard extras | Emoji, clipboard and swipe match what you use in SwiftKey |
 | 6 | Apply the design | The keyboard looks and behaves like the mockups; HeliBoard's extra features and settings are gone |
 | 7 | Settings app | Everything configurable without rebuilding, built to the mockups |
+| 8 | Bugs and refinements | Known rough edges fixed, measured on the phone |
 
 ### Phase 0: Spike (1–2 days)
 - Build and install `mtib/android-local-transcribe` unchanged. Measure transcription speed, RAM and accuracy on your phone.
@@ -131,6 +132,13 @@ Steps, each installed and compared against the mockups before the next:
 - Setup checklist, then settings for dictation (model, cleanup level, language, silence timeout), power button, theme, typing, dictionary and clipboard.
 - Backup and restore of settings and the dictionary to a file.
 - **Exit:** everything can be configured without rebuilding.
+
+### Phase 8: Bugs and refinements
+Smaller fixes collected along the way, each measured on the Fold before and after.
+- **Emoji and clipboard panels overlap Android's keyboard-switch and hide buttons.** The main keyboard leaves about 164 px under its keys on the Fold 8; HeliBoard's bottom padding explains only ~33 px of it, and the rest matches the 126 px IME navigation area. The panels' bottom row is a separate one-row keyboard that doesn't get the same space. A first fix (main-keyboard bottom padding on the bottom row) wasn't enough. Next: measure the real view bounds on the phone (layout inspector or a debug overlay) and give the panels the same gap as the main keyboard.
+- **Listening panel:** check that Cancel and Stop clear the same buttons (now padded by the main keyboard's measured gap below its keys).
+- Live words in grey in the field while listening (mockup), not yet built.
+- **Exit:** every item verified on the phone in light and dark.
 
 ## Open questions
 

@@ -23,6 +23,7 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import dev.murmur.cleanup.Cleanup
+import dev.murmur.design.MurmurTokens
 import dev.murmur.dictation.DictationController
 import dev.murmur.dictation.DictationPanel
 import dev.murmur.dictation.LevelBarsView
@@ -50,10 +51,10 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
     private var startedAt = 0L
 
     private val dark = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-    private val sheetColor = if (dark) Color.parseColor("#1E2129") else Color.parseColor("#F1F3F7")
-    private val ink = if (dark) Color.parseColor("#ECEEF3") else Color.parseColor("#191B21")
-    private val subtle = if (dark) Color.parseColor("#A1A8B6") else Color.parseColor("#5B6272")
-    private val chipColor = if (dark) Color.parseColor("#2A2E37") else Color.parseColor("#DDE2EA")
+    private val sheetColor = if (dark) MurmurTokens.Dark.SHEET else MurmurTokens.Light.SHEET
+    private val ink = if (dark) MurmurTokens.Dark.TEXT else MurmurTokens.Light.TEXT
+    private val subtle = if (dark) MurmurTokens.Dark.SECONDARY_TEXT else MurmurTokens.Light.SECONDARY_TEXT
+    private val chipColor = if (dark) MurmurTokens.Dark.CHIP else MurmurTokens.Light.CHIP
 
     private lateinit var status: TextView
     private lateinit var transcript: TextView

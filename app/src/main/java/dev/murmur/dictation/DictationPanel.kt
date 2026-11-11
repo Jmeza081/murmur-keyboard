@@ -105,6 +105,6 @@ class DictationPanel(
 
     companion object {
         /** Recording orange; reads on both light and dark keyboards. */
-        val RECORDING = Color.parseColor("#E8590C")
+        val RECORDING = dev.murmur.design.MurmurTokens.RECORDING
     }
 }

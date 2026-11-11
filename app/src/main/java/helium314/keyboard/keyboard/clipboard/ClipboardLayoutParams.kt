@@ -17,6 +17,8 @@ class ClipboardLayoutParams(ctx: Context) {
     private val keyHorizontalGap: Int
     private val listHeight: Int
     val bottomRowKeyboardHeight: Int
+    /** Murmur: the main keyboard's bottom padding, so the bottom row clears Android's nav buttons. */
+    val bottomPadding: Int
 
     init {
         val res = ctx.resources
@@ -28,7 +30,7 @@ class ClipboardLayoutParams(ctx: Context) {
             defaultKeyboardHeight, defaultKeyboardHeight) * sv.mKeyGapScale).toInt()
         keyHorizontalGap = (res.getFraction(R.fraction.config_key_horizontal_gap_holo,
             defaultKeyboardWidth, defaultKeyboardWidth) * sv.mKeyGapScale).toInt()
-        val bottomPadding = (res.getFraction(R.fraction.config_keyboard_bottom_padding_holo,
+        bottomPadding = (res.getFraction(R.fraction.config_keyboard_bottom_padding_holo,
                 defaultKeyboardHeight, defaultKeyboardHeight) * sv.mBottomPaddingScale).toInt()
         val topPadding = res.getFraction(R.fraction.config_keyboard_top_padding_holo,
                 defaultKeyboardHeight, defaultKeyboardHeight).toInt()

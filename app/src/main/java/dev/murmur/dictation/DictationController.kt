@@ -218,6 +218,9 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
         val params = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, keyboardView.height)
         if (p.parent == null) wrapper.addView(p, params) else p.layoutParams = params
         p.reset()
+        // Keep Cancel and Stop above Android's nav buttons, like the keys (the keyboard's bottom padding)
+        val bottomPad = keyboardView.keyboard?.let { kb -> kb.mOccupiedHeight - (kb.sortedKeys.maxOfOrNull { it.y + it.height } ?: kb.mOccupiedHeight) }?.coerceAtLeast(0) ?: 0
+        p.setPadding(p.paddingLeft, p.paddingTop, p.paddingRight, bottomPad + (8 * ime.resources.displayMetrics.density).toInt())
         keyboardView.visibility = View.INVISIBLE // keeps its size, so the panel matches the key area
         return p
     }
