@@ -484,8 +484,12 @@ public class LatinIME extends InputMethodService implements
         Log.i(TAG, "Hardware accelerated drawing: " + mIsHardwareAcceleratedDrawingEnabled);
     }
 
+    // Murmur: on-device dictation behind the toolbar mic key
+    private dev.murmur.dictation.DictationController mDictation;
+
     @Override
     public void onCreate() {
+        mDictation = new dev.murmur.dictation.DictationController(this); // Murmur
         mSettings.startListener();
         KeyboardIconsSet.Companion.getInstance().loadIcons(this);
         mRichImm = RichInputMethodManager.getInstance();
@@ -614,6 +618,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onDestroy() {
+        mDictation.release(); // Murmur
         mClipboardHistoryManager.onDestroy();
         mDictionaryFacilitator.closeDictionaries();
         mSettings.onDestroy();
@@ -702,11 +707,13 @@ public class LatinIME extends InputMethodService implements
     @Override
     public void onStartInputView(final EditorInfo editorInfo, final boolean restarting) {
         mHandler.onStartInputView(editorInfo, restarting);
+        mDictation.preload(); // Murmur: load the speech model while the keyboard is open
         mStatsUtilsManager.onStartInputView();
     }
 
     @Override
     public void onFinishInputView(final boolean finishingInput) {
+        mDictation.cancel(); // Murmur: never keep recording after the keyboard hides
         StatsUtils.onFinishInputView();
         mHandler.onFinishInputView(finishingInput);
         mStatsUtilsManager.onFinishInputView();
@@ -1244,7 +1251,8 @@ public class LatinIME extends InputMethodService implements
     // completely replace #onCodeInput.
     public void onEvent(@NonNull final Event event) {
         if (KeyCode.VOICE_INPUT == event.getKeyCode()) {
-            mRichImm.switchToShortcutIme(this);
+            mDictation.onMicKey(); // Murmur: dictate in place instead of switching to a voice IME
+            return;
         }
         InputTransaction completeInputTransaction =
                 mInputLogic.onCodeInput(mSettings.getCurrent(), event, mKeyboardSwitcher.getKeyboardCapsMode(), mHandler);
