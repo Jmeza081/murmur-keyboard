@@ -25,3 +25,12 @@ models/
 .idea/
 *.iml
 .DS_Store
+
+# From HeliBoard
+.kotlin/
+app/release/
+app/.cxx/
+app/.attach_*
+tools/*.txt
+*.patch
+*.diff

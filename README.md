@@ -2,7 +2,7 @@
 
 A personal Android keyboard with on-device dictation. Speech runs locally with NVIDIA Parakeet TDT v3, the model [FluidVoice](https://github.com/altic-dev/FluidVoice) uses. Holding the power button starts dictation from any app.
 
-**Status:** design done, Phase 0 (spike) next. See [PLAN.md](PLAN.md).
+**Status:** Phase 1 done. Phase 2 (dictation key) next. See [PLAN.md](PLAN.md).
 
 ## Screens
 
@@ -52,7 +52,29 @@ Speech never leaves the phone. Audio is held in memory and dropped after transcr
 
 ## Build and install
 
-Filled in during Phase 1, once the HeliBoard fork is in place.
+Murmur is a vendored copy of [HeliBoard](https://github.com/Helium314/HeliBoard) at commit `3e91b4f` (4.3-beta1). HeliBoard's own docs are in [`docs/upstream/`](docs/upstream/).
+
+**Requirements:** Android SDK (Gradle installs the platform and NDK 28 it needs), and JDK 17 or newer as `JAVA_HOME`.
+
+**Signing:** release builds read `keystore.properties` at the repo root. It's git-ignored and never committed:
+
+```properties
+storeFile=/Users/you/.murmur/murmur-release.jks
+storePassword=…
+keyAlias=murmur
+keyPassword=…
+```
+
+Back up the keystore and this file somewhere safe. Without them you can't install updates over the existing app; you'd have to uninstall it and lose its settings.
+
+**Build and install on a connected phone** (USB or wireless debugging):
+
+```sh
+./gradlew :app:installRelease   # signed release, app ID dev.murmur.keyboard
+./gradlew :app:installDebug     # debug build, app ID dev.murmur.keyboard.debug
+```
+
+With more than one device connected, set `ANDROID_SERIAL` to the one you want (see `adb devices`). Then turn on **Murmur** under Settings › General management › Keyboard list and default.
 
 ## Rebuilding the README GIFs
 
@@ -67,4 +89,4 @@ The output goes to `docs/media/`. Edit the frame list at the top of `design/capt
 
 ## License
 
-GPL-3.0, inherited from [HeliBoard](https://github.com/Helium314/HeliBoard) once the fork lands.
+GPL-3.0, inherited from [HeliBoard](https://github.com/Helium314/HeliBoard). See [`LICENSE`](LICENSE). Some HeliBoard files are under Apache-2.0 or CC-BY-SA-4.0; see the other `LICENSE-*` files.

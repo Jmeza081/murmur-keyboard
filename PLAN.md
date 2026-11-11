@@ -57,6 +57,10 @@ Each phase ends with something installed and usable on your phone, and with the 
 - Build and install `mtib/android-local-transcribe` unchanged. Measure transcription speed, RAM and accuracy on your phone.
 - Build and install HeliBoard unchanged. Confirm the split keyboard on a tablet or a large emulator.
 - **Exit:** both run, and Parakeet's speed on your phone is acceptable. If it isn't, try a smaller model before going further.
+- **Result (2026-11-11): passed.** Target device: Galaxy Z Fold 8 (SM-F971U, Snapdragon SM8850, Android 17, ~12 GB RAM).
+  - Parakeet TDT v3 (INT8, sherpa-onnx 1.13.3): accurate, with text appearing promptly after stopping. About 1.4 GB memory with the model loaded, and about 1.4 GB storage. Exact timings get logged in Phase 2.
+  - HeliBoard (4.3-beta1, debug build): works well as the daily keyboard, including the split layout on the inner screen.
+  - Build notes: HeliBoard uses Gradle 9.7 and NDK 28. The test app's Gradle 8.11 needs JDK 17, not Android Studio's bundled Java 25.
 
 ### Phase 1: Repo and fork
 - The repo is already set up with git, `.gitignore`, the README and the mockup GIFs (`docs/media/`, built by `design/capture/`).
@@ -64,6 +68,7 @@ Each phase ends with something installed and usable on your phone, and with the 
 - Set up a release signing key (kept out of git), a build script and a one-command install (`./gradlew installRelease`).
 - Fill in the README's build and install section.
 - **Exit:** your fork installs and works as your daily keyboard, and the README renders with every GIF.
+- **Result (2026-11-11): passed.** HeliBoard 4.3-beta1 (`3e91b4f`) vendored as one commit; Murmur changes are in a separate commit on top, so `git diff` against the vendor commit shows every change. App ID `dev.murmur.keyboard`, release key in `~/.murmur/`.
 
 ### Phase 2: Dictation key
 - Add a `speech` module wrapping sherpa-onnx: load the model, record with VAD, transcribe.
@@ -101,10 +106,8 @@ Each phase ends with something installed and usable on your phone, and with the 
 
 ## Open questions
 
-- Which phone or tablet is the main target? This decides model size and the LLM choice.
 - Hold-to-talk or tap-to-start/tap-to-stop for the power-button flow?
 - Languages: English only, or Spanish too? Parakeet v3 covers about 25 European languages.
-- Keep the forked HeliBoard history, or start fresh with a vendored copy?
 
 ## References
 

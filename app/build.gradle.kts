@@ -1,4 +1,11 @@
 import com.android.build.api.variant.ApplicationVariant
+import java.util.Properties
+
+// Murmur: release signing reads keystore.properties at the repo root (git-ignored; see README).
+val keystoreProps = Properties().apply {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
 
 plugins {
     id("com.android.application")
@@ -10,7 +17,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "helium314.keyboard"
+        applicationId = "dev.murmur.keyboard"
         minSdk = 21
         targetSdk = 37
         versionCode = 4300
@@ -22,8 +29,20 @@ android {
         proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
 
+    signingConfigs {
+        if (keystoreProps.containsKey("storeFile")) {
+            create("murmur") {
+                storeFile = file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("murmur")
             isMinifyEnabled = true
             isShrinkResources = false
             isDebuggable = false
@@ -66,7 +85,7 @@ android {
             }
             variant.outputs.forEach { output ->
                 if (output is com.android.build.api.variant.impl.VariantOutputImpl) {
-                    output.outputFileName = "HeliBoard_${defaultConfig.versionName}-${variant.buildType}.apk"
+                    output.outputFileName = "Murmur_${defaultConfig.versionName}-${variant.buildType}.apk"
                 }
             }
         }
