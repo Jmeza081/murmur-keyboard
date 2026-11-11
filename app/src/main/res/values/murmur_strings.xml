@@ -15,6 +15,9 @@
     <!-- Power-button assistant -->
     <string name="murmur_assistant_name" translatable="false">Murmur dictation</string>
     <string name="murmur_assistant_hint" translatable="false">Pause or tap stop to finish · Tap outside to cancel</string>
-    <string name="murmur_assistant_copied" translatable="false">Copied to clipboard</string>
+    <string name="murmur_assistant_copied" translatable="false">No text field open. Copied to clipboard.</string>
+    <string name="murmur_assistant_added" translatable="false">Added to %1$s</string>
+    <string name="murmur_assistant_target" translatable="false">Typing into %1$s</string>
+    <string name="murmur_assistant_target_clipboard" translatable="false">No text field open · will copy to clipboard</string>
     <string name="murmur_assistant_clip_label" translatable="false">Murmur dictation</string>
 </resources>

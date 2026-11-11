@@ -22,6 +22,7 @@ import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
+import dev.murmur.dictation.DictationController
 import dev.murmur.dictation.DictationPanel
 import dev.murmur.dictation.LevelBarsView
 import dev.murmur.dictation.MicPermissionActivity
@@ -35,7 +36,7 @@ import helium314.keyboard.latin.R
  * The listening sheet shown when you hold the power button. It listens until you pause or tap
  * Done, transcribes on the device, and delivers the text.
  *
- * Phase 3 step 1: delivery is the clipboard. Typing into the focused field comes next.
+ * Text goes into the focused field through Murmur's keyboard, or to the clipboard if there's none.
  */
 class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRecorder.Listener {
 
@@ -56,6 +57,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
     private lateinit var transcript: TextView
     private lateinit var bars: LevelBarsView
     private lateinit var hint: TextView
+    private lateinit var target: TextView
 
     override fun onCreateContentView(): View {
         val c = context
@@ -77,6 +79,10 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
             minHeight = dp(56)
         }
         bars = LevelBarsView(c, DictationPanel.RECORDING, subtle)
+        target = TextView(c).apply {
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f)
+            setTextColor(subtle)
+        }
         hint = TextView(c).apply {
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f)
             setTextColor(subtle)
@@ -111,7 +117,8 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
                 addView(status, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
                 addView(chip)
             })
-            addView(transcript, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12) })
+            addView(target, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) })
+            addView(transcript, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) })
             addView(bars, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(64)))
             addView(FrameLayout(c).apply {
                 addView(cancel, FrameLayout.LayoutParams(dp(52), dp(52), Gravity.START or Gravity.CENTER_VERTICAL))
@@ -131,6 +138,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
         super.onShow(args, showFlags)
         transcript.text = ""
         bars.clear()
+        target.text = targetLine()
         if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             context.startActivity(Intent(context, MicPermissionActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             return hide()
@@ -172,13 +180,33 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
         }
     }
 
-    /** Step 1 delivery: copy to the clipboard and say so. */
+    /**
+     * Delivers the text: (1) through Murmur's keyboard into the focused field, else (2) the clipboard.
+     * An accessibility fallback for other keyboards slots in between later.
+     */
     private fun deliver(text: String) {
         transcript.text = text
+        val keyboard = DictationController.active
+        val target = keyboard?.focusedFieldPackage()
+        if (target != null && keyboard.typeIntoFocusedField(text)) {
+            return showResult(context.getString(R.string.murmur_assistant_added, appLabel(target)), close = true)
+        }
         context.getSystemService(ClipboardManager::class.java)
             ?.setPrimaryClip(ClipData.newPlainText(context.getString(R.string.murmur_assistant_clip_label), text))
         showResult(context.getString(R.string.murmur_assistant_copied), close = true)
     }
+
+    /** Shown while listening, so you know where the text will go before you speak. */
+    private fun targetLine(): String {
+        val target = DictationController.active?.focusedFieldPackage()
+        return if (target != null) context.getString(R.string.murmur_assistant_target, appLabel(target))
+        else context.getString(R.string.murmur_assistant_target_clipboard)
+    }
+
+    private fun appLabel(pkg: String): String = try {
+        val pm = context.packageManager
+        pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
+    } catch (e: PackageManager.NameNotFoundException) { pkg }
 
     private fun showResult(message: String, close: Boolean) {
         state = State.DONE

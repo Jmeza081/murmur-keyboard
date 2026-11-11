@@ -34,6 +34,8 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
     private var panel: DictationPanel? = null
     private var startedAt = 0L
 
+    init { active = this }
+
     /** Loads the model in the background so the first tap is fast. Safe to call often. */
     fun preload() = SharedEngine.preload(ime)
 
@@ -54,7 +56,28 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
         closePanel()
     }
 
-    fun release() = cancel()
+    fun release() {
+        cancel()
+        if (active === this) active = null
+    }
+
+    /**
+     * The app whose text field Murmur is attached to, or null if there's none (or it's a password field).
+     * The field counts even when the keyboard is hidden, as long as it still has focus.
+     */
+    fun focusedFieldPackage(): String? {
+        if (ime.currentInputConnection == null) return null
+        val info = ime.currentInputEditorInfo ?: return null
+        if (info.inputType == android.text.InputType.TYPE_NULL || isPassword(info.inputType)) return null
+        return info.packageName
+    }
+
+    /** Types [text] into the focused field for the power-button assistant. Returns false if there's no field. */
+    fun typeIntoFocusedField(text: String): Boolean {
+        if (focusedFieldPackage() == null) return false
+        insert(text)
+        return true
+    }
 
     private fun start() {
         if (ime.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -102,6 +125,17 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
     override fun onAutoStop() { main.post { if (state == State.LISTENING) finish() } }
     override fun onNoSpeech() { main.post { if (state == State.LISTENING) showFailure(ime.getString(R.string.murmur_dictation_nothing_heard)) } }
 
+    private fun isPassword(inputType: Int): Boolean {
+        val variation = inputType and android.text.InputType.TYPE_MASK_VARIATION
+        return when (inputType and android.text.InputType.TYPE_MASK_CLASS) {
+            android.text.InputType.TYPE_CLASS_TEXT -> variation == android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD ||
+                variation == android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD ||
+                variation == android.text.InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD
+            android.text.InputType.TYPE_CLASS_NUMBER -> variation == android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+            else -> false
+        }
+    }
+
     /** Types [text] at the cursor, adding a space if it would touch the previous word. */
     private fun insert(text: String) {
         val before = ime.currentInputConnection?.getTextBeforeCursor(1, 0)
@@ -120,6 +154,12 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
         if (state != State.LISTENING) return
         panel?.setElapsed(SystemClock.elapsedRealtime() - startedAt)
         main.postDelayed({ tick() }, 250)
+    }
+
+    companion object {
+        /** The running keyboard's controller, used by the power-button assistant (same process). */
+        @Volatile var active: DictationController? = null
+            private set
     }
 
     // --- Panel: an overlay on the key area, same size as the keyboard ---
