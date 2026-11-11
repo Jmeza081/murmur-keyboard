@@ -2,7 +2,7 @@
 
 A personal Android keyboard with on-device dictation. Speech runs locally with NVIDIA Parakeet TDT v3, the model [FluidVoice](https://github.com/altic-dev/FluidVoice) uses. Holding the power button starts dictation from any app.
 
-**Status:** Phases 2–4 done: dictation from the keyboard and the power button, with instant cleanup. Phase 5 (keyboard extras) next. See [PLAN.md](PLAN.md).
+**Status:** Phases 2–5 done: dictation from the keyboard and the power button, instant cleanup, and SwiftKey-style extras. Phase 6 (apply the design) next. See [PLAN.md](PLAN.md).
 
 ## Screens
 

@@ -106,10 +106,13 @@ Each phase ends with something installed and usable on your phone, and with the 
 - Swipe typing: sideload the Google library, or put it off.
 - Check the tablet split layout against the mockup.
 - **Exit:** feature parity with what you use in SwiftKey, minus GIF search.
+- **Result (2026-11-11): passed.** Number row on by default; space-bar cursor control and pinned clips were already in HeliBoard. Clips Android marks sensitive (passwords, one-time codes) are no longer saved, and clips are kept for 60 minutes (was 10).
+  - Swipe typing uses Google's closed `libjni_latinime.so` (arm64, SHA-256 `b1049983…754f`, the checksum HeliBoard expects), loaded once under Settings › Advanced. It is never committed.
+  - Emoji prediction uses HeliBoard's `emoji_en.dict` (Settings › Dictionaries › Add dictionary from file). Emoji compete with words for the 3 strip slots, so they rarely show without expanding the strip; Phase 6 reserves a slot.
 
 ### Phase 6: Apply the design
 - A Murmur keyboard theme from `design/mockups.html`: colors, key shape and radius, type, light and dark, accent choices.
-- The strip: suggestions in the middle, the mic as a prominent pill on the right, tools when the field is empty.
+- The strip: suggestions in the middle, the mic as a prominent pill on the right, tools when the field is empty. Reserve one slot for the best emoji suggestion when there is one, as SwiftKey does.
 - Restyle the listening panel, the emoji and clipboard panels, and the power-button sheet to match.
 - Tablet split layout per the mockup.
 - **Exit:** side by side with the mockups at phone and tablet sizes, in light and dark, the keyboard matches.
