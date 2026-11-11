@@ -41,7 +41,7 @@ A personal Android keyboard with on-device dictation using the same speech model
 
 ## Phases
 
-Each phase ends with something installed and usable on your phone, and with the README updated. From Phase 2 on, each phase replaces the matching mockup GIF in the README with a real screen recording (`adb shell screenrecord`, converted to GIF), so the README shows what has actually been built.
+Each phase ends with something installed and usable on your phone, and with the README updated.  The README shows the mockup GIFs from `design/mockups.html` throughout; they're rebuilt with `design/capture/` when the mockups change.
 
 | Phase | Name | Outcome |
 |---|---|---|
@@ -75,14 +75,15 @@ Each phase ends with something installed and usable on your phone, and with the 
 - Add the mic key to the strip and the listening panel (level meter, cancel, stop).
 - Commit the transcribed text through `InputConnection.commitText`.
 - Model manager: import or download the model, check its checksum, show its storage size.
-- README: replace `dictation.gif` with a recording.
 - **Exit:** you can dictate into any app with the keyboard.
+- **Result (2026-11-11): passed.** Tested on the release build on the Fold 8: model download through the new screen, then dictation into Notes. Model load 1.7 s (in the background when the keyboard opens); 7.8 s of speech transcribed in 319 ms (RTF 0.04).
+  - The mic key is HeliBoard's toolbar voice key, now dictating in place. The listening panel is pinned to the keyboard's height.
+  - Not done yet: live grey words in the field while listening, and the prominent mic pill from the mockup. Both are polish for later.
 
 ### Phase 3: Power-button dictation
 - Add `VoiceInteractionService`, `VoiceInteractionSessionService` and the listening sheet.
 - Delivery order: the active keyboard (through a bound service in the same app), then the accessibility service, then the clipboard.
 - Add an optional `AccessibilityService` for text fields that aren't using your keyboard.
-- README: replace `power-button.gif` with a recording.
 - **Exit:** holding the power button, speaking and releasing puts the text where you're typing.
 
 ### Phase 4: Cleanup
@@ -95,13 +96,11 @@ Each phase ends with something installed and usable on your phone, and with the 
 - Review clipboard history and emoji (HeliBoard has them). Fill any gaps against SwiftKey, such as pinned clips and the 1-hour expiry.
 - Swipe typing: sideload the Google library, or put it off.
 - Check the tablet split layout against the mockup.
-- README: replace `keyboard.gif` and `panels.gif` with recordings.
 - **Exit:** feature parity with what you use in SwiftKey, minus GIF search.
 
 ### Phase 6: Settings app
 - Setup checklist, then settings for dictation (model, cleanup level, language, silence timeout), power button, theme, typing, dictionary and clipboard.
 - Backup and restore of settings and the dictionary to a file.
-- README: replace `settings.gif` with a recording.
 - **Exit:** everything can be configured without rebuilding.
 
 ## Open questions

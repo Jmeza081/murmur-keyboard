@@ -208,9 +208,9 @@ class DictationController(private val ime: LatinIME) {
         val keyboardView = KeyboardSwitcher.getInstance().mainKeyboardView ?: return null
         val wrapper = keyboardView.parent as? ViewGroup ?: return null
         val p = panel ?: DictationPanel(ime, onCancel = { cancel() }, onStop = { onMicKey() }).also { panel = it }
-        if (p.parent == null) {
-            wrapper.addView(p, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        }
+        // Exactly the keyboard's height: MATCH_PARENT would let the wrapper grow to fill the screen.
+        val params = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, keyboardView.height)
+        if (p.parent == null) wrapper.addView(p, params) else p.layoutParams = params
         p.reset()
         keyboardView.visibility = View.INVISIBLE // keeps its size, so the panel matches the key area
         return p
