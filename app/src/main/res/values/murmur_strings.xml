@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Murmur: dictation strings. -->
 <resources>
+    <string name="murmur_dictation_mic" translatable="false">Dictate</string>
     <string name="murmur_dictation_listening" translatable="false">Listening</string>
     <string name="murmur_dictation_loading" translatable="false">Loading speech model…</string>
     <string name="murmur_dictation_transcribing" translatable="false">Transcribing…</string>

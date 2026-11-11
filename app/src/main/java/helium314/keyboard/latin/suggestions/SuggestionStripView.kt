@@ -115,6 +115,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private val toolbar: ViewGroup = findViewById(R.id.toolbar)
     private val toolbarContainer: View = findViewById(R.id.toolbar_container)
     private val pinnedKeys: ViewGroup = findViewById(R.id.pinned_keys)
+    /** Murmur: the dictation pill at the right edge of the strip. Replaces the voice toolbar key. */
+    private val murmurMic: ImageButton = findViewById(R.id.murmur_mic)
     private val suggestionsStrip: ViewGroup = findViewById(R.id.suggestions_strip)
     private val toolbarExpandKey = findViewById<ImageButton>(R.id.suggestions_strip_toolbar_key)
     private val incognitoIcon = KeyboardIconsSet.instance.getNewDrawable(ToolbarKey.INCOGNITO.name, context)
@@ -153,13 +155,14 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         }
 
         // toolbar keys setup (no need to hide them any more when locked, because then suggestion strip is gone anyway
-        for (key in getEnabledToolbarKeys(context.prefs())) {
+        setupMurmurMic(colors)
+        for (key in getEnabledToolbarKeys(context.prefs()).filter { it != ToolbarKey.VOICE }) {
             val button = createToolbarKey(context, key)
             button.layoutParams = toolbarKeyLayoutParams
             setupKey(button, colors)
             toolbar.addView(button)
         }
-        for (pinnedKey in getPinnedToolbarKeys(context.prefs())) {
+        for (pinnedKey in getPinnedToolbarKeys(context.prefs()).filter { it != ToolbarKey.VOICE }) {
             val button = createToolbarKey(context, pinnedKey)
             button.layoutParams = toolbarKeyLayoutParams
             setupKey(button, colors)
@@ -502,6 +505,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         val show = Settings.getValues().mShowsVoiceInputKey
         toolbar.findViewWithTag<View>(ToolbarKey.VOICE)?.isVisible = show
         pinnedKeys.findViewWithTag<View>(ToolbarKey.VOICE)?.isVisible = show
+        murmurMic.isVisible = show
     }
 
     private fun updateKeys() {
@@ -536,6 +540,22 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         copy.isActivated = original.isActivated
         setupKey(copy, Settings.getValues().mColors)
         pinnedKeys.addView(copy)
+    }
+
+    /** Murmur: accent-filled pill, as in design/mockups.html. Tap dictates; long-press opens dictation settings. */
+    private fun setupMurmurMic(colors: Colors) {
+        murmurMic.tag = ToolbarKey.VOICE
+        murmurMic.setOnClickListener(this)
+        murmurMic.setOnLongClickListener {
+            context.startActivity(android.content.Intent(context, dev.murmur.speech.ModelActivity::class.java)
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+            true
+        }
+        murmurMic.background = android.graphics.drawable.GradientDrawable().apply {
+            cornerRadius = 20 * resources.displayMetrics.density
+            setColor(colors.get(ColorType.ACTION_KEY_BACKGROUND))
+        }
+        murmurMic.setColorFilter(colors.get(ColorType.ACTION_KEY_ICON))
     }
 
     private fun setupKey(view: ImageButton, colors: Colors) {

@@ -29,7 +29,8 @@
             android:contentDescription="@string/more_keys_strip_description" />
         <HorizontalScrollView
             android:id="@+id/toolbar_container"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="match_parent"
             android:scrollbarThumbHorizontal="@color/toolbar_scrollbar"
             android:visibility="gone">
@@ -63,5 +64,17 @@
             android:minWidth="0dp"
             style="?attr/suggestionWordStyle">
         </LinearLayout>
+        <!-- Murmur: the dictation key, always at the right edge of the strip (see SuggestionStripView) -->
+        <ImageButton
+            android:id="@+id/murmur_mic"
+            android:layout_width="56dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="0"
+            android:scaleType="center"
+            android:src="@drawable/ic_murmur_mic"
+            android:contentDescription="@string/murmur_dictation_mic" />
     </LinearLayout>
 </merge>
