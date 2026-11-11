@@ -67,11 +67,24 @@ keyPassword=…
 
 Back up the keystore and this file somewhere safe. Without them you can't install updates over the existing app; you'd have to uninstall it and lose its settings.
 
+**Speech files:** the sherpa-onnx library (57 MB) and the Parakeet model (640 MB) are too big for git. Fetch them once before the first build:
+
+```sh
+scripts/fetch-speech-deps.sh   # library into app/libs/, model into models/parakeet/
+```
+
 **Build and install on a connected phone** (USB or wireless debugging):
 
 ```sh
 ./gradlew :app:installRelease   # signed release, app ID dev.murmur.keyboard
 ./gradlew :app:installDebug     # debug build, app ID dev.murmur.keyboard.debug
+```
+
+For debug builds, copy the model onto the phone with `scripts/push-model.sh`, then check speed with the benchmark screen:
+
+```sh
+adb shell am start -n dev.murmur.keyboard.debug/dev.murmur.speech.SpeechBenchmarkActivity
+adb logcat -s MurmurSpeech
 ```
 
 With more than one device connected, set `ANDROID_SERIAL` to the one you want (see `adb devices`). Then turn on **Murmur** under Settings › General management › Keyboard list and default.

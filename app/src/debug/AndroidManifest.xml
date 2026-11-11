@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug-only additions. Not part of release builds. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Exported so `adb shell am start` can open it. -->
+        <activity
+            android:name="dev.murmur.speech.SpeechBenchmarkActivity"
+            android:exported="true"
+            android:label="Murmur speech benchmark"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+    </application>
+</manifest>

@@ -34,3 +34,7 @@ app/.attach_*
 tools/*.txt
 *.patch
 *.diff
+
+# Speech files fetched by scripts/fetch-speech-deps.sh
+app/libs/*.aar
+!*.sh

@@ -135,6 +135,9 @@ android {
 }
 
 dependencies {
+    // Murmur: on-device speech (fetched by scripts/fetch-speech-deps.sh, not committed)
+    implementation(files("libs/sherpa-onnx-1.13.3.aar"))
+
     // androidx
     implementation("androidx.core:core-ktx:1.17.0") // 1.18.0 requires minSdk 23
     implementation("androidx.recyclerview:recyclerview:1.4.0")
