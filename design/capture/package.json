@@ -1,0 +1,14 @@
+{
+  "name": "mockup-capture",
+  "private": true,
+  "type": "module",
+  "description": "Builds the README GIFs from design/mockups.html",
+  "scripts": {
+    "capture": "node capture.mjs"
+  },
+  "devDependencies": {
+    "gifenc": "1.0.3",
+    "playwright": "1.63.0",
+    "pngjs": "7.0.0"
+  }
+}

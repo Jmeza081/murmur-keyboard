@@ -1,0 +1,27 @@
+# Node (mockup capture tooling)
+node_modules/
+
+# Android / Gradle
+.gradle/
+build/
+local.properties
+*.apk
+*.aab
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing (never commit keys)
+*.keystore
+*.jks
+keystore.properties
+
+# Speech and language models (downloaded at runtime)
+*.onnx
+*.gguf
+models/
+
+# IDE and OS
+.idea/
+*.iml
+.DS_Store
