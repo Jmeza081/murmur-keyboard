@@ -158,7 +158,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
         super.onHide()
         if (state == State.LISTENING || state == State.TRANSCRIBING) recorder.cancel()
         state = State.IDLE
-        main.removeCallbacksAndMessages(null)
+        main.removeCallbacksAndMessages(null) // pending typing lives in the keyboard, not here
     }
 
     private fun stopAndTranscribe() {
@@ -188,12 +188,22 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
         transcript.text = text
         val keyboard = DictationController.active
         val target = keyboard?.focusedFieldPackage()
-        if (target != null && keyboard.typeIntoFocusedField(text)) {
-            return showResult(context.getString(R.string.murmur_assistant_added, appLabel(target)), close = true)
-        }
+        if (keyboard == null || target == null) return copyToClipboard(text, toast = false)
+        // The field only gets its connection back once this sheet closes, so close first, then type.
+        status.setTextColor(ink)
+        status.text = context.getString(R.string.murmur_assistant_added, appLabel(target))
+        state = State.DONE
+        main.postDelayed({
+            hide()
+            keyboard.typeWhenFieldReturns(text) { copyToClipboard(text, toast = true) }
+        }, 600)
+    }
+
+    private fun copyToClipboard(text: String, toast: Boolean) {
         context.getSystemService(ClipboardManager::class.java)
             ?.setPrimaryClip(ClipData.newPlainText(context.getString(R.string.murmur_assistant_clip_label), text))
-        showResult(context.getString(R.string.murmur_assistant_copied), close = true)
+        if (toast) android.widget.Toast.makeText(context, R.string.murmur_assistant_copied_fallback, android.widget.Toast.LENGTH_LONG).show()
+        else showResult(context.getString(R.string.murmur_assistant_copied), close = true)
     }
 
     /** Shown while listening, so you know where the text will go before you speak. */

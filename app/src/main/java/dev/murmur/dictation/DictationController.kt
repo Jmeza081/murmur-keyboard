@@ -3,6 +3,8 @@ package dev.murmur.dictation
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.util.Log
+import android.view.inputmethod.EditorInfo
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -61,23 +63,56 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
         if (active === this) active = null
     }
 
-    /**
-     * The app whose text field Murmur is attached to, or null if there's none (or it's a password field).
-     * The field counts even when the keyboard is hidden, as long as it still has focus.
-     */
-    fun focusedFieldPackage(): String? {
-        if (ime.currentInputConnection == null) return null
-        val info = ime.currentInputEditorInfo ?: return null
-        if (info.inputType == android.text.InputType.TYPE_NULL || isPassword(info.inputType)) return null
-        return info.packageName
+    /** The last app field the keyboard attached to, ignoring Murmur's own assistant sheet. */
+    private var lastField: EditorInfo? = null
+    private var pending: Pending? = null
+
+    private class Pending(val text: String, val pkg: String, val onTimeout: () -> Unit)
+
+    /** Called by LatinIME for every new input connection. */
+    fun onStartInput(info: EditorInfo?) {
+        if (info == null || info.packageName == ime.packageName) return // our own sheet took focus
+        lastField = info
+        Log.i(TAG, "Input started in ${info.packageName}, type 0x${Integer.toHexString(info.inputType)}")
+        val p = pending ?: return
+        if (info.packageName != p.pkg || !isTextField(info)) return
+        pending = null
+        main.postDelayed({ commitForAssistant(p.text) }, 50) // let the connection settle
     }
 
-    /** Types [text] into the focused field for the power-button assistant. Returns false if there's no field. */
-    fun typeIntoFocusedField(text: String): Boolean {
-        if (focusedFieldPackage() == null) return false
-        insert(text)
-        return true
+    /**
+     * The app whose text field had focus before the assistant sheet opened, or null if there was
+     * none (or it's a password field). The keyboard can be hidden; the field just needs focus.
+     */
+    fun focusedFieldPackage(): String? = lastField?.takeIf { isTextField(it) }?.packageName
+
+    /**
+     * Types [text] into that field once focus returns to it after the sheet closes.
+     * Calls [onTimeout] (on the main thread) if focus doesn't come back within 2 s.
+     */
+    fun typeWhenFieldReturns(text: String, onTimeout: () -> Unit) {
+        val pkg = focusedFieldPackage() ?: return onTimeout()
+        val current = ime.currentInputEditorInfo
+        if (ime.currentInputConnection != null && current != null && current.packageName == pkg && isTextField(current)) {
+            return commitForAssistant(text) // focus is already back
+        }
+        val p = Pending(text, pkg, onTimeout)
+        pending = p
+        main.postDelayed({ if (pending === p) { pending = null; Log.w(TAG, "Field didn't regain focus"); p.onTimeout() } }, 2000)
     }
+
+    /** Commits straight to the connection, which works whether or not the keyboard is showing. */
+    private fun commitForAssistant(text: String) {
+        val ic = ime.currentInputConnection ?: return
+        val before = ic.getTextBeforeCursor(1, 0)
+        val prefix = if (!before.isNullOrEmpty() && !before.last().isWhitespace()) " " else ""
+        ic.finishComposingText()
+        ic.commitText(prefix + text, 1)
+        Log.i(TAG, "Typed ${text.length} chars into ${ime.currentInputEditorInfo?.packageName}")
+    }
+
+    private fun isTextField(info: EditorInfo) =
+        info.inputType != android.text.InputType.TYPE_NULL && !isPassword(info.inputType)
 
     private fun start() {
         if (ime.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -160,6 +195,7 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
         /** The running keyboard's controller, used by the power-button assistant (same process). */
         @Volatile var active: DictationController? = null
             private set
+        private const val TAG = "MurmurDictation"
     }
 
     // --- Panel: an overlay on the key area, same size as the keyboard ---

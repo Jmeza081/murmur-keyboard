@@ -702,6 +702,7 @@ public class LatinIME extends InputMethodService implements
     @Override
     public void onStartInput(final EditorInfo editorInfo, final boolean restarting) {
         mHandler.onStartInput(editorInfo, restarting);
+        mDictation.onStartInput(editorInfo); // Murmur: track the app's field for the power-button assistant
     }
 
     @Override
