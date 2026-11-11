@@ -39,8 +39,9 @@ public final class LanguageOnSpacebarUtils {
             return FORMAT_TYPE_FULL_LOCALE;
         }
         // Only this subtype is enabled and equals to the system locale.
+        // Murmur: always label the space bar with the language, as in the mockups (HeliBoard hid it here)
         if (sEnabledSubtypes.size() < 2 && sIsSystemLanguageSameAsInputLanguage && Settings.getValues().mSecondaryLocales.isEmpty()) {
-            return FORMAT_TYPE_NONE;
+            return FORMAT_TYPE_LANGUAGE_ONLY;
         }
         final Locale locale = subtype.getLocale();
         final String keyboardLanguage = locale.getLanguage();

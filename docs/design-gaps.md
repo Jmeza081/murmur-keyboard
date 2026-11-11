@@ -11,7 +11,7 @@ Phase 6, step 1. Each gap names the step that fixes it. Compared against `design
 | 3 | Mic pill | Fills the strip's full height; light icon on a light accent | 56 × 40 dp with breathing room; dark icon (`#0D1336`) on the light accent in dark mode | 3, 4 |
 | 4 | Enter key | Light icon on the light accent: low contrast | Dark icon on the accent in dark mode, white in light mode | 2, 3 |
 | 5 | Key hints | Symbol hints on every letter (`% \ \| = [ ]`…), plus duplicate tiny digits on the number row | Only digit hints on q–p, and none when the number row is on | 3 |
-| 6 | Function keys | Shift and backspace use the letter-key color | Shift, backspace, ?123, comma and period all use the darker function-key color | 3 |
+| 6 | ~~Function keys~~ | Not a gap: sampled pixels show shift and backspace already use the function-key color (`#1E222A`) | — | — |
 | 7 | Space bar | Blank | "English" label in the hint color | 3 |
 | 8 | Key shape | Flat keys, borders only | 8 dp radius with a 1 dp bottom shadow | 3 |
 | 9 | Icons | HeliBoard's filled shift and backspace | Stroke icons (1.8 px) matching the rest of the mockups | 3 |
@@ -35,6 +35,8 @@ Phase 6, step 1. Each gap names the step that fixes it. Compared against `design
 **Theme note:** the dark screenshots are Murmur dark. "Colors" in Appearance is the daytime theme; with the phone in dark mode, "Colors (night)" applies.
 
 **Fixed in step 4 (strip):** 1, 3, 4 (Enter icon contrast), 12, 13, 14.
+
+**Fixed in step 3, part 1 (keys):** 5 (hints), 7 (space bar label), 8 (8 dp corners; the 1 dp bottom edge was already there).
 
 ## Still to capture
 

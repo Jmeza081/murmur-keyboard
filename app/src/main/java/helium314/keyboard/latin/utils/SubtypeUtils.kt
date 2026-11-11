@@ -78,11 +78,9 @@ fun getPopupKeyOrder(subtype: InputMethodSubtype, prefs: SharedPreferences): Lis
     return getEnabledPopupKeys(string)
 }
 
-fun getPopupKeyHintOrder(subtype: InputMethodSubtype, prefs: SharedPreferences): List<String> {
-    val string = subtype.getExtraValueOf(ExtraValue.HINT_ORDER)
-        ?: prefs.getString(Settings.PREF_POPUP_KEYS_HINT_ORDER, Defaults.PREF_POPUP_KEYS_HINT_ORDER)!!
-    return getEnabledPopupKeys(string)
-}
+// Murmur: key hints are digits only (q-p), as in the mockups; HeliBoard's hint-order setting no longer applies
+@Suppress("UNUSED_PARAMETER")
+fun getPopupKeyHintOrder(subtype: InputMethodSubtype, prefs: SharedPreferences): List<String> = listOf(POPUP_KEYS_NUMBER)
 
 fun getMoreKeys(subtype: InputMethodSubtype, prefs: SharedPreferences, default: String): String =
     subtype.getExtraValueOf(ExtraValue.MORE_POPUPS)
