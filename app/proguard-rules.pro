@@ -16,9 +16,3 @@
 # Murmur: sherpa-onnx reads its config classes from native code by field name
 -keep class com.k2fsa.sherpa.onnx.** { *; }
 
-# Murmur: ML Kit GenAI (Gemini Nano) breaks when R8 merges or rewrites its internal classes
--keep class com.google.mlkit.** { *; }
--keep class com.google.android.gms.internal.mlkit_** { *; }
--keep class com.google.android.gms.common.** { *; }
--keep class com.google.android.gms.tasks.** { *; }
--keep class com.google.firebase.components.** { *; }

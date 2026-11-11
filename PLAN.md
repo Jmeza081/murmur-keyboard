@@ -26,7 +26,7 @@ A personal Android keyboard with on-device dictation using the same speech model
 |---|---|---|
 | Keyboard base | Fork **HeliBoard** (GPL-3.0, AOSP LatinIME lineage) | Already has emoji, clipboard history, split keyboard, themes and a dictionary. Verify the current feature set before forking. |
 | Speech engine | **sherpa-onnx** running Parakeet TDT 0.6B v3 (INT8 ONNX) with Silero VAD | A proven Android route; see `mtib/android-local-transcribe`. Model is about 640 MB. |
-| Cleanup | Stage 1: rules. Stage 2: a small on-device LLM (llama.cpp with a ~1B model, or Gemini Nano through ML Kit GenAI if the phone supports it) | Rules cover most filler words. Use the LLM only if latency and RAM allow. |
+| Cleanup | Rules only (`TextCleanup`) | Measured in Phase 4: Gemini Nano is blocked for keyboards, and a 1B model added ~1.2 s for one real fix in ten. |
 | Power-button trigger | Register as the default digital assistant through `VoiceInteractionService` | Officially supported. Replaces Google Assistant on the long-press. |
 | Text injection | Order: (1) commit through the active IME, (2) `AccessibilityService` `ACTION_SET_TEXT` or paste, (3) copy to the clipboard and show a toast | Covers every case. Accessibility is fine because the app is sideloaded. |
 | Language | Kotlin. Native code only through sherpa-onnx and llama.cpp | Matches HeliBoard and the Android tooling. |
@@ -95,6 +95,10 @@ Each phase ends with something installed and usable on your phone, and with the 
 - Optional LLM pass behind a setting, with a strict timeout that falls back to the rule output.
 - The "Cleaned up" preview with Undo cleanup.
 - **Exit:** cleaned text arrives with no noticeable extra delay.
+- **Result (2026-11-11): passed, rules only.** Light cleanup (`TextCleanup`, 13 unit tests) removes fillers, stutters and restarted phrases, and applies "scratch that" and short corrections ("5, I mean 6", "Wednesday, wait no, on Thursday"). Instant. Cleanup level is Off or Light on the Dictation screen.
+  - **Gemini Nano (ML Kit Prompt API) can't be used:** AICore rejects calls from a keyboard or assistant sheet with "Background usage is blocked" (error 30). It only serves an app whose own screen is in front.
+  - **llama.cpp + Gemma 3 1B (Q4_K_M) was built and measured on the Fold 8:** 0.8–1.7 s per dictation (same at 6 or 8 threads), 1.4 GB memory with Parakeet. Unguarded it changed the meaning in 3 of 10 test dictations (dropped "you", "2" to "two"); behind a strict guard it made one real fix in ten, a restarted phrase. That fix is now a rule, so the model was removed.
+  - Revisit if AICore opens to keyboards, or a much faster small model appears. The removed code is in git history (`1d7bf53` and its parent).
 
 ### Phase 5: Keyboard extras
 - Review clipboard history and emoji (HeliBoard has them). Fill any gaps against SwiftKey, such as pinned clips and the 1-hour expiry.

@@ -2,7 +2,7 @@
 
 A personal Android keyboard with on-device dictation. Speech runs locally with NVIDIA Parakeet TDT v3, the model [FluidVoice](https://github.com/altic-dev/FluidVoice) uses. Holding the power button starts dictation from any app.
 
-**Status:** Phases 2 and 3 done: dictation works from the keyboard and the power button. Phase 4 (cleanup) next. See [PLAN.md](PLAN.md).
+**Status:** Phases 2–4 done: dictation from the keyboard and the power button, with instant cleanup. Phase 5 (keyboard extras) next. See [PLAN.md](PLAN.md).
 
 ## Screens
 
@@ -40,7 +40,7 @@ These GIFs come from the design mockups. The full board is in [`design/mockups.h
 - Full keyboard: suggestions, swipe typing, emoji, clipboard history with pins, themes, personal dictionary.
 - Split layout for tablets in landscape.
 - Dictation key with on-device Parakeet TDT v3 through [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx).
-- Optional cleanup: removes filler words, applies dictionary replacements, and can rewrite with a small on-device model.
+- Instant cleanup: removes filler words, stutters and restarted phrases, and applies "scratch that" and quick corrections like "5, I mean 6".
 - Power-button dictation, by registering as the phone's digital assistant.
 - Companion settings app for setup, the speech model, themes and the dictionary.
 

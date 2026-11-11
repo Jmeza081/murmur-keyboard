@@ -15,6 +15,7 @@ object TextCleanup {
         s = scratchThat(s)
         s = selfCorrections(s)
         s = fillers(s)
+        s = restarts(s)
         s = stutters(s)
         return tidy(s)
     }
@@ -83,9 +84,25 @@ object TextCleanup {
         return s
     }
 
-    // "the the" -> "the". A few doubles are grammatical ("that that", "had had").
+    // "first we need to, well, first we need to book" -> "first we need to book": a phrase of 2-6
+    // words said twice, with at most a filler or two in between, keeps only the second try.
+    private val RESTART = Regex(
+        """\b((?:[\w'’]+\s+){1,5}[\w'’]+)[\s,]+(?:(?:well|so|um+|uh+|I mean|like)[\s,]+){0,2}\1\b""",
+        RegexOption.IGNORE_CASE,
+    )
+
+    private fun restarts(text: String): String {
+        var s = text
+        while (true) {
+            val next = RESTART.replace(s) { it.groupValues[1] }
+            if (next == s) return s
+            s = next
+        }
+    }
+
+    // "the the" -> "the". Some doubles are grammatical ("that that", "had had") or deliberate ("bye bye").
     private val STUTTER = Regex("""\b([A-Za-z']+)(?:\s+\1\b)+""", RegexOption.IGNORE_CASE)
-    private val REAL_DOUBLES = setOf("that", "had")
+    private val REAL_DOUBLES = setOf("that", "had", "bye", "no", "yes", "yeah", "very", "really", "ha", "hey", "knock", "blah", "now")
 
     private fun stutters(text: String) = STUTTER.replace(text) { m ->
         if (m.groupValues[1].lowercase() in REAL_DOUBLES) m.value else m.groupValues[1]

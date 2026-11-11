@@ -171,7 +171,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
         status.text = context.getString(R.string.murmur_dictation_transcribing)
         recorder.stop { samples ->
             SharedEngine.transcribe(context, samples) { result ->
-                val cleaned = result?.let { Cleanup.process(context, it.text) } // worker thread
+                val cleaned = result?.let { Cleanup.process(context, it.text) }
                 main.post {
                     if (state != State.TRANSCRIBING) return@post
                     val text = cleaned.orEmpty()

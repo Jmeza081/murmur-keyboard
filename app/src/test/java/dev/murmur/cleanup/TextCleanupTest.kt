@@ -60,6 +60,18 @@ class TextCleanupTest {
         assertEquals("It costs 40 dollars.", clean("It costs 30, no wait, 40 dollars."))
     }
 
+    @Test fun collapsesRestartedPhrases() {
+        assertEquals("Okay so first we need to book the flights and then the hotel.",
+            clean("Okay so first we need to um, well, first we need to book the flights and then the hotel."))
+        assertEquals("I want to go to the park.", clean("I want to, I want to go to the park."))
+        assertEquals("We should leave at noon.", clean("We should, uh, we should leave at noon."))
+    }
+
+    @Test fun keepsDeliberateRepetition() {
+        assertEquals("Bye bye, see you soon.", clean("Bye bye, see you soon."))
+        assertEquals("It was a long, long day.", clean("It was a long, long day."))
+    }
+
     @Test fun leavesLongIMeanAlone() {
         val s = "It was fine, I mean the food was great but the service was slow."
         assertEquals(s, clean(s))

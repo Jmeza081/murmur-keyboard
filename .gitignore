@@ -38,3 +38,4 @@ tools/*.txt
 # Speech files fetched by scripts/fetch-speech-deps.sh
 app/libs/*.aar
 !*.sh
+

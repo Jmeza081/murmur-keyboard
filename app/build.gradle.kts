@@ -18,7 +18,7 @@ android {
 
     defaultConfig {
         applicationId = "dev.murmur.keyboard"
-        minSdk = 26 // Murmur: was 21; ML Kit GenAI needs 26
+        minSdk = 21
         targetSdk = 37
         versionCode = 4300
         versionName = "4.3-beta1"
@@ -137,8 +137,6 @@ android {
 dependencies {
     // Murmur: on-device speech (fetched by scripts/fetch-speech-deps.sh, not committed)
     implementation(files("libs/sherpa-onnx-1.13.3.aar"))
-    // Murmur: optional "Smart" cleanup with Gemini Nano through AICore (Android 12+, beta API)
-    implementation("com.google.mlkit:genai-prompt:1.0.0-beta5")
 
     // androidx
     implementation("androidx.core:core-ktx:1.17.0") // 1.18.0 requires minSdk 23
