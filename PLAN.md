@@ -51,7 +51,8 @@ Each phase ends with something installed and usable on your phone, and with the 
 | 3 | Power button | Hold power, speak, release: text lands where you're typing |
 | 4 | Cleanup | Filler words gone with no noticeable delay |
 | 5 | Keyboard extras | Emoji, clipboard and swipe match what you use in SwiftKey |
-| 6 | Settings app | Everything configurable without rebuilding |
+| 6 | Apply the design | The keyboard looks like the mockups, in light and dark |
+| 7 | Settings app | Everything configurable without rebuilding, built to the mockups |
 
 ### Phase 0: Spike (1–2 days)
 - Build and install `mtib/android-local-transcribe` unchanged. Measure transcription speed, RAM and accuracy on your phone.
@@ -106,7 +107,14 @@ Each phase ends with something installed and usable on your phone, and with the 
 - Check the tablet split layout against the mockup.
 - **Exit:** feature parity with what you use in SwiftKey, minus GIF search.
 
-### Phase 6: Settings app
+### Phase 6: Apply the design
+- A Murmur keyboard theme from `design/mockups.html`: colors, key shape and radius, type, light and dark, accent choices.
+- The strip: suggestions in the middle, the mic as a prominent pill on the right, tools when the field is empty.
+- Restyle the listening panel, the emoji and clipboard panels, and the power-button sheet to match.
+- Tablet split layout per the mockup.
+- **Exit:** side by side with the mockups at phone and tablet sizes, in light and dark, the keyboard matches.
+
+### Phase 7: Settings app
 - Setup checklist, then settings for dictation (model, cleanup level, language, silence timeout), power button, theme, typing, dictionary and clipboard.
 - Backup and restore of settings and the dictionary to a file.
 - **Exit:** everything can be configured without rebuilding.

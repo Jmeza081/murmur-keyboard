@@ -76,6 +76,8 @@ class ClipboardHistoryManager(
         if (clipData.itemCount == 0) return
         val clipItem = clipData.getItemAt(0) ?: return
         val description = clipData.description ?: return
+        // Murmur: never keep clips marked sensitive (passwords from password managers, one-time codes)
+        if (ClipboardManagerCompat.getClipSensitivity(description) == true) return
         val timeStamp = ClipboardManagerCompat.getClipTimestamp(clipData)
 
         if (description.hasMimeType("text/*")) {
