@@ -65,7 +65,11 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         const val THEME_PINK = "pink"
         const val THEME_SAND = "sand"
         const val THEME_VIOLETTE = "violette"
+        // Murmur: colors from design/mockups.html
+        const val THEME_MURMUR_LIGHT = "murmur_light"
+        const val THEME_MURMUR_DARK = "murmur_dark"
         fun getAvailableDefaultColors(prefs: SharedPreferences, isNight: Boolean) = listOfNotNull(
+            if (!isNight) THEME_MURMUR_LIGHT else null, THEME_MURMUR_DARK,
             if (!isNight) THEME_LIGHT else null, THEME_DARK,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) THEME_DYNAMIC else null,
             if (prefs.getString(Settings.PREF_THEME_STYLE, Defaults.PREF_THEME_STYLE) == STYLE_HOLO) THEME_HOLO_WHITE else null,
@@ -152,6 +156,32 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) DynamicColors(context, themeStyle, hasBorders, backgroundImage)
                     else getThemeColors(THEME_LIGHT, themeStyle, context, prefs, isNight)
                 }
+                // Murmur: light keyboard from the mockups (cool grey, white keys, cobalt accent)
+                THEME_MURMUR_LIGHT -> DefaultColors(
+                    themeStyle,
+                    hasBorders,
+                    accent = "#2F4BE0".toColorInt(),
+                    background = "#E8EBF1".toColorInt(),
+                    keyBackground = "#FFFFFF".toColorInt(),
+                    functionalKey = "#CFD5E0".toColorInt(),
+                    spaceBar = "#FFFFFF".toColorInt(),
+                    keyText = "#191B21".toColorInt(),
+                    keyHintText = "#6B7282".toColorInt(),
+                    keyboardBackground = backgroundImage
+                )
+                // Murmur: dark keyboard from the mockups
+                THEME_MURMUR_DARK -> DefaultColors(
+                    themeStyle,
+                    hasBorders,
+                    accent = "#8EA0FF".toColorInt(),
+                    background = "#121419".toColorInt(),
+                    keyBackground = "#2A2E37".toColorInt(),
+                    functionalKey = "#1E2129".toColorInt(),
+                    spaceBar = "#2A2E37".toColorInt(),
+                    keyText = "#ECEEF3".toColorInt(),
+                    keyHintText = "#9AA1B0".toColorInt(),
+                    keyboardBackground = backgroundImage
+                )
                 THEME_LIGHT -> DefaultColors(
                     themeStyle,
                     hasBorders,

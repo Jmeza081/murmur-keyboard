@@ -728,6 +728,8 @@ New dictionary:
     <!-- Option for setting navbar to follow keyboard color -->
     <string name="theme_navbar">Color navigation bar</string>
     <!-- Theme name for light theme -->
+    <string name="theme_name_murmur_light" tools:keep="@string/theme_name_murmur_light">Murmur light</string>
+    <string name="theme_name_murmur_dark" tools:keep="@string/theme_name_murmur_dark">Murmur dark</string>
     <string name="theme_name_light" tools:keep="@string/theme_name_light">Light</string>
     <!-- Theme name for holo white theme -->
     <string name="theme_name_holo_white" tools:keep="@string/theme_name_holo_white">Holo White</string>
