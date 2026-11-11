@@ -48,6 +48,13 @@ class TextCleanupTest {
         assertEquals("Send it to Jim.", clean("Send it to John, I mean Jim."))
     }
 
+    @Test fun moreCorrectionCues() {
+        assertEquals("I want to meet on Thursday.", clean("I want to meet on Wednesday, wait no, on Thursday."))
+        assertEquals("I'll be there at 5.30.", clean("I'll be there at 5, no actually 5.30."))
+        assertEquals("Book it for Friday.", clean("Book it for Thursday, or rather Friday."))
+        assertEquals("We went to Paris, actually Paris was amazing.", clean("We went to Paris, actually Paris was amazing."))
+    }
+
     @Test fun multiWordNamesAndNumbers() {
         assertEquals("Fly to San Francisco on Friday.", clean("Fly to New York, I mean San Francisco on Friday."))
         assertEquals("It costs 40 dollars.", clean("It costs 30, no wait, 40 dollars."))

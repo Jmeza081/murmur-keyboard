@@ -46,8 +46,11 @@ object TextCleanup {
     }
 
     // "5, I mean 6" and "John, no wait, Jim": swap a number for a number, or a name for a name.
+    private val NAME_OR_NUMBER = """(?:(?:[A-Z][\w'’-]*\s+){0,2}[A-Z][\w'’-]*|\d[\d.,:]*)"""
+    private val CUE = """(?:I mean|no,? wait|wait,? no|no,? actually|actually,? no|sorry|or rather)"""
+    private val PREP = """(?:on|at|in|to|for|by|with|from)"""
     private val CORRECTION = Regex(
-        """((?:[A-Z][\w'’-]*\s+){0,2}[A-Z][\w'’-]*|\d[\d.,:]*)\s*,\s*(?:I mean|no wait|no,? wait|sorry)\s*,?\s+((?:[A-Z][\w'’-]*\s+){0,2}[A-Z][\w'’-]*|\d[\d.,:]*)""",
+        """($NAME_OR_NUMBER)\s*,\s*$CUE\s*,?\s+(?:$PREP\s+)?($NAME_OR_NUMBER)""",
     )
 
     private fun selfCorrections(text: String): String = CORRECTION.replace(text) { m ->

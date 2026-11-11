@@ -11,7 +11,7 @@ import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import dev.murmur.cleanup.TextCleanup
+import dev.murmur.cleanup.Cleanup
 import dev.murmur.speech.MicRecorder
 import dev.murmur.speech.ModelActivity
 import dev.murmur.speech.ModelManager
@@ -152,13 +152,13 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
         panel?.showMessage(ime.getString(R.string.murmur_dictation_transcribing))
         recorder.stop { samples ->
             SharedEngine.transcribe(ime, samples) { result ->
+                val cleaned = result?.let { Cleanup.process(ime, it.text) } // worker thread: Smart can take 1.5 s
                 main.post {
                     if (state != State.TRANSCRIBING) return@post // cancelled meanwhile
                     if (result == null) return@post showFailure(ime.getString(R.string.murmur_dictation_model_missing))
                     state = State.IDLE
                     closePanel()
-                    val text = TextCleanup.clean(result.text)
-                    if (text.isNotEmpty()) insert(text)
+                    if (!cleaned.isNullOrEmpty()) insert(cleaned)
                 }
             }
         }

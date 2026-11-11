@@ -5,6 +5,8 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,7 +30,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.runtime.rememberCoroutineScope
+import com.google.mlkit.genai.common.DownloadStatus
+import dev.murmur.cleanup.Cleanup
+import dev.murmur.cleanup.SmartCleanup
 import helium314.keyboard.latin.utils.Theme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Shows whether the speech model is installed, and downloads or deletes it. */
 class ModelActivity : ComponentActivity() {
@@ -51,10 +63,10 @@ class ModelActivity : ComponentActivity() {
         }
 
         Column(
-            Modifier.safeDrawingPadding().padding(20.dp),
+            Modifier.safeDrawingPadding().verticalScroll(rememberScrollState()).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text("Speech model", style = MaterialTheme.typography.headlineMedium)
+            Text("Dictation", style = MaterialTheme.typography.headlineMedium)
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Parakeet TDT v3", style = MaterialTheme.typography.titleMedium)
@@ -100,6 +112,66 @@ class ModelActivity : ComponentActivity() {
                     "A paused download picks up where it stopped.",
                 style = MaterialTheme.typography.bodySmall,
             )
+
+            CleanupSection()
+        }
+    }
+
+    @Composable
+    private fun CleanupSection() {
+        var level by remember { mutableStateOf(Cleanup.level(this@ModelActivity)) }
+        var nano by remember { mutableStateOf<SmartCleanup.Availability?>(null) }
+        var nanoProgress by remember { mutableStateOf<String?>(null) }
+        val scope = rememberCoroutineScope()
+        LaunchedEffect(Unit) { nano = withContext(Dispatchers.IO) { SmartCleanup.availability() } }
+
+        Text("Cleanup", style = MaterialTheme.typography.titleMedium)
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            Cleanup.Level.entries.forEachIndexed { i, l ->
+                SegmentedButton(
+                    selected = level == l,
+                    onClick = { level = l; Cleanup.setLevel(this@ModelActivity, l) },
+                    shape = SegmentedButtonDefaults.itemShape(i, Cleanup.Level.entries.size),
+                ) { Text(l.name.lowercase().replaceFirstChar { it.uppercase() }) }
+            }
+        }
+        Text(
+            when (level) {
+                Cleanup.Level.OFF -> "Types exactly what the speech model heard."
+                Cleanup.Level.LIGHT -> "Removes filler words and stutters, applies \"scratch that\" and quick corrections, and fixes spacing. Instant."
+                Cleanup.Level.SMART -> "Light cleanup, then Gemini Nano on this phone tidies false starts. Adds up to 1.5 s. " +
+                    "If Gemini Nano drops or changes your words, Murmur keeps the Light result."
+            },
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        if (level == Cleanup.Level.SMART) {
+            val status = nanoProgress ?: when (nano) {
+                null -> "Checking Gemini Nano…"
+                SmartCleanup.Availability.AVAILABLE -> "Gemini Nano is ready."
+                SmartCleanup.Availability.DOWNLOADABLE -> "Gemini Nano needs a one-time download through Google's AICore."
+                SmartCleanup.Availability.DOWNLOADING -> "Gemini Nano is downloading…"
+                SmartCleanup.Availability.UNAVAILABLE -> "Gemini Nano isn't available on this phone, so Smart works like Light."
+            }
+            Text(status, style = MaterialTheme.typography.bodySmall)
+            if (nano == SmartCleanup.Availability.DOWNLOADABLE && nanoProgress == null) {
+                OutlinedButton(onClick = {
+                    nanoProgress = "Starting download…"
+                    scope.launch(Dispatchers.IO) {
+                        try {
+                            SmartCleanup.download().collect { st ->
+                                nanoProgress = when (st) {
+                                    is DownloadStatus.DownloadProgress -> "Downloading Gemini Nano… ${st.totalBytesDownloaded / 1_000_000} MB"
+                                    is DownloadStatus.DownloadCompleted -> null.also { nano = SmartCleanup.Availability.AVAILABLE }
+                                    is DownloadStatus.DownloadFailed -> "Download failed. Try again later."
+                                    else -> nanoProgress
+                                }
+                            }
+                        } catch (e: Exception) {
+                            nanoProgress = "Download failed. Try again later."
+                        }
+                    }
+                }) { Text("Download Gemini Nano") }
+            }
         }
     }
 

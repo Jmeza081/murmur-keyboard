@@ -100,10 +100,17 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
         </service>
 
         <!-- Murmur: download or delete the speech model -->
+        <!-- Launcher icon for now; moves into the settings app in Phase 6. -->
         <activity android:name="dev.murmur.speech.ModelActivity"
-            android:exported="false"
-            android:label="Murmur speech model"
-            android:theme="@android:style/Theme.Material.NoActionBar" />
+            android:exported="true"
+            android:label="Murmur dictation"
+            android:icon="@mipmap/ic_launcher"
+            android:theme="@android:style/Theme.Material.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
         <activity android:name="helium314.keyboard.settings.SettingsActivity"
                 android:theme="@style/platformActivityTheme"
