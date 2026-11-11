@@ -169,11 +169,11 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                     keyHintText = "#6B7282".toColorInt(),
                     keyboardBackground = backgroundImage
                 )
-                // Murmur: dark keyboard from the mockups
+                // Murmur: dark keyboard from the mockups, with the same cobalt accent as light
                 THEME_MURMUR_DARK -> DefaultColors(
                     themeStyle,
                     hasBorders,
-                    accent = "#8EA0FF".toColorInt(),
+                    accent = "#2F4BE0".toColorInt(),
                     background = "#121419".toColorInt(),
                     keyBackground = "#2A2E37".toColorInt(),
                     functionalKey = "#1E2129".toColorInt(),
