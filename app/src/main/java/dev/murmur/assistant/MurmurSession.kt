@@ -22,6 +22,7 @@ import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
+import dev.murmur.cleanup.TextCleanup
 import dev.murmur.dictation.DictationController
 import dev.murmur.dictation.DictationPanel
 import dev.murmur.dictation.LevelBarsView
@@ -172,7 +173,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
             SharedEngine.transcribe(context, samples) { result ->
                 main.post {
                     if (state != State.TRANSCRIBING) return@post
-                    val text = result?.text.orEmpty()
+                    val text = TextCleanup.clean(result?.text.orEmpty())
                     when {
                         result == null -> showResult(context.getString(R.string.murmur_dictation_model_missing), close = true)
                         text.isEmpty() -> showResult(context.getString(R.string.murmur_dictation_nothing_heard), close = true)

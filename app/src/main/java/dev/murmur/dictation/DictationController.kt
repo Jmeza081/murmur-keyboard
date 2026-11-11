@@ -11,6 +11,7 @@ import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import dev.murmur.cleanup.TextCleanup
 import dev.murmur.speech.MicRecorder
 import dev.murmur.speech.ModelActivity
 import dev.murmur.speech.ModelManager
@@ -156,7 +157,8 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
                     if (result == null) return@post showFailure(ime.getString(R.string.murmur_dictation_model_missing))
                     state = State.IDLE
                     closePanel()
-                    if (result.text.isNotEmpty()) insert(result.text)
+                    val text = TextCleanup.clean(result.text)
+                    if (text.isNotEmpty()) insert(text)
                 }
             }
         }
