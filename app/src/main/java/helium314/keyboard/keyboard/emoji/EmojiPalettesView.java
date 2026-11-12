@@ -119,6 +119,13 @@ public final class EmojiPalettesView extends LinearLayout
             });
 
             emojiRecyclerView.setPersistentDrawingCache(PERSISTENT_NO_CACHE);
+            // Murmur: Android draws its keyboard-switch and hide buttons (~48 dp) over the panel's bottom edge.
+            // Like the dictation panel, keep 48 + 8 dp clear there; the grid still scrolls under it, so the
+            // last row can always be scrolled up into view.
+            final int clear = (int) (56 * parent.getResources().getDisplayMetrics().density);
+            emojiRecyclerView.setPadding(emojiRecyclerView.getPaddingLeft(), emojiRecyclerView.getPaddingTop(),
+                    emojiRecyclerView.getPaddingRight(), clear);
+            emojiRecyclerView.setClipToPadding(false);
             return viewHolder;
         }
 

@@ -98,9 +98,10 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             word.contentDescription = resources.getString(R.string.spoken_empty_suggestion)
             word.setOnClickListener(this)
             word.setOnLongClickListener(this)
-            colors.setBackground(word, ColorType.STRIP_BACKGROUND)
+            word.background = murmurSuggestionPill(colors)
             wordViews.add(word)
             val divider = inflater.inflate(R.layout.suggestion_divider, null)
+            divider.visibility = INVISIBLE // Murmur: the pills separate words; the divider only keeps its small gap
             dividerViews.add(divider)
             val info = TextView(context, null, R.attr.suggestionWordStyle)
             info.setTextColor(colors.get(ColorType.KEY_TEXT))
@@ -119,7 +120,6 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private val murmurMic: ImageButton = findViewById(R.id.murmur_mic)
     private val suggestionsStrip: ViewGroup = findViewById(R.id.suggestions_strip)
     private val toolbarExpandKey = findViewById<ImageButton>(R.id.suggestions_strip_toolbar_key)
-    private val incognitoIcon = KeyboardIconsSet.instance.getNewDrawable(ToolbarKey.INCOGNITO.name, context)
     private val toolbarArrowIcon = KeyboardIconsSet.instance.getNewDrawable(KeyboardIconsSet.NAME_TOOLBAR_KEY, context)
     private val defaultToolbarBackground: Drawable = toolbarExpandKey.background
     private val enabledToolKeyBackground = GradientDrawable()
@@ -271,6 +271,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         startIndexOfMoreSuggestions = layoutHelper.layoutAndReturnStartIndexOfMoreSuggestions(
             context, suggestedWords, suggestionsStrip, this
         )
+        // Murmur: an empty slot shows no pill
+        wordViews.forEach { it.background?.alpha = if (it.text.isNullOrEmpty()) 0 else 255 }
         isExternalSuggestionVisible = false
         updateKeys()
     }
@@ -538,13 +540,10 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         val settingsValues = Settings.getValues()
 
         val toolbarIsExpandable = settingsValues.mToolbarMode == ToolbarMode.EXPANDABLE
-        if (settingsValues.mIncognitoModeEnabled) {
-            toolbarExpandKey.setImageDrawable(incognitoIcon)
-            toolbarExpandKey.isVisible = true
-        } else {
-            toolbarExpandKey.setImageDrawable(toolbarArrowIcon)
-            toolbarExpandKey.isVisible = toolbarIsExpandable
-        }
+        // Murmur: always the plain chevron. HeliBoard swapped in a spy icon in incognito fields (passwords),
+        // which read as a stray glyph; nothing is learned there either way.
+        toolbarExpandKey.setImageDrawable(toolbarArrowIcon)
+        toolbarExpandKey.isVisible = toolbarIsExpandable
 
         toolbarExpandKey.setOnClickListener(if (!toolbarIsExpandable) null else this)
         pinnedKeys.visibility = suggestionsStrip.visibility
@@ -657,6 +656,18 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         val reordered = list.toMutableList().apply { this[right] = list[emoji]; this[emoji] = list[right] }
         return SuggestedWords(reordered, words.rawSuggestions, words.typedWordInfo, words.typedWordValid,
             words.willAutoCorrect, words.isObsoleteSuggestions, words.inputStyle, words.sequenceNumber)
+    }
+
+    /** Murmur: each suggestion sits on its own rounded key-colored pill, inset from the strip (iOS-style). */
+    private fun murmurSuggestionPill(colors: Colors): Drawable {
+        val d = resources.displayMetrics.density
+        val pill = GradientDrawable().apply { cornerRadius = 10 * d; setColor(colors.get(ColorType.KEY_BACKGROUND)) }
+        val pressed = GradientDrawable().apply { cornerRadius = 10 * d; setColor(colors.get(ColorType.FUNCTIONAL_KEY_BACKGROUND)) }
+        val states = android.graphics.drawable.StateListDrawable().apply {
+            addState(intArrayOf(android.R.attr.state_pressed), pressed)
+            addState(intArrayOf(), pill)
+        }
+        return android.graphics.drawable.InsetDrawable(states, (2 * d).toInt(), (5 * d).toInt(), (2 * d).toInt(), (5 * d).toInt())
     }
 
     /** Murmur: opens 1Password, for sites where autofill doesn't offer the right login. Only if it's installed. */
@@ -800,7 +811,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
 
     companion object {
         /** Murmur: the tools row, in mockup order. */
-        private val MURMUR_TOOLS = listOf(ToolbarKey.CLIPBOARD, ToolbarKey.EMOJI, ToolbarKey.SPLIT, ToolbarKey.SETTINGS)
+        private val MURMUR_TOOLS = listOf(ToolbarKey.CLIPBOARD, ToolbarKey.SPLIT, ToolbarKey.SETTINGS) // emoji has its own key by the space bar
         private const val PASSWORD_MANAGER = "com.onepassword.android"
 
         @JvmField

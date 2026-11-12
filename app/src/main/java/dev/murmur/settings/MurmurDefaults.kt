@@ -18,7 +18,7 @@ import helium314.keyboard.latin.utils.prefs
  * Bump [VERSION] when a default changes and should reach existing installs.
  */
 object MurmurDefaults {
-    private const val VERSION = 4
+    private const val VERSION = 5
     private const val KEY = "murmur_defaults_version"
 
     fun applyOnce(context: Context) {
@@ -34,6 +34,11 @@ object MurmurDefaults {
             // v4: 2 s of silence cut people off mid-thought; drop any saved value so the 5 s default applies
             dev.murmur.settings.DictationPrefs.clearSilence(context)
             prefs.edit { putInt(KEY, VERSION) }
+        }
+        if (applied < 5) prefs.edit {
+            // v5: the emoji key moves from the toolbar to the bottom row, between comma and space
+            putBoolean(Settings.PREF_SHOW_EMOJI_KEY, true)
+            putInt(KEY, VERSION)
         }
         if (applied >= 1) return
         prefs.edit {

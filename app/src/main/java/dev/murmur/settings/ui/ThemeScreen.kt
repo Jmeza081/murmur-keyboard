@@ -118,47 +118,50 @@ private fun KeyboardPreview(dark: Boolean, accent: Color, borders: Boolean, heig
     val ink = Color(if (dark) MurmurTokens.Dark.TEXT else MurmurTokens.Light.TEXT)
     val sub = Color(if (dark) MurmurTokens.Dark.SUBTLE else MurmurTokens.Light.SUBTLE)
     val onAccent = if (accent.luminance() > 0.3f) Color(0xFF0D1336) else Color.White
-    val rowH = (30 * heightScale).dp
+    val rowH = (44 * heightScale).dp
     val keyBg = if (borders) key else Color.Transparent
     val fnBg = if (borders) fn else Color.Transparent
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(bg).padding(horizontal = 4.dp, vertical = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp)) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(bg).padding(horizontal = 5.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp)) {
         // strip: three suggestions, middle bold, and the mic pill
-        Row(Modifier.fillMaxWidth().height(28.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().height(40.dp), verticalAlignment = Alignment.CenterVertically) {
             listOf("the" to false, "and" to true, "for" to false).forEach { (w, bold) ->
-                Text(w, Modifier.weight(1f), fontFamily = RobotoFlex, fontSize = 12.sp, color = ink, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                Text(w, Modifier.weight(1f), fontFamily = RobotoFlex, fontSize = 16.sp, color = ink, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal)
             }
-            Box(Modifier.width(36.dp).height(24.dp).clip(RoundedCornerShape(12.dp)).background(accent), contentAlignment = Alignment.Center) {
-                Icon(painterResource(R.drawable.ic_murmur_mic), null, tint = onAccent, modifier = Modifier.size(14.dp))
+            Box(Modifier.width(52.dp).height(34.dp).clip(RoundedCornerShape(17.dp)).background(accent), contentAlignment = Alignment.Center) {
+                Icon(painterResource(R.drawable.ic_murmur_mic), null, tint = onAccent, modifier = Modifier.size(20.dp))
             }
             Spacer(Modifier.width(4.dp))
         }
         @Composable
         fun keys(labels: String, inset: Float = 0f, lead: String? = null, trail: Boolean = false) =
-            Row(Modifier.fillMaxWidth().height(rowH).padding(horizontal = (inset * 14).dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (lead != null) PreviewKey(lead, fnBg, ink, 1.5f, small = true)
+            Row(Modifier.fillMaxWidth().height(rowH).padding(horizontal = (inset * 14).dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                if (lead != null) PreviewKey("", fnBg, ink, 1.5f, icon = R.drawable.sym_keyboard_shift_lxx)
                 labels.forEach { PreviewKey(it.toString(), keyBg, ink) }
-                if (trail) PreviewKey("⌫", fnBg, ink, 1.5f, small = true)
+                if (trail) PreviewKey("", fnBg, ink, 1.5f, icon = R.drawable.sym_keyboard_delete_lxx)
             }
         keys("qwertyuiop")
         keys("asdfghjkl", inset = 1f)
         keys("zxcvbnm", lead = "⇧", trail = true)
-        Row(Modifier.fillMaxWidth().height(rowH), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(Modifier.fillMaxWidth().height(rowH), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
             PreviewKey("?123", fnBg, ink, 1.5f, small = true)
             PreviewKey(",", keyBg, ink)
-            PreviewKey("English", keyBg, sub, 5f, small = true)
+            PreviewKey("English · Español", keyBg, sub, 5f, small = true)
             PreviewKey(".", keyBg, ink)
-            PreviewKey("↵", accent, onAccent, 1.5f)
+            PreviewKey("", accent, onAccent, 1.5f, icon = R.drawable.sym_keyboard_return_lxx)
         }
     }
 }
 
 @Composable
-private fun androidx.compose.foundation.layout.RowScope.PreviewKey(label: String, bg: Color, fg: Color, weight: Float = 1f, small: Boolean = false) {
+private fun androidx.compose.foundation.layout.RowScope.PreviewKey(label: String, bg: Color, fg: Color, weight: Float = 1f, small: Boolean = false,
+                                                                    @androidx.annotation.DrawableRes icon: Int? = null) {
     Box(Modifier.weight(weight).fillMaxHeight()
-        .clip(RoundedCornerShape(5.dp)).background(bg), contentAlignment = Alignment.Center) {
-        Text(label, fontFamily = RobotoFlex, fontSize = if (small) 9.sp else 12.sp, color = fg, maxLines = 1)
+        .clip(RoundedCornerShape(7.dp)).background(bg), contentAlignment = Alignment.Center) {
+        // the keyboard's own Material icons, sized like a letter (about 24 dp on a 44 dp key)
+        if (icon != null) Icon(painterResource(icon), null, tint = fg, modifier = Modifier.size(24.dp))
+        else Text(label, fontFamily = RobotoFlex, fontSize = if (small) 15.sp else 20.sp, color = fg, maxLines = 1)
     }
 }
 

@@ -49,6 +49,10 @@ class ModelActivity : ComponentActivity() {
                             Screen.DICTATION -> DictationScreen(onBack = { screen = Screen.HOME })
                             Screen.POWER -> PowerScreen(onBack = { screen = Screen.HOME })
                             Screen.THEME -> dev.murmur.settings.ui.ThemeScreen(onBack = { screen = Screen.HOME })
+                            Screen.TYPING -> dev.murmur.settings.ui.TypingScreen(onBack = { screen = Screen.HOME })
+                            Screen.CLIPBOARD -> dev.murmur.settings.ui.ClipboardScreen(onBack = { screen = Screen.HOME })
+                            Screen.EMOJI -> dev.murmur.settings.ui.EmojiScreen(onBack = { screen = Screen.HOME })
+                            Screen.TABLET -> dev.murmur.settings.ui.TabletScreen(onBack = { screen = Screen.HOME })
                             Screen.SETUP -> SetupScreen(onDone = { dev.murmur.settings.SetupState.setSkipped(this@ModelActivity); screen = Screen.HOME })
                         }
                     }

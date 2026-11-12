@@ -97,7 +97,8 @@ public class InlineAutofillUtils {
 
         final int height = (int) (40 * density); // Murmur: a 40 dp pill centered in the 48 dp strip
         final Size min = new Size(height, height); // Murmur: an icon-only chip is square
-        final Size max = new Size(740, height);
+        // Murmur: wide enough for one chip to fill the strip; createView picks each chip's actual width
+        final Size max = new Size(context.getResources().getDisplayMetrics().widthPixels, height);
 
         // Three InlinePresentationSpec are required for some password managers
         final ArrayList<InlinePresentationSpec> presentationSpecs = new ArrayList<>();
@@ -117,20 +118,45 @@ public class InlineAutofillUtils {
         final int gap = (int) (6 * context.getResources().getDisplayMetrics().density);
         container.setGravity(android.view.Gravity.CENTER_VERTICAL);
         container.setPadding(gap, 0, gap, 0);
-        for (InlineSuggestion inlineSuggestion : inlineSuggestions) {
-            inlineSuggestion.inflate(context, new Size(ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT), context.getMainExecutor(), (view) -> {
-                if (view != null) {
-                    // Murmur: draw the chip above the keyboard window; Murmur's opaque strip hides it otherwise
-                    view.setZOrderedOnTop(true);
-                    // keep the size the password manager rendered the chip at; only add spacing
-                    final ViewGroup.LayoutParams given = view.getLayoutParams();
-                    final LinearLayout.LayoutParams lp = given != null ? new LinearLayout.LayoutParams(given)
-                            : new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                    lp.gravity = android.view.Gravity.CENTER_VERTICAL;
-                    lp.setMarginEnd(gap);
-                    container.addView(view, lp);
-                }
+        // Murmur: pinned chips (1Password's icon) stay square; the others share the rest of the strip, so
+        // nothing scrolls. The strip here is the screen minus the expand key (36 dp + 1 dp margin) and the
+        // close button (30 dp), less 16 dp so the chip clears the close button.
+        final float density = context.getResources().getDisplayMetrics().density;
+        final int height = (int) (40 * density);
+        int pinned = 0;
+        for (InlineSuggestion s : inlineSuggestions) if (s.getInfo().isPinned()) pinned++;
+        final int others = inlineSuggestions.size() - pinned;
+        final int strip = context.getResources().getDisplayMetrics().widthPixels - (int) (67 * density);
+        final int share = others == 0 ? 0
+                : Math.max(height, (strip - 2 * gap - inlineSuggestions.size() * gap - pinned * height - (int) (16 * density)) / others);
+        // Murmur: chips render asynchronously in the password manager's process and finish in any order,
+        // so each gets a fixed slot: suggestions first, pinned chips (1Password's icon) last
+        final List<InlineSuggestion> ordered = new ArrayList<>();
+        for (InlineSuggestion s : inlineSuggestions) if (!s.getInfo().isPinned()) ordered.add(s);
+        for (InlineSuggestion s : inlineSuggestions) if (s.getInfo().isPinned()) ordered.add(s);
+        final View[] slots = new View[ordered.size()];
+        for (int i = 0; i < ordered.size(); i++) {
+            final int slot = i;
+            final InlineSuggestion inlineSuggestion = ordered.get(i);
+            final Size size = inlineSuggestion.getInfo().isPinned()
+                    ? new Size(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                    : new Size(share, height);
+            inlineSuggestion.inflate(context, size, context.getMainExecutor(), (view) -> {
+                if (view == null) return;
+                // Murmur: draw the chip above the keyboard window; Murmur's opaque strip hides it otherwise
+                view.setZOrderedOnTop(true);
+                // keep the size the password manager rendered the chip at; only add spacing
+                final ViewGroup.LayoutParams given = view.getLayoutParams();
+                final LinearLayout.LayoutParams lp = given != null ? new LinearLayout.LayoutParams(given)
+                        : new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                lp.gravity = android.view.Gravity.CENTER_VERTICAL;
+                lp.setMarginEnd(gap);
+                view.setLayoutParams(lp);
+                slots[slot] = view;
+                // insert after every earlier slot that has already arrived
+                int index = 0;
+                for (int j = 0; j < slot; j++) if (slots[j] != null) index++;
+                container.addView(view, index);
             });
         }
 
