@@ -29,4 +29,17 @@
     <string name="murmur_clip_title" translatable="false">Clipboard</string>
     <string name="murmur_clip_pinned" translatable="false">Pinned</string>
     <string name="murmur_clip_empty" translatable="false">Copied text shows up here.\nLong-press a clip to pin it. Others clear after 1 hour.</string>
+    <!-- Emoji panel -->
+    <string name="murmur_emoji_search" translatable="false">Search emoji</string>
+    <string name="murmur_emoji_recents" translatable="false">Recently used</string>
+    <string name="murmur_emoji_smileys" translatable="false">Smileys</string>
+    <string name="murmur_emoji_people" translatable="false">People</string>
+    <string name="murmur_emoji_nature" translatable="false">Nature</string>
+    <string name="murmur_emoji_food" translatable="false">Food</string>
+    <string name="murmur_emoji_travel" translatable="false">Travel</string>
+    <string name="murmur_emoji_activities" translatable="false">Activities</string>
+    <string name="murmur_emoji_objects" translatable="false">Objects</string>
+    <string name="murmur_emoji_symbols" translatable="false">Symbols</string>
+    <string name="murmur_emoji_flags" translatable="false">Flags</string>
+    <string name="murmur_emoji_emoticons" translatable="false">Emoticons</string>
 </resources>

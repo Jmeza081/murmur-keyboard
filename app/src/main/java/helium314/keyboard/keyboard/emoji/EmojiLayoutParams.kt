@@ -39,9 +39,18 @@ internal class EmojiLayoutParams(res: Resources) {
         val pageIdHeight = res.getDimension(R.dimen.config_emoji_category_page_id_height)
         emojiCategoryPageIdViewHeight = pageIdHeight.toInt()
         val offset = 1.25f * res.displayMetrics.density * sv.mKeyboardHeightScale // like ClipboardLayoutParams
-        val emojiListHeight = defaultKeyboardHeight - bottomRowKeyboardHeight - bottomPadding + (offset.toInt())
+        // Murmur: no bottom row or page dots; the search row (6 + 40 dp + 6 dp gap) sits on top
+        val density = res.displayMetrics.density
+        val topRows = ((6 + 40 + 6) * density).toInt()
+        val emojiListHeight = defaultKeyboardHeight - bottomPadding - topRows + (offset.toInt()) + extraHeight(res)
         emojiListBottomMargin = 0
-        emojiKeyboardHeight = emojiListHeight - emojiCategoryPageIdViewHeight - emojiListBottomMargin
+        emojiKeyboardHeight = emojiListHeight
+    }
+
+    companion object {
+        /** Murmur: the emoji panel is taller than the letter keyboard, for more rows of emoji. */
+        const val EXTRA_HEIGHT_DP = 88
+        @JvmStatic fun extraHeight(res: Resources) = (EXTRA_HEIGHT_DP * res.displayMetrics.density).toInt()
     }
 
     fun setEmojiListProperties(vp: ViewPager2) {

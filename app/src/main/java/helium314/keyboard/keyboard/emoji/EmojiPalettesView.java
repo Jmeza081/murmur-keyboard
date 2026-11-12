@@ -227,6 +227,7 @@ public final class EmojiPalettesView extends LinearLayout
         final int width = ResourceUtils.getKeyboardWidth(getContext(), Settings.getValues())
                 + getPaddingLeft() + getPaddingRight();
         final int height = ResourceUtils.getSecondaryKeyboardHeight(res, Settings.getValues())
+                + EmojiLayoutParams.extraHeight(res) // Murmur: taller than the letter keyboard
                 + getPaddingTop() + getPaddingBottom();
         mEmojiCategoryPageIndicatorView.mWidth = width;
         setMeasuredDimension(width, height);
@@ -259,10 +260,30 @@ public final class EmojiPalettesView extends LinearLayout
         mEmojiCategory.initialize();
         mTabStrip = (LinearLayout) KeyboardSwitcher.getInstance().getEmojiTabStrip();
         if (Settings.getValues().isSecondaryStripVisible()) {
-            for (EmojiCategory.CategoryProperties properties : mEmojiCategory.getShownCategories()) {
-                addTab(mTabStrip, properties.getCategory());
-            }
+            // Murmur: ABC + category chips instead of a row of icons
+            final java.util.ArrayList<EmojiCategory.Category> categories = new java.util.ArrayList<>();
+            for (EmojiCategory.CategoryProperties properties : mEmojiCategory.getShownCategories())
+                categories.add(properties.getCategory());
+            mTabStrip = MurmurEmojiChrome.INSTANCE.buildStrip(mTabStrip, categories, this, v -> {
+                AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, this, HapticEvent.KEY_LONG_PRESS);
+                clearRecentKeys();
+                return true;
+            }, () -> {
+                mKeyboardActionListener.onCodeInput(KeyCode.ALPHA, NOT_A_COORDINATE, NOT_A_COORDINATE, false);
+                return kotlin.Unit.INSTANCE;
+            });
         }
+        // Murmur: search bar + backspace on top, category name above the grid, no bottom row or page dots
+        MurmurEmojiChrome.INSTANCE.buildTop(findViewById(R.id.murmur_emoji_top), () -> {
+            mKeyboardActionListener.onCodeInput(KeyCode.EMOJI_SEARCH, NOT_A_COORDINATE, NOT_A_COORDINATE, false);
+            return kotlin.Unit.INSTANCE;
+        }, () -> {
+            AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.DELETE, this, HapticEvent.KEY_PRESS);
+            mKeyboardActionListener.onCodeInput(KeyCode.DELETE, NOT_A_COORDINATE, NOT_A_COORDINATE, false);
+            return kotlin.Unit.INSTANCE;
+        });
+        findViewById(R.id.murmur_emoji_label).setVisibility(View.INVISIBLE); // Murmur: kept as a 6 dp gap; the chips already name the category
+        findViewById(R.id.bottom_row_keyboard).setVisibility(View.GONE);
 
         mPager = findViewById(R.id.emoji_pager);
         mPager.setAdapter(new PagerAdapter(mPager));
@@ -271,6 +292,7 @@ public final class EmojiPalettesView extends LinearLayout
         mEmojiLayoutParams.setCategoryPageIdViewProperties(mEmojiCategoryPageIndicatorView);
         setCurrentCategory(mEmojiCategory.getCurrentCategory(), true);
         mEmojiCategoryPageIndicatorView.setColors(mColors.get(ColorType.EMOJI_CATEGORY_SELECTED), mColors.get(ColorType.STRIP_BACKGROUND));
+        mEmojiCategoryPageIndicatorView.setVisibility(View.GONE); // Murmur
         initialized = true;
     }
 
@@ -453,13 +475,9 @@ public final class EmojiPalettesView extends LinearLayout
             }
 
             if (Settings.getValues().isSecondaryStripVisible()) {
-                View old = mTabStrip.findViewWithTag(oldCategory);
-                View current = mTabStrip.findViewWithTag(category);
-
-                if (old instanceof ImageView)
-                    Settings.getValues().mColors.setColor((ImageView) old, ColorType.EMOJI_CATEGORY);
-                if (current instanceof ImageView)
-                    Settings.getValues().mColors.setColor((ImageView) current, ColorType.EMOJI_CATEGORY_SELECTED);
+                // Murmur: filled chip for the current category
+                MurmurEmojiChrome.INSTANCE.styleTab(mTabStrip.findViewWithTag(oldCategory), false);
+                MurmurEmojiChrome.INSTANCE.styleTab(mTabStrip.findViewWithTag(category), true);
             }
         }
     }
