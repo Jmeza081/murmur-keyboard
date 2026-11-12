@@ -48,7 +48,7 @@ private val colors @Composable get() = LocalSettingsColors.current
 @Composable
 fun BigTitle(text: String, sub: String? = null) {
     Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 12.dp)) {
-        Text(text, fontFamily = RobotoFlex, fontSize = 30.sp, fontWeight = FontWeight.Bold, color = colors.ink, lineHeight = 33.sp)
+        Text(text, fontFamily = Bricolage, fontSize = 30.sp, fontWeight = FontWeight.Bold, color = colors.ink, lineHeight = 33.sp, letterSpacing = (-0.3).sp)
         if (sub != null) Text(sub, fontFamily = RobotoFlex, fontSize = 13.5.sp, color = colors.sub, modifier = Modifier.padding(top = 4.dp))
     }
 }

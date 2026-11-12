@@ -20,7 +20,7 @@ object Cleanup {
     fun process(context: Context, raw: String): String = when (level(context)) {
         Level.OFF -> raw.trim()
         Level.LIGHT -> TextCleanup.clean(removeExtraFillers(raw, extraFillers(context)))
-    }
+    }.let { dev.murmur.dictionary.MurmurDictionary.applyReplacements(context, it) } // your replacements apply at every level
 
     /** The fillers Light always removes, shown on the Dictation screen. */
     val BUILT_IN_FILLERS = listOf("um", "uh", "erm", "like", "you know")

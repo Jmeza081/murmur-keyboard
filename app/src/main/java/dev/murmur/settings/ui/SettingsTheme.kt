@@ -40,6 +40,13 @@ private fun flex(weight: FontWeight) = Font(R.font.roboto_flex, weight,
 /** Roboto Flex is a variable font: each weight sets the 'wght' axis, or everything renders at 400. */
 val RobotoFlex = FontFamily(flex(FontWeight.Normal), flex(FontWeight.Medium), flex(FontWeight.SemiBold), flex(FontWeight.Bold))
 
+/** Bricolage Grotesque, the mockup's display face (--font-display), for big screen titles. Variable: weight 700, optical size 30. */
+@OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
+val Bricolage = FontFamily(Font(R.font.bricolage_grotesque, FontWeight.Bold,
+    variationSettings = androidx.compose.ui.text.font.FontVariation.Settings(
+        androidx.compose.ui.text.font.FontVariation.weight(700),
+        androidx.compose.ui.text.font.FontVariation.Setting("opsz", 30f))))
+
 @Composable
 fun MurmurSettingsTheme(content: @Composable () -> Unit) {
     val dark = isSystemInDarkTheme()

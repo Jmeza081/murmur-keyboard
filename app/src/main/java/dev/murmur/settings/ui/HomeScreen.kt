@@ -53,7 +53,7 @@ fun HomeScreen(open: (Screen) -> Unit, openLegacy: () -> Unit) {
                 GroupDivider()
                 Item("Typing", "Swipe, autocorrect, number row", R.drawable.ic_murmur_keyboard, onClick = { open(Screen.TYPING) })
                 GroupDivider()
-                Item("Dictionary", "Your words · English and Spanish", R.drawable.ic_murmur_book, onClick = openLegacy)
+                Item("Dictionary", dictionaryValue(ctx), R.drawable.ic_murmur_book, onClick = { open(Screen.DICTIONARY) })
             }
             Group {
                 Item("Clipboard", clipboardValue(ctx), R.drawable.ic_murmur_clip, onClick = { open(Screen.CLIPBOARD) })
@@ -115,7 +115,13 @@ private fun tabletValue(ctx: Context): String {
     return when { land && port -> "Split always"; land -> "Split in landscape"; port -> "Split in portrait"; else -> "Not split" }
 }
 
-enum class Screen { HOME, DICTATION, POWER, SETUP, THEME, TYPING, CLIPBOARD, EMOJI, TABLET }
+private fun dictionaryValue(ctx: Context): String {
+    val w = dev.murmur.dictionary.MurmurDictionary.words(ctx).size
+    val r = dev.murmur.dictionary.MurmurDictionary.replacements(ctx).size
+    return "$w word${if (w == 1) "" else "s"} · $r replacement${if (r == 1) "" else "s"}"
+}
+
+enum class Screen { HOME, DICTATION, POWER, SETUP, THEME, TYPING, CLIPBOARD, EMOJI, TABLET, DICTIONARY }
 
 /** A small playground: a text field and a password field, to try the keyboard, dictation and autofill chips. */
 @Composable
