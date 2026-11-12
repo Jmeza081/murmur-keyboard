@@ -148,6 +148,13 @@ Built to the mockup's section 06 in Compose, with its own tokens (surface, tint,
 - Backup and restore of settings and the dictionary to a file.
 - **Exit:** everything can be configured without rebuilding.
 
+### Spike: ElevenLabs as the primary speech engine (researched 2026-11-12, not started)
+Goal: ElevenLabs Scribe for dictation, Parakeet on the phone as the fallback when the plan's hours run out.
+- **Cost:** Starter plan $6/month ($1 first month) includes ~30 h batch or ~27 h realtime STT. Batch (Scribe v3/v2) $0.20/h, realtime (Scribe v3 Live) $0.22/h on the official page; some third parties list $0.39/h realtime, so confirm in the account. Keyterms (Dictionary words as hints) +$0.05/h. Silence is billed.
+- **Fallback:** Starter is believed to have no usage-based overage (verify), so quota errors are the signal to fall back. Also fall back when offline or after a ~4 s timeout.
+- **Step one (recommended):** batch upload on Send. Same record-then-transcribe flow; add a cloud engine beside SharedEngine, the API key in the Android keystore, and a Dictation setting "ElevenLabs" / "On device". Realtime streaming (`scribe_v3_live` over WebSocket, 16 kHz PCM base64, partial and committed transcripts) later, which would also give live grey words.
+- **Privacy:** audio leaves the phone; Zero Retention Mode is enterprise-only. The "On device" chip, setup copy and the landing page's "nothing leaves your phone" claims must change with it.
+
 ### Phase 8: Bugs and refinements
 Smaller fixes collected along the way, each measured on the Fold before and after.
 - **Emoji and clipboard panels overlap Android's keyboard-switch and hide buttons.** The main keyboard leaves about 164 px under its keys on the Fold 8; HeliBoard's bottom padding explains only ~33 px of it, and the rest matches the 126 px IME navigation area. The panels' bottom row is a separate one-row keyboard that doesn't get the same space. A first fix (main-keyboard bottom padding on the bottom row) wasn't enough. Next: measure the real view bounds on the phone (layout inspector or a debug overlay) and give the panels the same gap as the main keyboard.
