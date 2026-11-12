@@ -137,6 +137,13 @@ Steps, each installed and compared against the mockups before the next:
 - **Exit:** side by side with the mockups at phone and tablet sizes, in light and dark, the keyboard matches, and nothing on screen comes from a feature the mockups don't have.
 
 ### Phase 7: Settings app
+Built to the mockup's section 06 in Compose, with its own tokens (surface, tint, line, 20 dp groups, accent group labels). Steps, each installed and compared before the next:
+1. **Frame, home and Dictation.** The settings home list with current values; the Dictation screen (model card with size, last run and memory, cleanup Off/Light, filler words, waveform, stop-after-silence, language). Rows not built yet open HeliBoard's settings.
+2. **Power button and setup.** Power-button screen (assistant switch, delivery order with the accessibility permission); the first-run setup checklist that ticks itself.
+3. **Theme.** Light/Dark/System, accent swatches checked for contrast, key borders, key height, live preview.
+4. **Typing, clipboard, emoji, tablet layout.** Murmur's own screens for the options kept in Phase 6.
+5. **Dictionary.** Words and replacements; replacements also fix dictation.
+6. **Backup and restore, then retire HeliBoard's settings.**
 - Setup checklist, then settings for dictation (model, cleanup level, language, silence timeout), power button, theme, typing, dictionary and clipboard.
 - Backup and restore of settings and the dictionary to a file.
 - **Exit:** everything can be configured without rebuilding.

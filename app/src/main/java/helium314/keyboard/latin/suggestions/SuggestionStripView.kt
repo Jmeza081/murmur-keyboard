@@ -569,7 +569,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         murmurMic.tag = ToolbarKey.VOICE
         murmurMic.setOnClickListener(this)
         murmurMic.setOnLongClickListener {
-            context.startActivity(android.content.Intent(context, dev.murmur.speech.ModelActivity::class.java)
+            context.startActivity(android.content.Intent(context, dev.murmur.speech.ModelActivity::class.java).putExtra(dev.murmur.speech.ModelActivity.EXTRA_SCREEN, "DICTATION")
                 .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
             true
         }

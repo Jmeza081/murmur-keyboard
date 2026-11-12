@@ -130,10 +130,11 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
         }
         if (!ModelManager.isInstalled(ime)) {
             // First run: open the model screen, which explains the download.
-            ime.startActivity(Intent(ime, ModelActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            ime.startActivity(Intent(ime, ModelActivity::class.java).putExtra(ModelActivity.EXTRA_SCREEN, "DICTATION").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             return
         }
         val panel = showPanel() ?: return
+        recorder.silenceStopMs = dev.murmur.settings.DictationPrefs.silenceMs(ime)
         if (!recorder.start()) {
             showFailure(ime.getString(R.string.murmur_dictation_mic_busy))
             return

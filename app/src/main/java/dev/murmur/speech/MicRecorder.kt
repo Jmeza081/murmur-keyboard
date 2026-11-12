@@ -14,6 +14,9 @@ import kotlin.math.sqrt
  * The caller must hold the RECORD_AUDIO permission.
  */
 class MicRecorder(private val listener: Listener) {
+    /** Quiet after speech that ends the recording. Set from settings before [start]. */
+    var silenceStopMs = SILENCE_STOP_MS
+
     interface Listener {
         /** Loudness of the last 100 ms, roughly 0..0.3 for speech. */
         fun onLevel(rms: Float)
@@ -64,7 +67,7 @@ class MicRecorder(private val listener: Listener) {
                     listener.onLevel(rms)
                     if (rms > SPEECH_RMS) { heardSpeech = true; quietMs = 0 } else quietMs += n * 1000 / rate
                     val tooLong = audio.size >= rate * MAX_SECONDS
-                    if (!autoStopSent && ((heardSpeech && quietMs >= SILENCE_STOP_MS) || tooLong)) {
+                    if (!autoStopSent && ((heardSpeech && quietMs >= silenceStopMs) || tooLong)) {
                         autoStopSent = true
                         listener.onAutoStop()
                     }

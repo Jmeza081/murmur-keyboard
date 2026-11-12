@@ -31,7 +31,10 @@ object SharedEngine {
         val app = context.applicationContext
         worker.execute {
             val result = load(app)?.transcribe(samples)
-            result?.let { Log.i(TAG, "Transcribed %.1f s in %d ms (RTF %.3f)".format(it.audioSeconds, it.decodeMs, it.rtf)) }
+            result?.let {
+                Log.i(TAG, "Transcribed %.1f s in %d ms (RTF %.3f)".format(it.audioSeconds, it.decodeMs, it.rtf))
+                dev.murmur.settings.DictationPrefs.setLastDecodeMs(app, it.decodeMs) // for the settings model card
+            }
             onDone(result)
         }
     }

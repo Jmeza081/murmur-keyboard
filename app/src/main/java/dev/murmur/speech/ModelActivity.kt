@@ -1,170 +1,54 @@
 package dev.murmur.speech
 
+import android.content.Intent
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import dev.murmur.cleanup.Cleanup
-import helium314.keyboard.latin.utils.Theme
+import dev.murmur.settings.ui.DictationScreen
+import dev.murmur.settings.ui.HomeScreen
+import dev.murmur.settings.ui.LocalSettingsColors
+import dev.murmur.settings.ui.MurmurSettingsTheme
+import dev.murmur.settings.ui.Screen
 
-/** Shows whether the speech model is installed, and downloads or deletes it. */
+/**
+ * Murmur's settings app (design/mockups.html, section 06): the launcher icon and the keyboard's gear.
+ * Opens on the Dictation screen when [EXTRA_SCREEN] says so (the mic key's long-press, first dictation).
+ */
 class ModelActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         ModelManager.refresh(this)
-        setContent { Theme { Surface(Modifier.fillMaxSize()) { ModelScreen() } } }
-    }
-
-    @Composable
-    private fun ModelScreen() {
-        val status by ModelManager.status.collectAsState()
-        var confirmMobileData by remember { mutableStateOf(false) }
-        val downloading = status is ModelManager.Status.Downloading || status is ModelManager.Status.Checking
-
-        // Keep the screen on while downloading, so the phone doesn't sleep mid-download.
-        LaunchedEffect(downloading) {
-            if (downloading) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        }
-
-        Column(
-            Modifier.safeDrawingPadding().verticalScroll(rememberScrollState()).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Text("Murmur", style = MaterialTheme.typography.headlineMedium)
-            Text("Dictation", style = MaterialTheme.typography.titleMedium)
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Parakeet TDT v3", style = MaterialTheme.typography.titleMedium)
-                    Text("INT8 · 25 European languages · ${mb(ModelManager.TOTAL_BYTES)}",
-                        style = MaterialTheme.typography.bodyMedium)
-                    when (val s = status) {
-                        is ModelManager.Status.Installed -> Text("Installed · ${mb(s.bytes)} on this phone")
-                        ModelManager.Status.NotInstalled -> Text("Not installed")
-                        is ModelManager.Status.Downloading -> {
-                            Text("Downloading ${mb(s.doneBytes)} of ${mb(s.totalBytes)}")
-                            LinearProgressIndicator(
-                                progress = { s.doneBytes.toFloat() / s.totalBytes },
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
-                        ModelManager.Status.Checking -> Text("Checking files…")
-                        is ModelManager.Status.Failed -> Text(s.message, color = MaterialTheme.colorScheme.error)
+        val start = intent.getStringExtra(EXTRA_SCREEN)?.let { runCatching { Screen.valueOf(it) }.getOrNull() } ?: Screen.HOME
+        setContent {
+            MurmurSettingsTheme {
+                var screen by rememberSaveable { mutableStateOfScreen(start) }
+                BackHandler(enabled = screen != Screen.HOME) { screen = Screen.HOME }
+                Box(Modifier.fillMaxSize().background(LocalSettingsColors.current.bg).safeDrawingPadding()) {
+                    when (screen) {
+                        Screen.HOME -> HomeScreen(open = { screen = it }, openLegacy = ::openLegacy)
+                        Screen.DICTATION -> DictationScreen(onBack = { screen = Screen.HOME })
                     }
                 }
             }
-
-            when {
-                downloading -> OutlinedButton(onClick = { ModelManager.cancel() }) { Text("Pause download") }
-                status is ModelManager.Status.Installed ->
-                    TextButton(onClick = { ModelManager.delete(this@ModelActivity) }) { Text("Delete model") }
-                confirmMobileData -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("You're not on Wi-Fi. This uses ${mb(ModelManager.TOTAL_BYTES)} of mobile data.")
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = { confirmMobileData = false }) { Text("Not now") }
-                        Button(onClick = { confirmMobileData = false; ModelManager.download(this@ModelActivity) }) {
-                            Text("Download anyway")
-                        }
-                    }
-                }
-                else -> Button(onClick = {
-                    if (ModelManager.isOnUnmeteredNetwork(this@ModelActivity)) ModelManager.download(this@ModelActivity)
-                    else confirmMobileData = true
-                }) { Text(if (status is ModelManager.Status.Failed) "Try again" else "Download") }
-            }
-
-            Text(
-                "Dictation runs entirely on this phone. The model is the only thing Murmur downloads. " +
-                    "A paused download picks up where it stopped.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-
-            CleanupSection()
-            WaveSection()
-            AdvancedSection()
         }
     }
 
-    @Composable
-    private fun CleanupSection() {
-        var level by remember { mutableStateOf(Cleanup.level(this@ModelActivity)) }
-        Text("Cleanup", style = MaterialTheme.typography.titleMedium)
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-            Cleanup.Level.entries.forEachIndexed { i, l ->
-                SegmentedButton(
-                    selected = level == l,
-                    onClick = { level = l; Cleanup.setLevel(this@ModelActivity, l) },
-                    shape = SegmentedButtonDefaults.itemShape(i, Cleanup.Level.entries.size),
-                ) { Text(if (l == Cleanup.Level.OFF) "Off" else "Light") }
-            }
-        }
-        Text(
-            when (level) {
-                Cleanup.Level.OFF -> "Types exactly what the speech model heard."
-                Cleanup.Level.LIGHT -> "Removes filler words, stutters and restarted phrases, applies \"scratch that\" " +
-                    "and quick corrections like \"5, I mean 6\", and fixes spacing. Instant."
-            },
-            style = MaterialTheme.typography.bodyMedium,
-        )
-    }
+    private fun openLegacy() = startActivity(Intent(this, helium314.keyboard.settings.SettingsActivity2::class.java))
 
-    @Composable
-    private fun WaveSection() {
-        var style by remember { mutableStateOf(dev.murmur.dictation.WaveStyle.get(this@ModelActivity)) }
-        val styles = dev.murmur.dictation.WaveStyle.entries
-        Text("Waveform", style = MaterialTheme.typography.titleMedium)
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-            styles.forEachIndexed { i, s ->
-                SegmentedButton(
-                    selected = style == s,
-                    onClick = { style = s; dev.murmur.dictation.WaveStyle.set(this@ModelActivity, s) },
-                    shape = SegmentedButtonDefaults.itemShape(i, styles.size),
-                ) { Text(s.label) }
-            }
-        }
-        Text("How the keyboard and the power-button sheet show your voice while listening.",
-            style = MaterialTheme.typography.bodyMedium)
+    companion object {
+        const val EXTRA_SCREEN = "screen"
     }
-
-    /** Until Phase 7's settings app, HeliBoard's own settings (theme, languages, dictionaries) live here. */
-    @Composable
-    private fun AdvancedSection() {
-        Text("Keyboard", style = MaterialTheme.typography.titleMedium)
-        OutlinedButton(onClick = {
-            startActivity(android.content.Intent(this@ModelActivity, helium314.keyboard.settings.SettingsActivity2::class.java))
-        }) { Text("Advanced (temporary)") }
-        Text("Theme, languages, dictionaries and everything else, until Murmur's own settings replace this.",
-            style = MaterialTheme.typography.bodySmall)
-    }
-
-    private fun mb(bytes: Long) = "%,d MB".format(bytes / 1_000_000)
 }
+
+private fun mutableStateOfScreen(s: Screen) = androidx.compose.runtime.mutableStateOf(s)

@@ -217,9 +217,10 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
             return hide()
         }
         if (!ModelManager.isInstalled(context)) {
-            context.startActivity(Intent(context, ModelActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            context.startActivity(Intent(context, ModelActivity::class.java).putExtra(ModelActivity.EXTRA_SCREEN, "DICTATION").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             return hide()
         }
+        recorder.silenceStopMs = dev.murmur.settings.DictationPrefs.silenceMs(context)
         if (!recorder.start()) return showResult(context.getString(R.string.murmur_dictation_mic_busy), close = true)
         state = State.LISTENING
         startedAt = SystemClock.elapsedRealtime()
