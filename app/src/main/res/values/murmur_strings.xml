@@ -6,8 +6,9 @@
     <string name="murmur_dictation_loading" translatable="false">Loading speech model…</string>
     <string name="murmur_dictation_transcribing" translatable="false">Transcribing…</string>
     <string name="murmur_dictation_on_device" translatable="false">On device · Parakeet v3</string>
+    <string name="murmur_assistant_on_device" translatable="false">On device</string>
     <string name="murmur_dictation_cancel" translatable="false">Cancel dictation</string>
-    <string name="murmur_dictation_stop" translatable="false">Stop and type</string>
+    <string name="murmur_dictation_stop" translatable="false">Send</string>
     <string name="murmur_dictation_model_missing" translatable="false">Speech model not installed. Open Murmur\'s speech model screen to download it.</string>
     <string name="murmur_dictation_mic_busy" translatable="false">Microphone unavailable. Another app may be using it.</string>
     <string name="murmur_dictation_nothing_heard" translatable="false">Didn\'t catch that. Nothing was typed.</string>

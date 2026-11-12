@@ -108,6 +108,7 @@ class ModelActivity : ComponentActivity() {
             )
 
             CleanupSection()
+            WaveSection()
         }
     }
 
@@ -132,6 +133,24 @@ class ModelActivity : ComponentActivity() {
             },
             style = MaterialTheme.typography.bodyMedium,
         )
+    }
+
+    @Composable
+    private fun WaveSection() {
+        var style by remember { mutableStateOf(dev.murmur.dictation.WaveStyle.get(this@ModelActivity)) }
+        val styles = dev.murmur.dictation.WaveStyle.entries
+        Text("Waveform", style = MaterialTheme.typography.titleMedium)
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            styles.forEachIndexed { i, s ->
+                SegmentedButton(
+                    selected = style == s,
+                    onClick = { style = s; dev.murmur.dictation.WaveStyle.set(this@ModelActivity, s) },
+                    shape = SegmentedButtonDefaults.itemShape(i, styles.size),
+                ) { Text(s.label) }
+            }
+        }
+        Text("How the keyboard and the power-button sheet show your voice while listening.",
+            style = MaterialTheme.typography.bodyMedium)
     }
 
     private fun mb(bytes: Long) = "%,d MB".format(bytes / 1_000_000)

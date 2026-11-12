@@ -54,6 +54,7 @@ class DictationPanel(
     private val accent = colors.get(ColorType.ACTION_KEY_BACKGROUND)
     private lateinit var cleanupButton: ImageButton
     private val waveform = LevelBarsView(context, RECORDING, subtle)
+    private val glow = StopGlowView(context, RECORDING, 34f)
 
     init {
         orientation = VERTICAL
@@ -68,8 +69,12 @@ class DictationPanel(
             addView(status, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
             addView(chip)
         })
-        addView(waveform, LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f))
+        // Breathing room above (status row) and below (the Send glow)
+        addView(waveform, LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f).apply { topMargin = dp(16); bottomMargin = dp(20) })
+        clipChildren = false // the Send glow spills past the controls row
         addView(FrameLayout(context).apply {
+            clipChildren = false
+            addView(glow, FrameLayout.LayoutParams(dp(132), dp(132), Gravity.CENTER))
             addView(roundButton(context, R.drawable.ic_murmur_close, R.string.murmur_dictation_cancel, fnBackground, ink, 52, onCancel),
                 FrameLayout.LayoutParams(dp(52), dp(52), Gravity.START or Gravity.CENTER_VERTICAL))
             addView(roundButton(context, R.drawable.ic_murmur_stop, R.string.murmur_dictation_stop, RECORDING, Color.WHITE, 68, onStop),
@@ -92,6 +97,7 @@ class DictationPanel(
 
     fun reset() {
         waveform.clear()
+        glow.clear()
         chip.visibility = VISIBLE
     }
 
@@ -117,7 +123,7 @@ class DictationPanel(
         status.text = text
     }
 
-    fun addLevel(rms: Float) = waveform.add(rms)
+    fun addLevel(rms: Float) { waveform.add(rms); glow.add(rms) }
 
     private fun roundButton(context: Context, icon: Int, label: Int, fill: Int, tint: Int, sizeDp: Int, onClick: () -> Unit) =
         ImageButton(context).apply {

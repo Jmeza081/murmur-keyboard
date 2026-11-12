@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Murmur: power-button sheet activation options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600;8..144,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --page: #0B0D11; --panel: #14171D; --line: #262A33; --ink: #ECEEF3; --sub: #9AA1B0;
+    --sheet: #1E2129; --chip: #2A2E37; --rec: #E8590C; --acc: #2F4BE0;
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font-family: "Roboto Flex", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  header { max-width: 1240px; margin: 0 auto; padding: 40px 24px 8px; }
+  h1 { font-size: 28px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.01em; }
+  header p { color: var(--sub); margin: 0 0 6px; max-width: 760px; line-height: 1.5; font-size: 15px; }
+  .note { margin-top: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); font-size: 14px; line-height: 1.5; color: var(--sub); max-width: 760px; }
+  .note b { color: var(--ink); font-weight: 600; }
+  .grid { max-width: 1240px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 20px; }
+  .opt { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .opt h2 { margin: 0; font-size: 17px; font-weight: 600; display: flex; gap: 10px; align-items: baseline; }
+  .opt h2 .k { color: var(--rec); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; }
+  .opt p { margin: 0; color: var(--sub); font-size: 13.5px; line-height: 1.5; }
+  .spec { font-size: 12px; color: var(--sub); line-height: 1.6; border-top: 1px solid var(--line); padding-top: 10px; }
+  .spec b { color: var(--ink); font-weight: 600; }
+  .controls { display: flex; gap: 8px; }
+  button { font: inherit; font-size: 13px; font-weight: 600; border: 0; border-radius: 999px; padding: 9px 16px; cursor: pointer; color: var(--ink); background: var(--chip); transition: transform 140ms var(--ease-out), background 140ms ease; }
+  button:active { transform: scale(0.97); }
+  button.primary { background: var(--rec); color: #fff; }
+
+  /* Phone (Fold cover screen proportions) */
+  .phone { position: relative; width: 236px; height: 372px; margin: 4px auto 0; border-radius: 30px; background: #000; padding: 7px; box-shadow: 0 0 0 1px #2c3039; }
+  .side { position: absolute; right: -4px; width: 4px; border-radius: 0 3px 3px 0; background: #3a3f4a; }
+  .side.vol { top: 70px; height: 46px; }
+  .side.pwr { top: 128px; height: 30px; cursor: pointer; transition: background 120ms ease, transform 120ms var(--ease-out); }
+  .side.pwr.down { background: var(--rec); transform: translateX(-1px); }
+  .screen { position: relative; width: 100%; height: 100%; border-radius: 24px; overflow: hidden; background: #F4F1EA; color: #1d1d1f; }
+  .notes { padding: 26px 16px; font-size: 11.5px; line-height: 1.55; }
+  .notes .nd { color: #8a8478; font-size: 9.5px; margin-bottom: 6px; }
+  .notes .nt { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .notes p { margin: 0; }
+  .caret { display: inline-block; width: 1.5px; height: 13px; background: #E8590C; vertical-align: -2px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .scrim { position: absolute; inset: 0; background: rgba(8, 10, 16, 0.42); opacity: 0; pointer-events: none; }
+  .gbar { position: absolute; bottom: 5px; left: 50%; width: 70px; height: 3px; margin-left: -35px; border-radius: 2px; background: rgba(0,0,0,0.35); }
+
+  /* The sheet */
+  .sheet { position: absolute; left: 6px; right: 6px; bottom: 14px; height: 158px; border-radius: 22px; background: var(--sheet); color: var(--ink); padding: 9px 12px 10px; display: flex; flex-direction: column; gap: 7px; box-shadow: 0 -8px 30px rgba(0,0,0,0.3); opacity: 0; pointer-events: none; will-change: transform, opacity; }
+  .grab { width: 28px; height: 3px; border-radius: 2px; background: var(--sub); opacity: 0.4; align-self: center; }
+  .top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
+  .live { display: inline-flex; align-items: center; gap: 6px; color: var(--rec); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--rec); }
+  .chip { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 8px; border-radius: 10px; background: var(--chip); font-size: 9.5px; }
+  .target { font-size: 10px; color: var(--sub); display: flex; gap: 6px; align-items: center; }
+  .target b { color: var(--ink); }
+  .bars { flex: 1; display: flex; align-items: center; justify-content: center; gap: 2.5px; }
+  .bars i { width: 3px; border-radius: 2px; background: var(--rec); height: 4px; }
+  .ctrls { display: flex; justify-content: center; }
+  .stop { width: 38px; height: 38px; border-radius: 50%; background: var(--rec); display: grid; place-items: center; }
+  .stop::after { content: ""; width: 12px; height: 12px; border-radius: 3px; background: #fff; }
+  .content { display: contents; }
+
+  /* Option-specific actors */
+  .glow { position: absolute; right: -40px; top: 103px; width: 80px; height: 80px; border-radius: 50%; background: radial-gradient(closest-side, rgba(232,89,12,0.85), rgba(232,89,12,0)); opacity: 0; pointer-events: none; }
+  .holdpill { position: absolute; right: 10px; top: 128px; height: 30px; padding: 0 12px; border-radius: 15px; background: #3a1f10; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 6px; overflow: hidden; opacity: 0; pointer-events: none; }
+  .holdpill .fill { position: absolute; inset: 0; background: var(--rec); clip-path: inset(0 100% 0 0); }
+  .holdpill span { position: relative; }
+  .capsule { position: absolute; left: 50%; bottom: 22px; width: 96px; height: 32px; margin-left: -48px; border-radius: 16px; background: var(--rec); display: flex; align-items: center; justify-content: center; gap: 2px; opacity: 0; pointer-events: none; }
+  .capsule i { width: 2.5px; border-radius: 2px; background: #fff; height: 6px; }
+
+  footer { max-width: 1240px; margin: 0 auto; padding: 4px 24px 48px; color: var(--sub); font-size: 13px; line-height: 1.6; }
+  @media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Power-button sheet: how it appears</h1>
+  <p>Four ways the listening sheet could open. Press <b>Play</b>, or press and hold the power button on the phone's right edge (the lower of the two) for half a second, like the real thing. Release to close.</p>
+  <div class="note"><b>One Android limit shapes all four:</b> apps aren't told about a power-button hold until Android decides it's long enough (about half a second). So nothing can animate <i>during</i> the hold. Each option plays the instant the sheet opens. Options B and C replay the hold as a quick flourish so the motion still points back to the button.</div>
+</header>
+
+<main class="grid" id="grid"></main>
+
+<footer>Timings follow the mockup's motion rules: entering uses a strong ease-out, exits are faster than entrances, and with reduced motion on, every option becomes a 150 ms fade. Every option can be built in the sheet with Android's standard animators. None needs anything new.</footer>
+
+<template id="phone">
+  <div class="phone">
+    <span class="side vol"></span><span class="side pwr" title="Hold to open"></span>
+    <div class="screen">
+      <div class="notes">
+        <div class="nd">Notes · Today 8:12</div>
+        <div class="nt">Groceries</div>
+        <p>Eggs, oat milk, spinach</p>
+        <p>Tortillas and the good salsa</p>
+        <p>Dish soap</p>
+        <p><span class="caret"></span></p>
+      </div>
+      <div class="scrim"></div>
+      <div class="glow"></div>
+      <div class="holdpill"><div class="fill"></div><span>⏻</span><span>Hold</span></div>
+      <div class="capsule"></div>
+      <div class="sheet">
+        <span class="grab"></span>
+        <div class="top"><span class="live">0:00</span><span class="chip">◈ On device</span></div>
+        <div class="target">⌶ Typing into <b>Notes</b></div>
+        <div class="bars"></div>
+        <div class="ctrls"><span class="stop"></span></div>
+      </div>
+      <div class="gbar"></div>
+    </div>
+  </div>
+</template>
+
+<script>
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)';
+const DRAWER = 'cubic-bezier(0.32, 0.72, 0, 1)';
+const EXIT = 'cubic-bezier(0.4, 0, 1, 1)';
+
+const OPTIONS = [
+  {
+    key: 'A', name: 'Rise',
+    desc: 'The sheet slides up from the bottom edge while the app dims. Calm and familiar, like Android\'s own sheets.',
+    spec: '<b>Enter</b> 340 ms, drawer curve · scrim 200 ms<br><b>Exit</b> 220 ms slide down<br><b>Android</b> translationY on the sheet; nothing custom',
+    async open(p) {
+      fadeScrim(p, 1, 200);
+      p.sheet.style.opacity = 1;
+      await p.sheet.animate([{ transform: 'translateY(115%)' }, { transform: 'translateY(0)' }], { duration: 340, easing: DRAWER, fill: 'both' }).finished;
+    },
+    async close(p) {
+      fadeScrim(p, 0, 200);
+      await p.sheet.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(115%)' }], { duration: 220, easing: EXIT, fill: 'both' }).finished;
+    },
+  },
+  {
+    key: 'B', name: 'From the button',
+    desc: 'An orange glow flares at the power button, and the sheet grows out toward it. Ties the sheet to the button you pressed.',
+    spec: '<b>Enter</b> glow 300 ms, sheet 280 ms ease-out from scale 0.9, anchored at the button<br><b>Exit</b> 180 ms fade and shrink toward the button<br><b>Android</b> pivot set to the power button\'s edge; glow is a gradient view',
+    async open(p) {
+      fadeScrim(p, 1, 200);
+      p.glow.animate([{ opacity: 0, transform: 'scale(0.6)' }, { opacity: 1, transform: 'scale(1.1)', offset: 0.4 }, { opacity: 0, transform: 'scale(1.4)' }], { duration: 420, easing: 'ease-out' });
+      p.sheet.style.transformOrigin = '100% -60px';
+      p.sheet.style.opacity = 1;
+      await p.sheet.animate([{ transform: 'scale(0.9) translateX(10px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 280, easing: EASE_OUT, fill: 'both', delay: 60 }).finished;
+    },
+    async close(p) {
+      fadeScrim(p, 0, 180);
+      await p.sheet.animate([{ transform: 'none', opacity: 1 }, { transform: 'scale(0.94) translateX(8px)', opacity: 0 }], { duration: 180, easing: EXIT, fill: 'both' }).finished;
+    },
+  },
+  {
+    key: 'C', name: 'Hold pill morph',
+    desc: 'The mockup\'s orange "Hold" pill appears by the button, fills, and stretches into the sheet. Most playful, and the most literal link to the hold.',
+    spec: '<b>Enter</b> pill fill 180 ms, morph to sheet 320 ms drawer curve, content fades in 120 ms<br><b>Exit</b> 200 ms slide down (no reverse morph)<br><b>Android</b> shared-bounds transition in the sheet window',
+    async open(p) {
+      fadeScrim(p, 1, 200);
+      const pill = p.holdpill;
+      pill.style.opacity = 1;
+      pill.animate([{ opacity: 0, transform: 'translateX(8px) scale(0.9)' }, { opacity: 1, transform: 'none' }], { duration: 140, easing: EASE_OUT });
+      await p.fill.animate([{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }], { duration: 180, easing: 'linear', fill: 'both', delay: 60 }).finished;
+      // Morph: the sheet starts as the pill's box and grows into place
+      const s = p.sheet.getBoundingClientRect(), r = pill.getBoundingClientRect();
+      const sx = r.width / s.width, sy = r.height / s.height;
+      const dx = r.left - s.left, dy = r.top - s.top;
+      p.sheet.style.transformOrigin = '0 0';
+      p.sheet.style.opacity = 1;
+      p.sheet.style.background = 'var(--rec)';
+      p.content.forEach(el => el.style.opacity = 0);
+      pill.style.opacity = 0;
+      await p.sheet.animate([
+        { transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, borderRadius: '60px', background: '#E8590C' },
+        { transform: 'none', borderRadius: '22px', background: '#1E2129' },
+      ], { duration: 320, easing: DRAWER, fill: 'both' }).finished;
+      p.sheet.style.background = '';
+      p.content.forEach(el => el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 120, fill: 'both' }));
+      p.content.forEach(el => el.style.opacity = '');
+    },
+    async close(p) {
+      fadeScrim(p, 0, 200);
+      await p.sheet.animate([{ transform: 'none' }, { transform: 'translateY(115%)' }], { duration: 200, easing: EXIT, fill: 'both' }).finished;
+      p.fill.getAnimations().forEach(a => a.cancel());
+    },
+  },
+  {
+    key: 'D', name: 'Capsule to sheet',
+    desc: 'A small orange listening capsule pops up at the bottom first, already showing your voice, then opens out into the full sheet.',
+    spec: '<b>Enter</b> capsule 160 ms, opens to sheet 360 ms drawer curve (clip reveal)<br><b>Exit</b> 220 ms collapse back to the capsule, then fade<br><b>Android</b> animated clip outline on the sheet',
+    async open(p) {
+      fadeScrim(p, 1, 240);
+      const c = p.capsule;
+      c.style.opacity = 1;
+      await c.animate([{ opacity: 0, transform: 'translateY(8px) scale(0.9)' }, { opacity: 1, transform: 'none' }], { duration: 160, easing: EASE_OUT, fill: 'both' }).finished;
+      await wait(140);
+      p.sheet.style.opacity = 1;
+      c.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, delay: 60, fill: 'both' });
+      p.content.forEach(el => el.animate([{ opacity: 0 }, { opacity: 0, offset: 0.5 }, { opacity: 1 }], { duration: 360, fill: 'both' }));
+      await p.sheet.animate([
+        { clipPath: 'inset(calc(100% - 40px) calc(50% - 48px) 4px calc(50% - 48px) round 16px)', background: '#E8590C' },
+        { clipPath: 'inset(0 0 0 0 round 22px)', background: '#1E2129' },
+      ], { duration: 360, easing: DRAWER, fill: 'both' }).finished;
+    },
+    async close(p) {
+      fadeScrim(p, 0, 220);
+      p.content.forEach(el => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 100, fill: 'both' }));
+      await p.sheet.animate([
+        { clipPath: 'inset(0 0 0 0 round 22px)', opacity: 1 },
+        { clipPath: 'inset(calc(100% - 40px) calc(50% - 48px) 4px calc(50% - 48px) round 16px)', opacity: 0 },
+      ], { duration: 220, easing: EXIT, fill: 'both' }).finished;
+      p.capsule.getAnimations().forEach(a => a.cancel());
+      p.capsule.style.opacity = 0;
+    },
+  },
+];
+
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function fadeScrim(p, to, ms) {
+  p.scrim.animate([{ opacity: 1 - to }, { opacity: to }], { duration: ms, easing: 'ease-out', fill: 'both' });
+}
+
+function build(opt) {
+  const el = document.createElement('section');
+  el.className = 'opt';
+  el.innerHTML = `<h2><span class="k">${opt.key}</span>${opt.name}</h2><p>${opt.desc}</p>`;
+  el.append(document.getElementById('phone').content.cloneNode(true));
+  el.insertAdjacentHTML('beforeend', `<div class="controls"><button class="primary">Play</button></div><div class="spec">${opt.spec}</div>`);
+  const q = s => el.querySelector(s);
+  const p = { scrim: q('.scrim'), sheet: q('.sheet'), glow: q('.glow'), holdpill: q('.holdpill'), fill: q('.holdpill .fill'), capsule: q('.capsule'), pwr: q('.side.pwr') };
+  p.content = [...p.sheet.children];
+  // Live waveform bars in the sheet and capsule
+  const bars = q('.bars');
+  for (let i = 0; i < 30; i++) bars.append(document.createElement('i'));
+  for (let i = 0; i < 12; i++) p.capsule.append(document.createElement('i'));
+  const live = q('.live');
+
+  let state = 'closed', t0 = 0, timer = null, holdTimer = null;
+  const tick = () => {
+    if (state !== 'open' && state !== 'opening') return;
+    const s = Math.floor((performance.now() - t0) / 1000);
+    live.textContent = `0:0${Math.min(s, 9)}`;
+    const k = performance.now() / 120;
+    [...bars.children].forEach((b, i) => b.style.height = (4 + Math.abs(Math.sin(k + i * 0.55) * Math.sin(k * 0.37 + i)) * 26) + 'px');
+    [...p.capsule.children].forEach((b, i) => b.style.height = (5 + Math.abs(Math.sin(k + i * 0.8)) * 14) + 'px');
+    requestAnimationFrame(tick);
+  };
+
+  async function open() {
+    if (state !== 'closed') return;
+    state = 'opening'; t0 = performance.now(); requestAnimationFrame(tick);
+    if (reduced) { p.sheet.style.opacity = 1; fadeScrim(p, 1, 150); await p.sheet.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150, fill: 'both' }).finished; }
+    else await opt.open(p);
+    state = 'open';
+  }
+  async function close() {
+    if (state !== 'open') return;
+    state = 'closing';
+    if (reduced) { fadeScrim(p, 0, 150); await p.sheet.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, fill: 'both' }).finished; }
+    else await opt.close(p);
+    p.sheet.getAnimations().forEach(a => a.cancel());
+    p.content.forEach(c => c.getAnimations().forEach(a => a.cancel()));
+    p.sheet.style.opacity = 0; p.holdpill.style.opacity = 0; p.sheet.style.transformOrigin = '';
+    state = 'closed';
+  }
+
+  q('button').addEventListener('click', async () => {
+    if (state !== 'closed') return;
+    p.pwr.classList.add('down');
+    await wait(500);           // Android's long-press threshold
+    p.pwr.classList.remove('down');
+    await open();
+    clearTimeout(timer);
+    timer = setTimeout(close, 2200);
+  });
+  // Press and hold the power button on the phone itself
+  p.pwr.addEventListener('pointerdown', e => {
+    if (state !== 'closed') return;
+    p.pwr.setPointerCapture(e.pointerId);
+    p.pwr.classList.add('down');
+    holdTimer = setTimeout(open, 500);
+  });
+  const release = () => {
+    p.pwr.classList.remove('down');
+    clearTimeout(holdTimer);
+    if (state === 'open') close();
+    else if (state === 'opening') { const w = setInterval(() => { if (state === 'open') { clearInterval(w); close(); } }, 30); }
+  };
+  p.pwr.addEventListener('pointerup', release);
+  p.pwr.addEventListener('pointercancel', release);
+  return el;
+}
+
+const grid = document.getElementById('grid');
+OPTIONS.forEach(o => grid.append(build(o)));
+</script>
+</body>
+</html>

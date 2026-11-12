@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Murmur: listening waveform options</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600;8..144,700&display=swap" rel="stylesheet">
+<style>
+  :root { --page:#0B0D11; --panel:#14171D; --line:#262A33; --ink:#ECEEF3; --sub:#9AA1B0; --sheet:#1E2129; --chip:#2A2E37; --rec:#E8590C; --acc:#2F4BE0; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--page); color:var(--ink); font-family:"Roboto Flex",system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  header { max-width:1240px; margin:0 auto; padding:40px 24px 4px; }
+  h1 { font-size:28px; font-weight:600; margin:0 0 8px; letter-spacing:-0.01em; }
+  header p { color:var(--sub); margin:0; max-width:780px; line-height:1.5; font-size:15px; }
+  .bar { position:sticky; top:0; z-index:5; background:rgba(11,13,17,0.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+  .bar .in { max-width:1240px; margin:0 auto; padding:12px 24px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .bar span { color:var(--sub); font-size:13px; margin-right:4px; }
+  button { font:inherit; font-size:13px; font-weight:600; border:0; border-radius:999px; padding:9px 16px; cursor:pointer; color:var(--ink); background:var(--chip); transition:transform 140ms cubic-bezier(.23,1,.32,1), background 140ms ease; }
+  button:active { transform:scale(0.97); }
+  button.on { background:var(--rec); color:#fff; }
+  .grid { max-width:1240px; margin:0 auto; padding:24px; display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:20px; }
+  .opt { background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:18px; display:flex; flex-direction:column; gap:12px; }
+  .opt h2 { margin:0; font-size:17px; font-weight:600; display:flex; gap:10px; align-items:baseline; }
+  .opt h2 .k { color:var(--rec); font-size:13px; font-weight:700; letter-spacing:.06em; }
+  .opt h2 .pick { margin-left:auto; font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--acc); background:rgba(47,75,224,.16); padding:3px 8px; border-radius:8px; }
+  .opt p { margin:0; color:var(--sub); font-size:13.5px; line-height:1.5; }
+  .spec { font-size:12px; color:var(--sub); line-height:1.6; border-top:1px solid var(--line); padding-top:10px; }
+  .spec b { color:var(--ink); font-weight:600; }
+  /* The sheet, at roughly real size */
+  .sheet { background:var(--sheet); border-radius:28px; padding:12px 16px 16px; display:flex; flex-direction:column; gap:10px; }
+  .grab { width:36px; height:4px; border-radius:2px; background:var(--sub); opacity:.4; align-self:center; }
+  .top { display:flex; justify-content:space-between; align-items:center; font-size:13px; }
+  .live { display:inline-flex; align-items:center; gap:8px; color:var(--rec); font-weight:600; font-variant-numeric:tabular-nums; font-size:15px; }
+  .live::before { content:""; width:9px; height:9px; border-radius:50%; background:var(--rec); }
+  .chip { display:inline-flex; align-items:center; gap:6px; height:26px; padding:0 10px; border-radius:13px; background:var(--chip); font-size:12px; }
+  .target { font-size:12.5px; color:var(--sub); }
+  .target b { color:var(--ink); }
+  canvas { width:100%; height:120px; display:block; }
+  .ctrls { position:relative; height:76px; display:flex; align-items:center; justify-content:center; }
+  .round { position:absolute; width:52px; height:52px; border-radius:50%; background:var(--chip); display:grid; place-items:center; color:var(--ink); font-size:20px; }
+  .round.l { left:0; } .round.r { right:0; color:var(--acc); background:color-mix(in srgb, var(--acc) 16%, var(--chip)); }
+  .stop { width:68px; height:68px; border-radius:50%; background:var(--rec); display:grid; place-items:center; position:relative; z-index:1; }
+  .stop::after { content:""; width:20px; height:20px; border-radius:5px; background:#fff; }
+  canvas.halo { position:absolute; left:50%; top:50%; width:160px; height:160px; margin:-80px 0 0 -80px; pointer-events:none; }
+  footer { max-width:1240px; margin:0 auto; padding:0 24px 48px; color:var(--sub); font-size:13px; line-height:1.6; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Listening waveform: six directions</h1>
+  <p>Each one sits in the real power-button sheet at about its real size, driven by the same simulated voice. Use the bar below to switch between speaking, quiet and loud. Every option uses the new level mapping already on your phone: a decibel scale where normal speech fills most of the height, with a fast rise and a softer fall.</p>
+</header>
+<div class="bar"><div class="in"><span>Voice</span><button data-mode="speak" class="on">Speaking</button><button data-mode="quiet">Quiet room</button><button data-mode="loud">Loud</button></div></div>
+<main class="grid" id="grid"></main>
+<footer>In the app, reduced motion would swap scrolling, ripples and drifting lines for a still meter that only changes with your voice. Everything here can be drawn on one Android Canvas view at 60 fps. None needs OpenGL.</footer>
+
+<template id="sheet">
+  <div class="sheet">
+    <span class="grab"></span>
+    <div class="top"><span class="live">0:04</span><span class="chip">◈ On device</span></div>
+    <div class="target">⌶ Typing into <b>Notes</b></div>
+    <canvas class="viz"></canvas>
+    <div class="ctrls"><span class="round l">✕</span><span class="stop"></span><span class="round r">✦</span></div>
+  </div>
+</template>
+
+<script>
+const REC = '#E8590C', CHIP = '#2A2E37', SUB = '#9AA1B0';
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let mode = 'speak';
+document.querySelectorAll('.bar button').forEach(b => b.onclick = () => {
+  mode = b.dataset.mode;
+  document.querySelectorAll('.bar button').forEach(x => x.classList.toggle('on', x === b));
+});
+
+// ---- Simulated voice: syllables (~5/s) grouped into words, with pauses. Produces a 0..1 level at ~60 fps.
+let level = 0, target = 0, t = 0, nextSyl = 0, wordLeft = 0, pauseUntil = 0;
+function stepVoice(dt) {
+  t += dt;
+  const floor = mode === 'quiet' ? 0.04 : 0.06;
+  if (mode === 'quiet') target = floor + Math.random() * 0.05;
+  else if (t > pauseUntil && t > nextSyl) {
+    if (wordLeft <= 0) { wordLeft = 2 + Math.floor(Math.random() * 5); if (Math.random() < 0.3) { pauseUntil = t + 0.35 + Math.random() * 0.5; target = floor; return; } }
+    wordLeft--;
+    const peak = mode === 'loud' ? 0.85 + Math.random() * 0.15 : 0.45 + Math.random() * 0.45;
+    target = peak; nextSyl = t + 0.12 + Math.random() * 0.12;
+  } else if (t > nextSyl - 0.06) target = Math.max(floor, target * 0.9);
+  if (t < pauseUntil) target = floor + Math.random() * 0.03;
+  level += (target - level) * (target > level ? 0.45 : 0.12);
+}
+
+// ---- Helpers
+function fit(c) {
+  const r = c.getBoundingClientRect(), d = devicePixelRatio || 1;
+  if (c.width !== Math.round(r.width * d)) { c.width = Math.round(r.width * d); c.height = Math.round(r.height * d); }
+  const ctx = c.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); return [ctx, r.width, r.height];
+}
+const hist = []; // shared history of levels, newest last
+function pushHist() { hist.push(level); if (hist.length > 400) hist.shift(); }
+function rgba(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
+
+// ---- The six options
+const OPTIONS = [
+  {
+    key: 'A', name: 'Ticker', pick: 'current, retuned',
+    desc: 'Today\'s scrolling bars, now with the decibel mapping and a fading tail, so the newest sound is brightest at the right.',
+    spec: '<b>Draws</b> rounded bars, 4 dp wide, 3 dp apart · history fades from 25% to 100% opacity<br><b>Feel</b> familiar, legible, a record of what you said',
+    draw(ctx, w, h) {
+      const bw = 4, gap = 3, n = Math.floor((w + gap) / (bw + gap)), x0 = (w - (n * (bw + gap) - gap)) / 2;
+      for (let i = 0; i < n; i++) {
+        const v = hist[hist.length - n + i] ?? 0, bh = 6 + (h - 6) * v;
+        ctx.fillStyle = rgba(REC, 0.25 + 0.75 * (i / n));
+        ctx.beginPath(); ctx.roundRect(x0 + i * (bw + gap), (h - bh) / 2, bw, bh, 2); ctx.fill();
+      }
+    },
+  },
+  {
+    key: 'B', name: 'Ribbon',
+    desc: 'A smooth, mirrored band of sound that streams to the left and fades into the card. Softer and more fluid than bars.',
+    spec: '<b>Draws</b> one filled path, curve-smoothed, mirrored around the center · gradient from clear on the left to orange on the right<br><b>Feel</b> calm and premium, a voice "ribbon"',
+    draw(ctx, w, h) {
+      const n = 64, step = w / (n - 1), mid = h / 2, pts = [];
+      for (let i = 0; i < n; i++) pts.push([i * step, ((hist[hist.length - n + i] ?? 0) * 0.92 + 0.03) * mid]);
+      const g = ctx.createLinearGradient(0, 0, w, 0); g.addColorStop(0, rgba(REC, 0)); g.addColorStop(0.35, rgba(REC, 0.55)); g.addColorStop(1, rgba(REC, 1));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, mid - pts[0][1]);
+      for (let i = 1; i < n; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; ctx.quadraticCurveTo(x0, mid - y0, (x0 + x1) / 2, mid - (y0 + y1) / 2); }
+      ctx.lineTo(w, mid - pts[n - 1][1]); ctx.lineTo(w, mid + pts[n - 1][1]);
+      for (let i = n - 1; i > 0; i--) { const [x0, y0] = pts[i], [x1, y1] = pts[i - 1]; ctx.quadraticCurveTo(x0, mid + y0, (x0 + x1) / 2, mid + (y0 + y1) / 2); }
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = rgba('#ffffff', 0.08); ctx.fillRect(0, mid - 0.5, w, 1);
+    },
+  },
+  {
+    key: 'C', name: 'Voice thread',
+    desc: 'Three thin orange lines weave around each other. They lie flat when you\'re quiet and swell into waves as you speak.',
+    spec: '<b>Draws</b> three sine strokes, 2 dp, with different phase and speed · amplitude follows the level, tapered at both ends<br><b>Feel</b> alive and distinctive, without Siri\'s rainbow',
+    draw(ctx, w, h, time) {
+      const mid = h / 2, amp = (0.08 + level * 0.92) * (h / 2 - 6);
+      [[1, 1.0, 0], [0.55, 1.6, 2.1], [0.3, 2.3, 4.2]].forEach(([a, k, ph]) => {
+        ctx.strokeStyle = rgba(REC, a); ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.beginPath();
+        for (let x = 0; x <= w; x += 2) {
+          const u = x / w, taper = Math.sin(Math.PI * u) ** 1.6;
+          const y = mid + Math.sin(u * Math.PI * 2 * k + (reduced ? 0 : time * (2 + k)) + ph) * amp * taper * (a === 1 ? 1 : 0.8);
+          x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        }
+        ctx.stroke();
+      });
+    },
+  },
+  {
+    key: 'D', name: 'Ripple',
+    desc: 'A glowing dot in the middle that grows with your voice and sends out rings on each syllable, like sound on water.',
+    spec: '<b>Draws</b> a center dot (radius follows the level), plus rings sent on rising peaks that expand over 900 ms and fade<br><b>Feel</b> minimal and calm, best if the card stays small',
+    init() { this.rings = []; this.prev = 0; },
+    draw(ctx, w, h, time) {
+      const cx = w / 2, cy = h / 2;
+      if (!reduced && level - this.prev > 0.12 && (!this.rings.length || time - this.rings.at(-1).t > 0.12)) this.rings.push({ t: time, s: level });
+      this.prev = level;
+      this.rings = this.rings.filter(r => time - r.t < 0.9);
+      this.rings.forEach(r => { const p = (time - r.t) / 0.9; ctx.strokeStyle = rgba(REC, (1 - p) * 0.7 * r.s); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, 14 + p * (h * 0.5 + 40), 0, Math.PI * 2); ctx.stroke(); });
+      const r = 10 + level * 26, g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 2.2);
+      g.addColorStop(0, rgba(REC, 0.5)); g.addColorStop(1, rgba(REC, 0)); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, r * 2.2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = REC; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+    },
+  },
+  {
+    key: 'E', name: 'Dot matrix',
+    desc: 'A grid of small dots that light up from the middle out, column by column, like an LED meter. Has a textured look no other keyboard uses.',
+    spec: '<b>Draws</b> 9 rows of 4 dp dots, 8 dp apart · lit dots orange, unlit dots in the chip color · scrolls left one column per update<br><b>Feel</b> crafted, a bit retro, very "Murmur"',
+    draw(ctx, w, h) {
+      const gap = 9, rows = 9, cols = Math.floor(w / gap), x0 = (w - (cols - 1) * gap) / 2, y0 = (h - (rows - 1) * gap) / 2;
+      for (let c = 0; c < cols; c++) {
+        const v = hist[hist.length - cols + c] ?? 0, lit = Math.round(v * ((rows - 1) / 2 + 0.6));
+        for (let r = 0; r < rows; r++) {
+          const d = Math.abs(r - (rows - 1) / 2), on = d <= lit - 1 || (d === 0 && v > 0.02);
+          ctx.fillStyle = on ? rgba(REC, 0.35 + 0.65 * (c / cols)) : CHIP;
+          ctx.beginPath(); ctx.arc(x0 + c * gap, y0 + r * gap, 2, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+    },
+  },
+  {
+    key: 'F', name: 'Halo stop', pick: 'most compact',
+    desc: 'No separate waveform. The stop button itself breathes, with a soft orange halo that swells as you speak. The card gets shorter and the button becomes the focus.',
+    spec: '<b>Draws</b> two rings around Stop: an inner ring that follows the level, and a soft outer glow · the waveform area is removed (about 90 dp shorter)<br><b>Feel</b> focused and quiet; tells you it hears you right where your thumb is',
+    halo: true,
+    draw(ctx, w, h) {
+      const c = w / 2, base = 34;
+      const g = ctx.createRadialGradient(c, c, base, c, c, base + 10 + level * 36);
+      g.addColorStop(0, rgba(REC, 0.45 * (0.3 + level))); g.addColorStop(1, rgba(REC, 0));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c, c, base + 10 + level * 36, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = rgba(REC, 0.9); ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(c, c, base + 4 + level * 14, 0, Math.PI * 2); ctx.stroke();
+    },
+  },
+];
+
+const grid = document.getElementById('grid');
+const cards = OPTIONS.map(o => {
+  o.init?.();
+  const el = document.createElement('section'); el.className = 'opt';
+  el.innerHTML = `<h2><span class="k">${o.key}</span>${o.name}${o.pick ? `<span class="pick">${o.pick.toUpperCase()}</span>` : ''}</h2><p>${o.desc}</p>`;
+  el.append(document.getElementById('sheet').content.cloneNode(true));
+  el.insertAdjacentHTML('beforeend', `<div class="spec">${o.spec}</div>`);
+  let canvas = el.querySelector('canvas.viz');
+  if (o.halo) { canvas.remove(); canvas = document.createElement('canvas'); canvas.className = 'halo'; el.querySelector('.ctrls').append(canvas); el.querySelector('.ctrls').style.height = '120px'; }
+  grid.append(el);
+  return { o, canvas };
+});
+
+let last = performance.now(), acc = 0, secs = 4;
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  stepVoice(dt);
+  acc += dt; if (acc > 0.05) { acc = 0; pushHist(); } // history at ~20 Hz, like the mic
+  secs += dt; document.querySelectorAll('.live').forEach(l => l.textContent = `0:${String(Math.floor(secs) % 60).padStart(2, '0')}`);
+  for (const { o, canvas } of cards) { const [ctx, w, h] = fit(canvas); ctx.clearRect(0, 0, w, h); o.draw(ctx, w, h, now / 1000); }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
