@@ -45,12 +45,11 @@ import helium314.keyboard.keyboard.KeyboardTheme
 import helium314.keyboard.latin.R
 import helium314.keyboard.latin.settings.Defaults
 import helium314.keyboard.latin.settings.Settings
-import helium314.keyboard.latin.settings.createPrefKeyForBooleanSettings
 import helium314.keyboard.latin.utils.prefs
 
 enum class ThemeMode(val label: String) { LIGHT("Light"), DARK("Dark"), SYSTEM("System") }
 
-private val HEIGHTS = listOf(0.85f to "Compact", 0.92f to "Small", 1.0f to "Medium", 1.08f to "Large", 1.16f to "Tall")
+private val HEIGHTS = dev.murmur.settings.KeyHeight.STEPS
 
 /** Theme (mockup "Theme"): a live keyboard preview, light/dark/system, accent, key borders and height. */
 @Composable
@@ -60,7 +59,7 @@ fun ThemeScreen(onBack: () -> Unit) {
     var mode by remember { mutableStateOf(readMode(prefs)) }
     var accent by remember { mutableIntStateOf(MurmurTokens.accent(prefs)) }
     var borders by remember { mutableStateOf(prefs.getBoolean(Settings.PREF_THEME_KEY_BORDERS, Defaults.PREF_THEME_KEY_BORDERS)) }
-    var heightIndex by remember { mutableFloatStateOf(nearestHeight(prefs.getFloat(heightKey(0), 1f)).toFloat()) }
+    var heightIndex by remember { mutableFloatStateOf(dev.murmur.settings.KeyHeight.readIndex(prefs).toFloat()) }
     val reload = { KeyboardSwitcher.getInstance().setThemeNeedsReload() }
     val systemDark = isSystemInDarkTheme()
     val previewDark = mode == ThemeMode.DARK || (mode == ThemeMode.SYSTEM && systemDark)
@@ -94,7 +93,7 @@ fun ThemeScreen(onBack: () -> Unit) {
                 Item("Key height", HEIGHTS[heightIndex.toInt()].second, below = {
                     MurmurSlider(heightIndex, 0f..(HEIGHTS.size - 1).toFloat(), steps = HEIGHTS.size - 2,
                         onChange = { heightIndex = it },
-                        onDone = { writeHeight(prefs, HEIGHTS[heightIndex.toInt()].first); reload() })
+                        onDone = { dev.murmur.settings.KeyHeight.write(prefs, heightIndex.toInt()); reload() })
                 })
             }
         }
@@ -175,8 +174,3 @@ private fun writeMode(prefs: android.content.SharedPreferences, mode: ThemeMode)
     putString(Settings.PREF_THEME_COLORS, if (mode == ThemeMode.DARK) KeyboardTheme.THEME_MURMUR_DARK else KeyboardTheme.THEME_MURMUR_LIGHT)
     putString(Settings.PREF_THEME_COLORS_NIGHT, KeyboardTheme.THEME_MURMUR_DARK)
 }
-
-/** HeliBoard stores height per (landscape, folded); one Murmur slider sets all four. */
-private fun heightKey(index: Int) = createPrefKeyForBooleanSettings(Settings.PREF_KEYBOARD_HEIGHT_SCALE_PREFIX, index, 2)
-private fun writeHeight(prefs: android.content.SharedPreferences, scale: Float) = prefs.edit { (0 until 4).forEach { putFloat(heightKey(it), scale) } }
-private fun nearestHeight(scale: Float) = HEIGHTS.indices.minBy { kotlin.math.abs(HEIGHTS[it].first - scale) }

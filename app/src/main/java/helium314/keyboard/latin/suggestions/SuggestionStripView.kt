@@ -158,7 +158,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         setupMurmurMic(colors)
         // Murmur: a fixed tools row from the mockups; HeliBoard's toolbar and pinned-key settings no longer apply
         for (key in MURMUR_TOOLS) {
-            if (key == ToolbarKey.SETTINGS) addPasswordManagerTool(colors) // settings stays last
+            if (key == ToolbarKey.SETTINGS) { addPasswordManagerTool(colors); addHeightTool(colors) } // settings stays last
             val button = createToolbarKey(context, key)
             button.layoutParams = toolbarKeyLayoutParams
             setupKey(button, colors)
@@ -242,6 +242,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     @JvmOverloads
     fun setToolbarVisibility(toolbarVisible: Boolean, fromUser: Boolean = false) {
         if (toolbarVisible && !fromUser && pinnedExternal != null) return // Murmur: keep the logins showing
+        if (murmurResizeBar != null) return // Murmur: the key height bar owns the strip until Done
         pinnedKeys.isVisible = !toolbarVisible
         suggestionsStrip.isVisible = !toolbarVisible
         toolbarContainer.isVisible = toolbarVisible
@@ -506,7 +507,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private fun clear() {
         suggestionsStrip.removeAllViews()
         if (DEBUG_SUGGESTIONS) removeAllDebugInfoViews()
-        if (!toolbarContainer.isVisible)
+        if (!toolbarContainer.isVisible && murmurResizeBar == null)
             suggestionsStrip.isVisible = true
         dismissMoreSuggestionsPanel()
         for (word in wordViews) {
@@ -527,7 +528,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         val show = Settings.getValues().mShowsVoiceInputKey
         toolbar.findViewWithTag<View>(ToolbarKey.VOICE)?.isVisible = show
         pinnedKeys.findViewWithTag<View>(ToolbarKey.VOICE)?.isVisible = show
-        murmurMic.isVisible = show
+        murmurMic.isVisible = show && murmurResizeBar == null
     }
 
     private fun updateKeys() {
@@ -671,6 +672,119 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             context.startActivity(launch.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
         }
         toolbar.addView(button)
+    }
+
+    /** Murmur: opens the key height bar in the strip, so height can be tuned while looking at the keys. */
+    private fun addHeightTool(colors: Colors) {
+        val button = ImageButton(context, null, R.attr.suggestionWordStyle)
+        button.setImageResource(R.drawable.ic_murmur_height)
+        button.scaleType = android.widget.ImageView.ScaleType.CENTER
+        button.contentDescription = context.getString(R.string.murmur_key_height)
+        button.layoutParams = LinearLayout.LayoutParams(toolbarKeyLayoutParams).apply { weight = 1f }
+        colors.setColor(button, ColorType.TOOL_BAR_KEY)
+        colors.setBackground(button, ColorType.STRIP_BACKGROUND)
+        button.setOnClickListener {
+            AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, this, HapticEvent.KEY_PRESS)
+            setMurmurResizing(true)
+        }
+        toolbar.addView(button)
+    }
+
+    // Murmur: key height bar: [-]  Key height · Medium  [+]  (Done). Each step applies right away.
+    private var murmurResizeBar: LinearLayout? = null
+    private var murmurResizeSaved: List<Pair<View, Int>>? = null
+
+    fun isMurmurResizing() = murmurResizeBar != null
+
+    fun setMurmurResizing(on: Boolean) {
+        val wrapper = murmurMic.parent as? LinearLayout ?: return
+        if (!on) {
+            murmurResizeSaved?.forEach { (v, vis) -> v.visibility = vis }
+            murmurResizeSaved = null
+            murmurResizeBar?.let { wrapper.removeView(it) }
+            murmurResizeBar = null
+            return
+        }
+        if (murmurResizeBar != null || murmurSaved != null) return // already open, or dictating
+        val colors = Settings.getValues().mColors
+        val density = resources.displayMetrics.density
+        fun dp(v: Int) = (v * density).toInt()
+        val prefs = context.prefs()
+        var index = dev.murmur.settings.KeyHeight.nearest(Settings.getValues().mKeyboardHeightScale)
+        val ink = colors.get(ColorType.KEY_TEXT)
+        val sub = colors.get(ColorType.KEY_HINT_TEXT)
+        val fn = colors.get(ColorType.FUNCTIONAL_KEY_BACKGROUND)
+        val accent = colors.get(ColorType.ACTION_KEY_BACKGROUND)
+        val onAccent = if (androidx.core.graphics.ColorUtils.calculateLuminance(accent) > 0.3) 0xFF0D1336.toInt() else Color.WHITE
+
+        fun stepper(icon: Int, label: Int) = ImageButton(context).apply {
+            setImageResource(icon)
+            setColorFilter(ink)
+            scaleType = android.widget.ImageView.ScaleType.CENTER
+            contentDescription = context.getString(label)
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(fn) }
+        }
+        val minus = stepper(R.drawable.ic_murmur_minus, R.string.murmur_key_height_smaller)
+        val plus = stepper(R.drawable.ic_murmur_plus, R.string.murmur_key_height_taller)
+        val label = TextView(context).apply {
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            gravity = android.view.Gravity.CENTER
+            isSingleLine = true
+            ellipsize = android.text.TextUtils.TruncateAt.END
+        }
+        val done = TextView(context).apply {
+            text = context.getString(R.string.murmur_done)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(onAccent)
+            gravity = android.view.Gravity.CENTER
+            setPadding(dp(16), 0, dp(16), 0)
+            background = GradientDrawable().apply { cornerRadius = 20 * density; setColor(accent) }
+            setOnClickListener {
+                AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, this, HapticEvent.KEY_PRESS)
+                setMurmurResizing(false)
+            }
+        }
+        fun render() {
+            val name = dev.murmur.settings.KeyHeight.STEPS[index].second
+            val title = context.getString(R.string.murmur_key_height)
+            label.text = android.text.SpannableStringBuilder().apply {
+                append(title, android.text.style.ForegroundColorSpan(sub), 0)
+                append("  ")
+                append(name, android.text.style.ForegroundColorSpan(ink), 0)
+                setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), length - name.length, length, 0)
+            }
+            minus.isEnabled = index > 0; minus.alpha = if (index > 0) 1f else 0.35f
+            val last = dev.murmur.settings.KeyHeight.STEPS.size - 1
+            plus.isEnabled = index < last; plus.alpha = if (index < last) 1f else 0.35f
+        }
+        fun step(delta: Int) {
+            val next = (index + delta).coerceIn(0, dev.murmur.settings.KeyHeight.STEPS.size - 1)
+            if (next == index) return
+            index = next
+            AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, this, HapticEvent.KEY_PRESS)
+            dev.murmur.settings.KeyHeight.write(prefs, index) // the settings listener reloads values
+            render()
+            post { KeyboardSwitcher.getInstance().reloadKeyboard() }
+        }
+        minus.setOnClickListener { step(-1) }
+        plus.setOnClickListener { step(1) }
+        render()
+
+        val hide = listOf<View>(toolbarExpandKey, toolbarContainer, suggestionsStrip, pinnedKeys, murmurMic)
+        murmurResizeSaved = hide.map { it to it.visibility }
+        hide.forEach { it.visibility = GONE }
+        val bar = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(dp(6), 0, dp(6), 0)
+            addView(minus, LinearLayout.LayoutParams(dp(40), dp(40)))
+            addView(label, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f))
+            addView(plus, LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginEnd = dp(10) })
+            addView(done, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(40)))
+        }
+        wrapper.addView(bar, 0, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f))
+        murmurResizeBar = bar
     }
 
     private fun setupKey(view: ImageButton, colors: Colors) {

@@ -718,6 +718,7 @@ public class LatinIME extends InputMethodService implements
     @Override
     public void onFinishInputView(final boolean finishingInput) {
         mDictation.cancel(); // Murmur: never keep recording after the keyboard hides
+        if (mSuggestionStripView != null) mSuggestionStripView.setMurmurResizing(false); // Murmur
         StatsUtils.onFinishInputView();
         mHandler.onFinishInputView(finishingInput);
         mStatsUtilsManager.onFinishInputView();

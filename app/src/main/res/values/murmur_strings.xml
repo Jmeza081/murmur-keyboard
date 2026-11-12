@@ -35,6 +35,10 @@
     <string name="murmur_cleanup_on" translatable="false">Cleanup on</string>
     <string name="murmur_cleanup_off" translatable="false">Cleanup off</string>
     <string name="murmur_open_1password" translatable="false">Open 1Password</string>
+    <string name="murmur_key_height" translatable="false">Key height</string>
+    <string name="murmur_key_height_smaller" translatable="false">Shorter keys</string>
+    <string name="murmur_key_height_taller" translatable="false">Taller keys</string>
+    <string name="murmur_done" translatable="false">Done</string>
     <!-- Emoji panel -->
     <string name="murmur_emoji_search" translatable="false">Search emoji</string>
     <string name="murmur_emoji_recents" translatable="false">Recently used</string>

@@ -233,7 +233,7 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
         val bottomPad = keyboardView.keyboard?.let { kb -> kb.mOccupiedHeight - (kb.sortedKeys.maxOfOrNull { it.y + it.height } ?: kb.mOccupiedHeight) }?.coerceAtLeast(0) ?: 0
         // Android draws its keyboard-switch and hide buttons ~48 dp tall over the keyboard's bottom edge
         val density = ime.resources.displayMetrics.density
-        p.setPadding(p.paddingLeft, p.paddingTop, p.paddingRight, maxOf(bottomPad, (48 * density).toInt()) + (8 * density).toInt())
+        p.setPadding(p.paddingLeft, p.paddingTop, p.paddingRight, maxOf(bottomPad, (48 * density).toInt()) + (32 * density).toInt()) // + room for Send's glow
         keyboardView.visibility = View.INVISIBLE // keeps its size, so the panel matches the key area
         strip(ime.getString(R.string.murmur_dictation_listening_strip))
         return p

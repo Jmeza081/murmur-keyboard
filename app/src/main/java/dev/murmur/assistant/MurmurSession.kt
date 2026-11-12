@@ -127,6 +127,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
             this@MurmurSession.sheet = this
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(12), dp(16), dp(16))
+            clipChildren = false // Send's glow draws over the waveform and hint rows instead of being cut at its own row
             // Floating card, rounded on all corners, inset from the screen edges (mockup .sheet)
             background = GradientDrawable().apply { cornerRadius = dp(28f); setColor(sheetColor) }
             elevation = dp(12f)

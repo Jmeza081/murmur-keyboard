@@ -72,6 +72,7 @@ class DictationPanel(
         // Breathing room above (status row) and below (the Send glow)
         addView(waveform, LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f).apply { topMargin = dp(16); bottomMargin = dp(20) })
         clipChildren = false // the Send glow spills past the controls row
+        clipToPadding = false // ...and into the bottom padding, instead of being cut where the padding starts
         addView(FrameLayout(context).apply {
             clipChildren = false
             addView(glow, FrameLayout.LayoutParams(dp(132), dp(132), Gravity.CENTER))
