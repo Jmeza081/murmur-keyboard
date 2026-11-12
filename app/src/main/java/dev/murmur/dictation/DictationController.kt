@@ -33,6 +33,7 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
 
     private val main = Handler(Looper.getMainLooper())
     private val recorder = MicRecorder(this)
+    private var stream: dev.murmur.speech.CloudStream? = null
     private var state = State.IDLE
     private var panel: DictationPanel? = null
     private var startedAt = 0L
@@ -55,6 +56,7 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
     fun cancel() {
         if (state == State.IDLE) return
         recorder.cancel()
+        stream?.cancel(); stream = null
         state = State.IDLE
         closePanel()
     }
@@ -128,21 +130,30 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
             ime.startActivity(Intent(ime, MicPermissionActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             return
         }
-        if (!ModelManager.isInstalled(ime)) {
+        if (!ModelManager.isInstalled(ime) && !dev.murmur.speech.CloudEngine.active(ime)) {
             // First run: open the model screen, which explains the download.
             ime.startActivity(Intent(ime, ModelActivity::class.java).putExtra(ModelActivity.EXTRA_SCREEN, "DICTATION").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             return
         }
         val panel = showPanel() ?: return
         recorder.silenceStopMs = dev.murmur.settings.DictationPrefs.silenceMs(ime)
+        // Live words from ElevenLabs when it's on; the recording stays on the phone for the Parakeet fallback
+        stream = dev.murmur.speech.CloudStream.start(ime, object : dev.murmur.speech.CloudStream.Listener {
+            override fun onWords(final: String, draft: String) {
+                if (state == State.LISTENING || state == State.TRANSCRIBING) panel.showWords(final, draft)
+            }
+        })
+        recorder.onChunk = stream?.let { s -> { chunk: ShortArray -> s.send(chunk) } }
         if (!recorder.start()) {
+            stream?.cancel(); stream = null
             showFailure(ime.getString(R.string.murmur_dictation_mic_busy))
             return
         }
         state = State.LISTENING
-        val loaded = SharedEngine.isLoaded
+        val loaded = SharedEngine.isLoaded || dev.murmur.speech.CloudEngine.active(ime) // the cloud needs no model load
         panel.showListening(loading = !loaded)
-        if (!loaded) SharedEngine.preload(ime) { main.post { if (state == State.LISTENING) panel.showListening(loading = false) } }
+        // preload Parakeet even with the cloud on: it is the fallback
+        if (!SharedEngine.isLoaded) SharedEngine.preload(ime) { main.post { if (state == State.LISTENING) panel.showListening(loading = false) } }
         startedAt = SystemClock.elapsedRealtime()
         tick()
     }
@@ -152,15 +163,17 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
         state = State.TRANSCRIBING
         panel?.showMessage(ime.getString(R.string.murmur_dictation_transcribing))
         strip(ime.getString(R.string.murmur_dictation_transcribing))
+        val live = stream.also { stream = null }
         recorder.stop { samples ->
-            SharedEngine.transcribe(ime, samples) { result ->
-                val cleaned = result?.let { Cleanup.process(ime, it.text) }
+            SharedEngine.finish(ime, live, samples) { result ->
+                Cleanup.processAsync(ime, result?.text.orEmpty()) { cleaned ->
                 main.post {
                     if (state != State.TRANSCRIBING) return@post // cancelled meanwhile
                     if (result == null) return@post showFailure(ime.getString(R.string.murmur_dictation_model_missing))
                     state = State.IDLE
                     closePanel()
-                    if (!cleaned.isNullOrEmpty()) insert(cleaned)
+                    if (cleaned.isNotEmpty()) insert(cleaned)
+                }
                 }
             }
         }
@@ -192,6 +205,7 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
 
     private fun showFailure(message: String) {
         recorder.cancel()
+        stream?.cancel(); stream = null
         state = State.TRANSCRIBING // ignore mic taps while the message shows
         panel?.showMessage(message)
         strip("") // the panel says what happened; don't keep saying "Listening…"
@@ -218,9 +232,7 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
         val wrapper = keyboardView.parent as? ViewGroup ?: return null
         val p = panel ?: DictationPanel(ime, onCancel = { cancel() }, onStop = { onMicKey() },
             onToggleCleanup = {
-                val on = Cleanup.level(ime) == Cleanup.Level.OFF
-                Cleanup.setLevel(ime, if (on) Cleanup.Level.LIGHT else Cleanup.Level.OFF)
-                on
+                Cleanup.toggle(ime)
             },
             cleanupOn = Cleanup.level(ime) != Cleanup.Level.OFF,
         ).also { panel = it }

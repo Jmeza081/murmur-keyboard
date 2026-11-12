@@ -19,7 +19,7 @@ class SpeechEngine private constructor(
     /** How long [load] took, in milliseconds. */
     val loadMs: Long,
 ) {
-    data class Result(val text: String, val audioSeconds: Double, val decodeMs: Long) {
+    data class Result(val text: String, val audioSeconds: Double, val decodeMs: Long, val engine: String = "Parakeet") {
         /** Real-time factor: decode time divided by audio length. Below 1 is faster than real time. */
         val rtf: Double get() = if (audioSeconds > 0) decodeMs / 1000.0 / audioSeconds else 0.0
     }

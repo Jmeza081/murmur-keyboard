@@ -18,6 +18,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,6 +46,7 @@ fun DictationScreen(onBack: () -> Unit) {
     Column(Modifier.verticalScroll(rememberScrollState())) {
         TopBar("Dictation", onBack)
         Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            EngineGroup()
             ModelCard()
             CleanupGroup()
             GroupLabel("Listening")
@@ -53,11 +55,21 @@ fun DictationScreen(onBack: () -> Unit) {
                     WaveformChoice()
                 }
                 GroupDivider()
+                TeleprompterItem()
+                GroupDivider()
                 SilenceItem()
                 GroupDivider()
                 Item("Language", "Detects English, Spanish and 23 more European languages automatically")
             }
-            Text("Dictation runs entirely on this phone. The model is the only thing Murmur downloads.",
+            val footCtx = LocalContext.current
+            val cloud = dev.murmur.speech.CloudEngine.active(footCtx)
+            val claude = Cleanup.level(footCtx) == Cleanup.Level.CLAUDE && dev.murmur.cleanup.ClaudeCleanup.active(footCtx)
+            Text(when {
+                    cloud && claude -> "With ElevenLabs on, each recording is sent to ElevenLabs to transcribe, and the text to Claude to clean up. Parakeet and Light on this phone are the backup."
+                    cloud -> "With ElevenLabs on, each recording is sent to ElevenLabs to transcribe. Parakeet on this phone is the backup."
+                    claude -> "Speech is transcribed on this phone. The text is sent to Claude to clean up, with Light as the backup."
+                    else -> "Dictation runs entirely on this phone. The model is the only thing Murmur downloads."
+                },
                 fontFamily = RobotoFlex, fontSize = 12.5.sp, color = c.sub, lineHeight = 18.sp, modifier = Modifier.padding(horizontal = 8.dp))
         }
     }
@@ -127,24 +139,52 @@ private fun CleanupGroup() {
     var level by remember { mutableStateOf(Cleanup.level(ctx)) }
     var extras by remember { mutableStateOf(Cleanup.extraFillers(ctx)) }
     var adding by remember { mutableStateOf(false) }
+    var hasClaudeKey by remember { mutableStateOf(dev.murmur.cleanup.ClaudeCleanup.hasKey(ctx)) }
+    var claudeStatus by remember { mutableStateOf<String?>(null) }
+    var editingKey by remember { mutableStateOf(false) }
     GroupLabel("Cleanup")
     Group {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Segmented(Cleanup.Level.entries, level, { if (it == Cleanup.Level.OFF) "Off" else "Light" }) {
+            val levels = if (dev.murmur.settings.Secrets.supported) Cleanup.Level.entries else Cleanup.Level.entries - Cleanup.Level.CLAUDE
+            Segmented(levels, level, { when (it) { Cleanup.Level.OFF -> "Off"; Cleanup.Level.LIGHT -> "Light"; Cleanup.Level.CLAUDE -> "Claude" } }) {
                 level = it; Cleanup.setLevel(ctx, it)
+                // only ask when there's really no key saved (read fresh, not from screen state)
+                if (it == Cleanup.Level.CLAUDE && !dev.murmur.cleanup.ClaudeCleanup.hasKey(ctx)) editingKey = true
             }
             Hint(when (level) {
                 Cleanup.Level.OFF -> "Types exactly what the speech model heard."
                 Cleanup.Level.LIGHT -> "Removes filler words, stutters and restarted phrases, applies \"scratch that\" and quick corrections " +
                     "like \"5, I mean 6\", and fixes spacing. Instant. Tap one of your words to remove it."
+                Cleanup.Level.CLAUDE -> "After you finish, the text (never the audio) goes to Claude Sonnet 5.5, which fixes misheard words, " +
+                    "follows corrections like \"actually, make it Tuesday\" and tidies it up, using your Dictionary words. " +
+                    "Adds about a second. When it's offline or slow, Light runs instead."
             })
-            if (level == Cleanup.Level.LIGHT) TagRow(
+            if (level != Cleanup.Level.OFF) TagRow(
                 Cleanup.BUILT_IN_FILLERS + extras,
                 onAdd = { adding = true },
                 onRemove = { w -> if (w in extras) { extras = extras - w; Cleanup.setExtraFillers(ctx, extras) } },
             )
         }
+        if (level == Cleanup.Level.CLAUDE) {
+            GroupDivider()
+            Item("Anthropic API key", claudeStatus ?: keyLine(dev.murmur.cleanup.ClaudeCleanup.keySavedAt(ctx), hasClaudeKey, "Light runs instead"),
+                onClick = { editingKey = true })
+            dev.murmur.cleanup.ClaudeCleanup.lastRun(ctx)?.let {
+                GroupDivider()
+                Item("Last cleanup", it, chevron = false)
+            }
+        }
     }
+    if (editingKey) KeyDialog(
+        title = "Anthropic API key",
+        explain = "Create a key at platform.claude.com under API keys. It is stored encrypted on this phone and left out of backups.",
+        hasKey = hasClaudeKey,
+        savedAt = dev.murmur.cleanup.ClaudeCleanup.keySavedAt(ctx),
+        check = { key -> runCatching { dev.murmur.cleanup.ClaudeCleanup.checkKey(key) }.exceptionOrNull()
+            ?.let { (it as? dev.murmur.cleanup.ClaudeCleanup.Failure)?.reason ?: "Couldn't check the key" } },
+        onSave = { key -> dev.murmur.cleanup.ClaudeCleanup.setApiKey(ctx, key); hasClaudeKey = key != null; claudeStatus = null },
+        onClose = { editingKey = false },
+    )
     if (adding) {
         var text by remember { mutableStateOf("") }
         AlertDialog(
@@ -173,7 +213,7 @@ private fun WaveformChoice() {
         androidx.compose.runtime.key(style) {
             var view by remember { mutableStateOf<dev.murmur.dictation.LevelBarsView?>(null) }
             androidx.compose.ui.viewinterop.AndroidView(
-                factory = { dev.murmur.dictation.LevelBarsView(it, dev.murmur.design.MurmurTokens.RECORDING,
+                factory = { dev.murmur.dictation.LevelBarsView(it, dev.murmur.design.MurmurTokens.live(it),
                     android.graphics.Color.argb(255, (c.sub.red * 255).toInt(), (c.sub.green * 255).toInt(), (c.sub.blue * 255).toInt()), style)
                     .also { v -> view = v } },
                 modifier = Modifier.fillMaxWidth().height(72.dp),
@@ -225,4 +265,135 @@ private fun SilenceItem() {
     })
 }
 
+@Composable
+private fun TeleprompterItem() {
+    val ctx = LocalContext.current
+    var on by remember { mutableStateOf(DictationPrefs.teleprompter(ctx)) }
+    val set = { v: Boolean -> on = v; DictationPrefs.setTeleprompter(ctx, v) }
+    Item("Live words", "With ElevenLabs on, shows what you say as two big lines over the waveform",
+        onClick = { set(!on) }, chevron = false, trailing = { MurmurSwitch(on) { set(it) } })
+}
+
 private fun mb(bytes: Long) = "%,d MB".format(bytes / 1_000_000)
+
+private enum class Engine(val label: String) { CLOUD("ElevenLabs"), DEVICE("On device") }
+
+/** Speech engine (PLAN.md, "Spike: ElevenLabs"): ElevenLabs first with Parakeet as the fallback, or on device only. */
+@Composable
+private fun EngineGroup() {
+    val ctx = LocalContext.current
+    var engine by remember { mutableStateOf(if (dev.murmur.speech.CloudEngine.enabled(ctx)) Engine.CLOUD else Engine.DEVICE) }
+    var hasKey by remember { mutableStateOf(dev.murmur.speech.CloudEngine.hasKey(ctx)) }
+    var keyStatus by remember { mutableStateOf<String?>(null) }
+    var editing by remember { mutableStateOf(false) }
+    val last = dev.murmur.settings.DictationPrefs.lastRun(ctx)
+    if (!dev.murmur.speech.CloudEngine.supported) return
+    GroupLabel("Speech engine")
+    Group {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Segmented(Engine.entries, engine, { it.label }) { e ->
+                engine = e; dev.murmur.speech.CloudEngine.setEnabled(ctx, e == Engine.CLOUD)
+                if (e == Engine.CLOUD && !dev.murmur.speech.CloudEngine.hasKey(ctx)) editing = true
+            }
+            Hint(if (engine == Engine.CLOUD)
+                "Recordings are sent to ElevenLabs (Scribe v2) to transcribe. When you're offline, it's slow, or your plan runs out of hours, Parakeet on this phone takes over."
+            else "Nothing leaves the phone. Parakeet v3 transcribes on this phone.")
+        }
+        if (engine == Engine.CLOUD) {
+            GroupDivider()
+            Item("ElevenLabs API key", keyStatus ?: keyLine(dev.murmur.speech.CloudEngine.keySavedAt(ctx), hasKey, "dictation uses Parakeet"),
+                onClick = { editing = true })
+        }
+        if (last != null) {
+            GroupDivider()
+            Item("Last dictation", buildString {
+                append(last.engine)
+                if (last.ms >= 0) append(" · %.1f s".format(last.ms / 1000f))
+                last.fallbackReason?.let { append(" · ElevenLabs skipped: ").append(it.lowercase()) }
+            }, chevron = false)
+        }
+    }
+    if (editing) KeyDialog(
+        title = "ElevenLabs API key",
+        explain = "Create a key at elevenlabs.io under Developers, API keys, with Speech to Text access. It is stored encrypted on this phone and left out of backups.",
+        hasKey = hasKey,
+        savedAt = dev.murmur.speech.CloudEngine.keySavedAt(ctx),
+        check = { key -> runCatching { dev.murmur.speech.CloudEngine.checkKey(key) }.fold(
+            { plan -> keyStatus = if (plan.tier.isEmpty()) null else "Works · ${plan.tier.replaceFirstChar { it.uppercase() }} plan"; null },
+            { e -> (e as? dev.murmur.speech.CloudEngine.Failure)?.reason ?: "Couldn't check the key" }) },
+        onSave = { key -> dev.murmur.speech.CloudEngine.setApiKey(ctx, key); hasKey = key != null; if (key == null) keyStatus = null },
+        onClose = { editing = false },
+    )
+}
+
+/** Paste, check and save an API key. [check] runs off the main thread and returns an error, or null when the key works. */
+@Composable
+private fun KeyDialog(title: String, explain: String, hasKey: Boolean, savedAt: Long?, check: (String) -> String?, onSave: (String?) -> Unit, onClose: () -> Unit) {
+    var replacing by remember { mutableStateOf(!hasKey) }
+    var confirmRemove by remember { mutableStateOf(false) }
+    if (!replacing) {
+        // A key is saved: show when, never the key itself
+        AlertDialog(
+            onDismissRequest = onClose,
+            title = { Text(title) },
+            text = {
+                Text(if (confirmRemove) "Remove the saved key from this phone? You can add it again any time."
+                    else "Saved ${savedAt?.let { "on " + dateTime(it) } ?: "on this phone"}, encrypted, and left out of backups. The key itself can't be shown.",
+                    fontFamily = RobotoFlex, fontSize = 14.sp, lineHeight = 20.sp)
+            },
+            confirmButton = {
+                if (confirmRemove) TextButton(onClick = { onSave(null); onClose() }) { Text("Remove") }
+                else TextButton(onClick = onClose) { Text("Done") }
+            },
+            dismissButton = {
+                Row {
+                    if (confirmRemove) TextButton(onClick = { confirmRemove = false }) { Text("Cancel") }
+                    else {
+                        TextButton(onClick = { confirmRemove = true }) { Text("Remove") }
+                        TextButton(onClick = { replacing = true }) { Text("Replace") }
+                    }
+                }
+            },
+        )
+        return
+    }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var key by remember { mutableStateOf("") }
+    var checking by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    AlertDialog(
+        onDismissRequest = { if (!checking) onClose() },
+        title = { Text(title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(explain, fontFamily = RobotoFlex, fontSize = 13.sp, lineHeight = 18.sp)
+                OutlinedTextField(key, { key = it.trim(); error = null }, singleLine = true,
+                    label = { Text("API key") }, isError = error != null,
+                    supportingText = error?.let { { Text(it) } },
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password))
+            }
+        },
+        confirmButton = { TextButton(enabled = key.isNotEmpty() && !checking, onClick = {
+            checking = true
+            scope.launch {
+                val e = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { check(key) }
+                checking = false
+                if (e == null) { onSave(key); onClose() } else error = e
+            }
+        }) { Text(if (checking) "Checking…" else "Save") } },
+        dismissButton = {
+            TextButton(enabled = !checking, onClick = onClose) { Text("Cancel") }
+        },
+    )
+}
+
+private fun dateTime(ms: Long): String =
+    java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT).format(java.util.Date(ms))
+
+/** The key row's subtitle: when it was saved, or what happens without one. */
+private fun keyLine(savedAt: Long?, hasKey: Boolean, without: String) = when {
+    savedAt != null -> "Added " + java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM).format(java.util.Date(savedAt)) + " · encrypted on this phone"
+    hasKey -> "Saved, encrypted on this phone"
+    else -> "Not set: $without"
+}

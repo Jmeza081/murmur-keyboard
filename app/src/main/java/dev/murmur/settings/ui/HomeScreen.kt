@@ -73,7 +73,7 @@ fun HomeScreen(open: (Screen) -> Unit, openLegacy: () -> Unit) {
 
 private fun dictationValue(ctx: Context): String {
     if (!ModelManager.isInstalled(ctx)) return "Speech model not installed"
-    val cleanup = if (Cleanup.level(ctx) == Cleanup.Level.OFF) "No cleanup" else "Light cleanup"
+    val cleanup = when (Cleanup.level(ctx)) { Cleanup.Level.OFF -> "No cleanup"; Cleanup.Level.LIGHT -> "Light cleanup"; Cleanup.Level.CLAUDE -> "Claude cleanup" }
     return "Parakeet v3 · $cleanup"
 }
 

@@ -16,6 +16,8 @@ import kotlin.math.sqrt
 class MicRecorder(private val listener: Listener) {
     /** Quiet after speech that ends the recording. Set from settings before [start]. */
     var silenceStopMs = SILENCE_STOP_MS
+    /** Each 100 ms of 16-bit audio as it's recorded (for streaming to ElevenLabs). Called on the recording thread. */
+    @Volatile var onChunk: ((ShortArray) -> Unit)? = null
 
     interface Listener {
         /** Loudness of the last 100 ms, roughly 0..0.3 for speech. */
@@ -57,6 +59,7 @@ class MicRecorder(private val listener: Listener) {
                 while (running) {
                     val n = rec.read(chunk, 0, chunk.size)
                     if (n <= 0) continue
+                    onChunk?.invoke(chunk.copyOf(n))
                     var sum = 0.0
                     for (i in 0 until n) {
                         val s = chunk[i] / 32768f

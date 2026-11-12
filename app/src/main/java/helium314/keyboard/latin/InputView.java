@@ -67,6 +67,8 @@ public final class InputView extends FrameLayout {
 
     @Override
     public boolean onInterceptTouchEvent(final MotionEvent me) {
+        // Murmur: a sheet over the app gets its own touches
+        if (helium314.keyboard.keyboard.KeyboardSwitcher.getInstance().getMurmurOverlay()) return false;
         final Rect rect = mInputViewRect;
         getGlobalVisibleRect(rect);
         final int index = me.getActionIndex();

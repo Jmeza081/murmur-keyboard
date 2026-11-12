@@ -18,7 +18,8 @@ object Backup {
     private const val FORMAT = 1
     private const val MURMUR_PREFS = "murmur"
     /** Per-phone state that shouldn't move between phones. */
-    private val SKIP = setOf("setup_seen", "last_decode_ms")
+    private val SKIP = setOf("setup_seen", "last_decode_ms", "elevenlabs_key", "last_engine", "last_engine_ms", "last_fallback", "anthropic_key", "last_polish",
+        "elevenlabs_key_saved_at", "anthropic_key_saved_at")
 
     data class Result(val settings: Int, val words: Int)
 

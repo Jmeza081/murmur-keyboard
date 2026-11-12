@@ -633,7 +633,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             murmurListenLabel = label
             murmurMic.background = GradientDrawable().apply {
                 cornerRadius = 20 * density
-                setColor(dev.murmur.design.MurmurTokens.RECORDING)
+                setColor(dev.murmur.design.MurmurTokens.live(context))
             }
             murmurMic.setColorFilter(Color.WHITE)
         }

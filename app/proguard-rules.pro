@@ -16,3 +16,13 @@
 # Murmur: sherpa-onnx reads its config classes from native code by field name
 -keep class com.k2fsa.sherpa.onnx.** { *; }
 
+
+# Murmur: the Anthropic SDK (Claude cleanup) parses JSON with Jackson by reflection
+-dontwarn com.google.auto.value.AutoValue
+-keep class com.anthropic.** { *; }
+-keep class com.fasterxml.jackson.** { *; }
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
+-dontwarn java.beans.ConstructorProperties
+-dontwarn java.beans.Transient
+-dontwarn java.lang.reflect.AnnotatedParameterizedType
+-dontwarn java.lang.reflect.AnnotatedType

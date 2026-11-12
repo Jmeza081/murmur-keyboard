@@ -139,6 +139,8 @@ dependencies {
     implementation(files("libs/sherpa-onnx-1.13.3.aar"))
 
     // androidx
+    implementation("com.anthropic:anthropic-java:3.3.0") // Murmur: Claude cleanup after dictation
+    implementation("com.squareup.okhttp3:okhttp:4.12.0") // Murmur: WebSocket for ElevenLabs streaming (4.x supports minSdk 21)
     implementation("androidx.core:core-ktx:1.17.0") // 1.18.0 requires minSdk 23
     implementation("androidx.recyclerview:recyclerview:1.4.0")
     implementation("androidx.autofill:autofill:1.3.0")

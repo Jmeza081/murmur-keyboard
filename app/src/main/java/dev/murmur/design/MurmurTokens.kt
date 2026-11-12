@@ -23,6 +23,9 @@ object MurmurTokens {
     /** The accent picked on the Theme screen, cobalt by default. */
     fun accent(prefs: android.content.SharedPreferences) = prefs.getInt(PREF_ACCENT, ACCENT)
 
+    /** The listening color (dot, stop button, level bars, glow): the accent picked on the Theme screen. */
+    fun live(context: android.content.Context) = accent(helium314.keyboard.latin.utils.DeviceProtectedUtils.getSharedPreferences(context))
+
     /** Recording orange: listening state, stop button, level bars. */
     val RECORDING = Color.parseColor("#E8590C")
 

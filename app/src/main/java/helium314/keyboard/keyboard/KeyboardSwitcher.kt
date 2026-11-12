@@ -98,6 +98,10 @@ class KeyboardSwitcher private constructor() {
     val mainKeyboardView get() = inputView?.keyboardView
     val keyboard get() = mainKeyboardView?.keyboard
     val wrapperView get() = inputView?.wrapperView
+    /** Murmur: the keyboard window's full-height root, for sheets drawn over the app (AutofillSheet). */
+    val inputRoot get() = inputView?.root
+    /** Murmur: while true, the whole screen takes touches (a sheet is open above the keys). */
+    var murmurOverlay = false
     val stripContainer get() = inputView?.stripContainer
     val emojiTabStrip get() = inputView?.emojiTabStrip
     /** Murmur: the strip, so dictation can show its listening state there. */
@@ -240,7 +244,7 @@ class KeyboardSwitcher private constructor() {
         // When using a floating keyboard and the showToolbarOnly setting, the wrapper view may be hidden but we still have a view
         if (visibleKeyboardView.isShown || (Settings.getValues().mIsFloatingKeyboard && inputView.root.isShown)) {
             var touchLeft = 0
-            var touchTop = if (isShowingPopupKeysPanel) 0 else visibleTopY
+            var touchTop = if (isShowingPopupKeysPanel || murmurOverlay) 0 else visibleTopY
             var touchRight = visibleKeyboardView.width
             var touchBottom = inputHeight + EXTENDED_TOUCHABLE_REGION_HEIGHT // Extend touchable region below the keyboard.
             if (Settings.getValues().mIsFloatingKeyboard) {

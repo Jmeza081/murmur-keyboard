@@ -718,6 +718,7 @@ public class LatinIME extends InputMethodService implements
     @Override
     public void onFinishInputView(final boolean finishingInput) {
         mDictation.cancel(); // Murmur: never keep recording after the keyboard hides
+        if (Build.VERSION.SDK_INT >= 30) dev.murmur.autofill.AutofillSheet.INSTANCE.dismiss(); // Murmur
         if (mSuggestionStripView != null) mSuggestionStripView.setMurmurResizing(false); // Murmur
         StatsUtils.onFinishInputView();
         mHandler.onFinishInputView(finishingInput);
@@ -984,6 +985,7 @@ public class LatinIME extends InputMethodService implements
     public void onUpdateSelection(int oldSelStart, int oldSelEnd, int newSelStart, int newSelEnd,
                                   int composingSpanStart, int composingSpanEnd) {
         super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd, composingSpanStart, composingSpanEnd);
+        if (Build.VERSION.SDK_INT >= 30) dev.murmur.autofill.AutofillSheet.INSTANCE.dismiss(); // Murmur
         if (DebugFlags.DEBUG_ENABLED) {
             Log.i(TAG, "onUpdateSelection: oss=" + oldSelStart + ", ose=" + oldSelEnd
                     + ", nss=" + newSelStart + ", nse=" + newSelEnd
@@ -1189,6 +1191,7 @@ public class LatinIME extends InputMethodService implements
             return false;
         }
 
+        if (Build.VERSION.SDK_INT >= 30) dev.murmur.autofill.AutofillSheet.INSTANCE.dismiss(); // Murmur
         final View inlineSuggestionView = InlineAutofillUtils.createView(inlineSuggestions, mDisplayContext);
 
         // Without this function the inline autofill suggestions will not be visible

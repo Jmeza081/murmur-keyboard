@@ -27,14 +27,24 @@ class DictationPanel(
 ) : LinearLayout(context) {
 
     private val colors = Settings.getValues().mColors
+    private val recording = dev.murmur.design.MurmurTokens.live(context)
     private val ink = colors.get(ColorType.KEY_TEXT)
     private val subtle = colors.get(ColorType.KEY_HINT_TEXT)
     private val fnBackground = colors.get(ColorType.FUNCTIONAL_KEY_BACKGROUND)
 
     private val status = TextView(context).apply {
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
-        setTextColor(RECORDING)
+        setTextColor(recording)
         typeface = android.graphics.Typeface.DEFAULT_BOLD
+    }
+    /** Live words from ElevenLabs as a teleprompter over the dimmed waveform (design/live-words-v2.html, C). */
+    private val words = TextView(context).apply {
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+        setLineSpacing(0f, 1.1f)
+        typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
+        gravity = Gravity.CENTER
+        maxLines = 2
+        visibility = GONE
     }
     private val chip = TextView(context).apply {
         text = context.getString(R.string.murmur_dictation_on_device)
@@ -49,12 +59,12 @@ class DictationPanel(
     }
     /** Red dot before the timer, as in the mockup; hidden for messages. */
     private val dot = android.view.View(context).apply {
-        background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(RECORDING) }
+        background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(recording) }
     }
     private val accent = colors.get(ColorType.ACTION_KEY_BACKGROUND)
     private lateinit var cleanupButton: ImageButton
-    private val waveform = LevelBarsView(context, RECORDING, subtle)
-    private val glow = StopGlowView(context, RECORDING, 34f)
+    private val waveform = LevelBarsView(context, recording, subtle)
+    private val glow = StopGlowView(context, recording, 34f)
 
     init {
         orientation = VERTICAL
@@ -69,8 +79,11 @@ class DictationPanel(
             addView(status, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
             addView(chip)
         })
-        // Breathing room above (status row) and below (the Send glow)
-        addView(waveform, LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f).apply { topMargin = dp(16); bottomMargin = dp(20) })
+        // Breathing room above (status row) and below (the Send glow); live words sit centered over the waveform
+        addView(FrameLayout(context).apply {
+            addView(waveform, FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+            addView(words, FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER))
+        }, LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f).apply { topMargin = dp(16); bottomMargin = dp(20) })
         clipChildren = false // the Send glow spills past the controls row
         clipToPadding = false // ...and into the bottom padding, instead of being cut where the padding starts
         addView(FrameLayout(context).apply {
@@ -78,7 +91,7 @@ class DictationPanel(
             addView(glow, FrameLayout.LayoutParams(dp(132), dp(132), Gravity.CENTER))
             addView(roundButton(context, R.drawable.ic_murmur_close, R.string.murmur_dictation_cancel, fnBackground, ink, 52, onCancel),
                 FrameLayout.LayoutParams(dp(52), dp(52), Gravity.START or Gravity.CENTER_VERTICAL))
-            addView(roundButton(context, R.drawable.ic_murmur_stop, R.string.murmur_dictation_stop, RECORDING, Color.WHITE, 68, onStop),
+            addView(roundButton(context, R.drawable.ic_murmur_stop, R.string.murmur_dictation_stop, recording, Color.WHITE, 68, onStop),
                 FrameLayout.LayoutParams(dp(68), dp(68), Gravity.CENTER))
             cleanupButton = roundButton(context, R.drawable.ic_murmur_spark, R.string.murmur_cleanup_on, fnBackground, ink, 52) {
                 styleCleanup(onToggleCleanup())
@@ -96,7 +109,16 @@ class DictationPanel(
         cleanupButton.contentDescription = context.getString(if (on) R.string.murmur_cleanup_on else R.string.murmur_cleanup_off)
     }
 
+    fun showWords(final: String, draft: String) {
+        if (!dev.murmur.settings.DictationPrefs.teleprompter(context)) return
+        val show = final.isNotBlank() || draft.isNotBlank()
+        words.text = dev.murmur.speech.CloudStream.styled(final, draft, ink, subtle, tail = 60)
+        if (show && words.visibility != VISIBLE) { words.visibility = VISIBLE; waveform.animate().alpha(0.25f).setDuration(200).start() }
+    }
+
     fun reset() {
+        words.text = ""; words.visibility = GONE
+        waveform.animate().cancel(); waveform.alpha = 1f
         waveform.clear()
         glow.clear()
         chip.visibility = VISIBLE
@@ -106,7 +128,11 @@ class DictationPanel(
 
     /** The strip says "Listening…"; the panel shows the timer (or that the model is still loading). */
     fun showListening(loading: Boolean) {
-        status.setTextColor(RECORDING)
+        // Murmur: the chip names the engine that will transcribe (ElevenLabs, or Parakeet on the phone)
+        val cloud = dev.murmur.speech.CloudEngine.active(context)
+        chip.text = context.getString(if (cloud) R.string.murmur_cloud_chip else R.string.murmur_dictation_on_device)
+        chip.setCompoundDrawablesRelativeWithIntrinsicBounds(if (cloud) R.drawable.ic_murmur_cloud else R.drawable.ic_murmur_shield, 0, 0, 0)
+        status.setTextColor(recording)
         dot.visibility = VISIBLE
         timing = !loading
         status.text = if (loading) context.getString(R.string.murmur_dictation_loading) else "0:00"
@@ -144,6 +170,5 @@ class DictationPanel(
 
     companion object {
         /** Recording orange; reads on both light and dark keyboards. */
-        val RECORDING = dev.murmur.design.MurmurTokens.RECORDING
     }
 }

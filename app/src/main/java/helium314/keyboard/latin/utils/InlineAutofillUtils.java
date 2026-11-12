@@ -118,29 +118,48 @@ public class InlineAutofillUtils {
         final int gap = (int) (6 * context.getResources().getDisplayMetrics().density);
         container.setGravity(android.view.Gravity.CENTER_VERTICAL);
         container.setPadding(gap, 0, gap, 0);
-        // Murmur: pinned chips (1Password's icon) stay square; the others share the rest of the strip, so
-        // nothing scrolls. The strip here is the screen minus the expand key (36 dp + 1 dp margin) and the
-        // close button (30 dp), less 16 dp so the chip clears the close button.
+        // Murmur (design/autofill-chips.html, A + C): the first two suggestions, each as wide as its own text,
+        // then a "+N" chip that opens every login in a sheet; pinned chips (1Password's icon) stay square, last.
         final float density = context.getResources().getDisplayMetrics().density;
         final int height = (int) (40 * density);
-        int pinned = 0;
-        for (InlineSuggestion s : inlineSuggestions) if (s.getInfo().isPinned()) pinned++;
-        final int others = inlineSuggestions.size() - pinned;
-        final int strip = context.getResources().getDisplayMetrics().widthPixels - (int) (67 * density);
-        final int share = others == 0 ? 0
-                : Math.max(height, (strip - 2 * gap - inlineSuggestions.size() * gap - pinned * height - (int) (16 * density)) / others);
-        // Murmur: chips render asynchronously in the password manager's process and finish in any order,
-        // so each gets a fixed slot: suggestions first, pinned chips (1Password's icon) last
-        final List<InlineSuggestion> ordered = new ArrayList<>();
-        for (InlineSuggestion s : inlineSuggestions) if (!s.getInfo().isPinned()) ordered.add(s);
-        for (InlineSuggestion s : inlineSuggestions) if (s.getInfo().isPinned()) ordered.add(s);
-        final View[] slots = new View[ordered.size()];
+        final List<InlineSuggestion> others = new ArrayList<>();
+        final List<InlineSuggestion> pinned = new ArrayList<>();
+        for (InlineSuggestion s : inlineSuggestions) (s.getInfo().isPinned() ? pinned : others).add(s);
+        final int shown = Math.min(2, others.size());
+        final List<InlineSuggestion> ordered = new ArrayList<>(others.subList(0, shown));
+        ordered.addAll(pinned);
+        final View[] slots = new View[ordered.size() + 1]; // + the "+N" chip, which sits after the suggestions
+        final int moreSlot = shown;
+        if (others.size() > shown) {
+            // A suggestion can only be drawn once, so the extra logins are drawn now, at the sheet's width,
+            // and the sheet shows those views when "+N" is tapped
+            final List<InlineSuggestion> extra = others.subList(shown, others.size());
+            final View[] sheetViews = new View[extra.size()];
+            final int sheetWidth = context.getResources().getDisplayMetrics().widthPixels - (int) (48 * density);
+            for (int i = 0; i < extra.size(); i++) {
+                final int slot = i;
+                extra.get(i).inflate(context, new Size(sheetWidth, height), context.getMainExecutor(), (view) -> {
+                    if (view == null) return;
+                    view.setZOrderedOnTop(true);
+                    sheetViews[slot] = view;
+                });
+            }
+            final View more = moreChip(context, extra.size(), height, () ->
+                    dev.murmur.autofill.AutofillSheet.INSTANCE.show(context, sheetViews));
+            final LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, height);
+            lp.gravity = android.view.Gravity.CENTER_VERTICAL;
+            lp.setMarginEnd(gap);
+            more.setLayoutParams(lp);
+            slots[moreSlot] = more;
+            int index = 0;
+            for (int j = 0; j < moreSlot; j++) if (slots[j] != null) index++;
+            container.addView(more, index);
+        }
         for (int i = 0; i < ordered.size(); i++) {
-            final int slot = i;
+            final int slot = i < shown ? i : i + 1; // pinned chips go after "+N"
             final InlineSuggestion inlineSuggestion = ordered.get(i);
-            final Size size = inlineSuggestion.getInfo().isPinned()
-                    ? new Size(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                    : new Size(share, height);
+            final Size size = new Size(ViewGroup.LayoutParams.WRAP_CONTENT, inlineSuggestion.getInfo().isPinned()
+                    ? ViewGroup.LayoutParams.WRAP_CONTENT : height);
             inlineSuggestion.inflate(context, size, context.getMainExecutor(), (view) -> {
                 if (view == null) return;
                 // Murmur: draw the chip above the keyboard window; Murmur's opaque strip hides it otherwise
@@ -168,6 +187,27 @@ public class InlineAutofillUtils {
         InlineContentClipView scrollableSuggestionsClip = new InlineContentClipView(context);
         scrollableSuggestionsClip.addView(inlineSuggestionView);
         return scrollableSuggestionsClip;
+    }
+
+    /** Murmur: the "+N" chip, outlined in the key text color, that opens the saved-logins sheet. */
+    private static View moreChip(final Context context, final int count, final int height, final Runnable onClick) {
+        final float density = context.getResources().getDisplayMetrics().density;
+        final Colors colors = Settings.getValues().mColors;
+        final android.widget.TextView v = new android.widget.TextView(context);
+        v.setText("+" + count);
+        v.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14);
+        v.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL));
+        v.setTextColor(colors.get(ColorType.KEY_TEXT));
+        v.setGravity(android.view.Gravity.CENTER);
+        v.setMinWidth(height);
+        v.setPadding((int) (12 * density), 0, (int) (12 * density), 0);
+        final android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+        bg.setCornerRadius(12 * density);
+        bg.setStroke((int) (1.5f * density), colors.get(ColorType.KEY_HINT_TEXT));
+        v.setBackground(bg);
+        v.setContentDescription(count + " more saved logins");
+        v.setOnClickListener(x -> onClick.run());
+        return v;
     }
 
     /**
