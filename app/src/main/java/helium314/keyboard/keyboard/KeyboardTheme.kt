@@ -162,7 +162,7 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                 THEME_MURMUR_LIGHT -> DefaultColors(
                     themeStyle,
                     hasBorders,
-                    accent = MurmurTokens.ACCENT,
+                    accent = MurmurTokens.accent(prefs),
                     background = MurmurTokens.Light.BACKGROUND,
                     keyBackground = MurmurTokens.Light.KEY,
                     functionalKey = MurmurTokens.Light.FUNCTION_KEY,
@@ -175,7 +175,7 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                 THEME_MURMUR_DARK -> DefaultColors(
                     themeStyle,
                     hasBorders,
-                    accent = MurmurTokens.ACCENT,
+                    accent = MurmurTokens.accent(prefs),
                     background = MurmurTokens.Dark.BACKGROUND,
                     keyBackground = MurmurTokens.Dark.KEY,
                     functionalKey = MurmurTokens.Dark.FUNCTION_KEY,

@@ -48,6 +48,7 @@ class ModelActivity : ComponentActivity() {
                             Screen.HOME -> HomeScreen(open = { screen = it }, openLegacy = ::openLegacy)
                             Screen.DICTATION -> DictationScreen(onBack = { screen = Screen.HOME })
                             Screen.POWER -> PowerScreen(onBack = { screen = Screen.HOME })
+                            Screen.THEME -> dev.murmur.settings.ui.ThemeScreen(onBack = { screen = Screen.HOME })
                             Screen.SETUP -> SetupScreen(onDone = { dev.murmur.settings.SetupState.setSkipped(this@ModelActivity); screen = Screen.HOME })
                         }
                     }

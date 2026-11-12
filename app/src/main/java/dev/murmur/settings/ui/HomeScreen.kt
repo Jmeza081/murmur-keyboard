@@ -31,7 +31,7 @@ fun HomeScreen(open: (Screen) -> Unit, openLegacy: () -> Unit) {
                 Item("Power button", powerValue(ctx), R.drawable.ic_murmur_power, onClick = { open(Screen.POWER) })
             }
             Group {
-                Item("Theme", "Murmur · Follows system", R.drawable.ic_murmur_palette, onClick = openLegacy)
+                Item("Theme", themeValue(ctx), R.drawable.ic_murmur_palette, onClick = { open(Screen.THEME) })
                 GroupDivider()
                 Item("Typing", "Swipe, autocorrect, number row", R.drawable.ic_murmur_keyboard, onClick = openLegacy)
                 GroupDivider()
@@ -73,4 +73,15 @@ private fun clipboardValue(ctx: Context): String {
     }
 }
 
-enum class Screen { HOME, DICTATION, POWER, SETUP }
+private fun themeValue(ctx: Context): String {
+    val prefs = ctx.prefs()
+    val accent = dev.murmur.design.MurmurTokens.ACCENTS.firstOrNull { it.second == dev.murmur.design.MurmurTokens.accent(prefs) }?.first ?: "Custom"
+    val mode = when {
+        prefs.getBoolean(Settings.PREF_THEME_DAY_NIGHT, Defaults.PREF_THEME_DAY_NIGHT) -> "Follows system"
+        prefs.getString(Settings.PREF_THEME_COLORS, Defaults.PREF_THEME_COLORS) == helium314.keyboard.keyboard.KeyboardTheme.THEME_MURMUR_DARK -> "Dark"
+        else -> "Light"
+    }
+    return "$accent · $mode"
+}
+
+enum class Screen { HOME, DICTATION, POWER, SETUP, THEME }

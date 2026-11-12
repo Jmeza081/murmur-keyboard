@@ -10,6 +10,19 @@ object MurmurTokens {
     /** Cobalt accent, used in both themes for Enter and the mic pill. */
     val ACCENT = Color.parseColor("#2F4BE0")
     val ON_ACCENT = Color.WHITE
+    /**
+     * Accent choices on the Theme screen (mockup swatches). Each keeps at least 4.5:1 contrast with the
+     * white Enter and mic icons on top of it.
+     */
+    val ACCENTS = listOf(
+        "Cobalt" to Color.parseColor("#2F4BE0"), "Teal" to Color.parseColor("#0B7A75"),
+        "Ember" to Color.parseColor("#C2410C"), "Violet" to Color.parseColor("#7C3AED"), "Slate" to Color.parseColor("#4B5563"),
+    )
+    const val PREF_ACCENT = "murmur_accent"
+
+    /** The accent picked on the Theme screen, cobalt by default. */
+    fun accent(prefs: android.content.SharedPreferences) = prefs.getInt(PREF_ACCENT, ACCENT)
+
     /** Recording orange: listening state, stop button, level bars. */
     val RECORDING = Color.parseColor("#E8590C")
 
