@@ -8,7 +8,9 @@
 <meta name="theme-color" content="#0B0D11">
 <meta property="og:title" content="Murmur: say it, and it's typed">
 <meta property="og:description" content="An Android keyboard with private, on-device dictation. Nothing you say leaves the phone.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23E8590C'/%3E%3Cpath d='M7 14v4M11.5 10.5v11M16 7v18M20.5 11.5v9M25 14.5v3' stroke='white' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:image" content="https://jmeza081.github.io/murmur-keyboard/icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600;8..144,700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -36,8 +38,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 /* Nav */
 .l-nav { position: sticky; top: 0; z-index: 50; backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px); background: color-mix(in srgb, var(--bg) 72%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
 .l-nav .l-wrap { display: flex; align-items: center; gap: 28px; height: 64px; }
-.l-brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 21px; letter-spacing: -0.01em; text-decoration: none; }
-.l-logo { width: 30px; height: 30px; border-radius: 9px; background: var(--rec); display: grid; place-items: center; color: #fff; }
+.l-brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 800; font-size: 23px; letter-spacing: -0.035em; text-decoration: none; }
+.l-logo { width: 30px; height: 30px; border-radius: 9px; display: block; }
 .l-nav nav { display: flex; gap: 4px; margin-left: auto; }
 .l-nav nav a { text-decoration: none; color: var(--muted); font-size: 14.5px; font-weight: 500; padding: 8px 12px; border-radius: 10px; transition: color 160ms ease; }
 @media (hover: hover) and (pointer: fine) { .l-nav nav a:hover { color: var(--ink); } }
@@ -500,7 +502,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
 
 <header class="l-nav">
   <div class="l-wrap">
-    <a class="l-brand" href="#top"><span class="l-logo"><svg class="icon sm"><use href="#i-wave"/></svg></span>Murmur</a>
+    <a class="l-brand" href="#top"><img class="l-logo" src="icon.svg" alt="" width="30" height="30">murmur</a>
     <nav aria-label="Sections">
       <a href="#dictation">Dictation</a>
       <a href="#keyboard">Keyboard</a>

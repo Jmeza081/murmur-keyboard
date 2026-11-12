@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Murmur: app icon and brand mark options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0B0D11; --panel: #13161C; --panel-2: #191C23; --line: #242832; --ink: #ECEEF3; --muted: #A1A8B6;
+  --rec: #E8590C; --rec-hi: #FF8A4C; --cobalt: #2F4BE0; --acc: #8EA0FF;
+  --display: "Bricolage Grotesque", system-ui, sans-serif; --body: "Roboto Flex", system-ui, sans-serif;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 48px 28px 96px; }
+header h1 { font-family: var(--display); font-weight: 800; font-size: clamp(36px, 5vw, 60px); letter-spacing: -0.03em; line-height: 1; margin: 0 0 14px; }
+header p { color: var(--muted); max-width: 46em; margin: 0 0 8px; font-size: 16.5px; line-height: 1.55; }
+.rules { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
+.rules li { font-size: 13px; color: var(--muted); background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); border-radius: 14px; padding: 6px 12px; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 18px; margin-top: 36px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 26px; padding: 22px; display: grid; gap: 18px; }
+.card.pick { border-color: color-mix(in srgb, var(--rec) 60%, var(--line)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--rec) 30%, transparent), 0 30px 60px -40px rgba(232, 89, 12, 0.5); }
+.card h2 { margin: 0; font-size: 19px; font-weight: 600; display: flex; align-items: baseline; gap: 10px; }
+.card h2 .k { font-family: "Roboto Mono", monospace; color: var(--rec-hi); font-size: 13px; }
+.card h2 .tag { margin-left: auto; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; background: var(--rec); border-radius: 8px; padding: 3px 8px; }
+.card p { margin: 0; color: var(--muted); font-size: 14.5px; line-height: 1.5; }
+
+/* Hero tile + masks + sizes */
+.show { display: grid; grid-template-columns: 124px 1fr; gap: 18px; align-items: center; }
+.hero { width: 124px; height: 124px; border-radius: 30px; overflow: hidden; box-shadow: 0 20px 40px -20px rgba(0,0,0,0.8); transition: transform 200ms var(--ease-out); }
+.hero:active { transform: scale(0.97); }
+.hero svg, .m svg, .tiny svg { display: block; width: 100%; height: 100%; }
+.masks { display: grid; grid-template-columns: repeat(3, 50px); gap: 12px 12px; align-items: center; }
+.m { width: 50px; height: 50px; overflow: hidden; }
+.m.circle { border-radius: 50%; } .m.squircle { border-radius: 30%; } .m.square { border-radius: 14px; }
+.m.mono { border-radius: 50%; }
+.cap { grid-column: 1 / -1; font-size: 11.5px; color: var(--muted); margin-top: -4px; }
+.sizes { display: flex; align-items: flex-end; gap: 14px; }
+.tiny { overflow: hidden; border-radius: 50%; }
+
+/* Home screen strip */
+.home { border-radius: 18px; padding: 16px 14px 12px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; justify-items: center; }
+.home.light { background: linear-gradient(160deg, #E9E3F5, #D7E4F7); }
+.home.dark { background: linear-gradient(160deg, #1B1F2A, #0E1118); }
+.app { display: grid; justify-items: center; gap: 5px; }
+.app .ic { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; }
+.app span { font-size: 10.5px; }
+.home.light .app span { color: #1D1B20; } .home.dark .app span { color: #E6E1E5; }
+.ph { width: 46px; height: 46px; border-radius: 50%; }
+
+/* Wordmark */
+.word { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-radius: 18px; background: var(--panel-2); }
+.word .glyph { width: 40px; height: 40px; border-radius: 12px; overflow: hidden; flex: none; }
+.word b { font-family: var(--display); font-weight: 800; font-size: 32px; letter-spacing: -0.035em; line-height: 1; }
+.word.light { background: #F4F2EE; color: #15171D; }
+
+section.brand { margin-top: 64px; }
+section.brand h2 { font-family: var(--display); font-weight: 700; font-size: 34px; letter-spacing: -0.02em; margin: 0 0 8px; }
+.lockups { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 18px; margin-top: 22px; }
+.lock { border-radius: 24px; padding: 40px 32px; display: grid; gap: 14px; place-items: start; }
+.lock.dark { background: #0F1115; border: 1px solid var(--line); }
+.lock.light { background: #F4F2EE; color: #15171D; }
+.lock.rec { background: var(--rec); color: #fff; }
+.lock .row { display: flex; align-items: center; gap: 14px; }
+.lock .mk { width: 56px; height: 56px; border-radius: 16px; overflow: hidden; flex: none; }
+.lock .wm { font-family: var(--display); font-weight: 800; font-size: 48px; letter-spacing: -0.04em; line-height: 0.9; }
+.lock small { font-size: 13.5px; opacity: 0.75; }
+.swatches { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+.sw { display: grid; gap: 6px; font-size: 12px; color: var(--muted); }
+.sw i { display: block; width: 92px; height: 56px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); }
+.sw b { color: var(--ink); font-family: "Roboto Mono", monospace; font-weight: 500; }
+footer { margin-top: 56px; color: var(--muted); font-size: 13.5px; line-height: 1.6; max-width: 60em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Murmur icons</h1>
+    <p>Six directions for the app icon, each shown the way Android will actually show it: under the circle, squircle and rounded-square launcher masks, small, and as a <b>themed (monochrome) icon</b> that takes its colors from the wallpaper. The last section is the wordmark.</p>
+    <ul class="rules">
+      <li>108 dp canvas, art inside the 72 dp safe zone</li>
+      <li>Reads at 48 px</li>
+      <li>One-color layer for themed icons</li>
+      <li>No text inside the icon</li>
+      <li>Orange = listening, cobalt = keyboard</li>
+    </ul>
+  </header>
+
+  <div class="grid" id="grid"></div>
+
+  <section class="brand">
+    <h2>Wordmark</h2>
+    <p style="color: var(--muted); margin: 0; max-width: 44em">Lowercase “murmur” in Bricolage Grotesque ExtraBold, tracked tight, the same display face as the settings titles. The mark sits to its left at the cap height.</p>
+    <div class="lockups" id="lockups"></div>
+    <div class="swatches">
+      <div class="sw"><i style="background:#E8590C"></i><b>#E8590C</b>Listening orange</div>
+      <div class="sw"><i style="background:#2F4BE0"></i><b>#2F4BE0</b>Cobalt</div>
+      <div class="sw"><i style="background:#8EA0FF"></i><b>#8EA0FF</b>Cobalt on dark</div>
+      <div class="sw"><i style="background:#0B0D11"></i><b>#0B0D11</b>Night</div>
+      <div class="sw"><i style="background:#F4F2EE"></i><b>#F4F2EE</b>Paper</div>
+    </div>
+  </section>
+
+  <footer>Each icon is two layers, as Android needs: a background (color or gradient) and a foreground drawn here in SVG. The monochrome version reuses the foreground shape in one color. Pick one and I'll export the adaptive-icon XML (foreground, background, monochrome) and the Play-style 512 px PNG.</footer>
+</div>
+
+<script>
+// Each concept: bg (SVG paint for the 108×108 canvas) and fg(color) → SVG markup inside the 72 dp safe zone (18..90).
+const REC = '#E8590C', COB = '#2F4BE0', NIGHT = '#0B0D11', WHITE = '#FFFFFF';
+const bars = (xs, hs, w, color, cy = 54) => xs.map((x, i) => `<rect x="${x - w / 2}" y="${cy - hs[i] / 2}" width="${w}" height="${hs[i]}" rx="${w / 2}" fill="${color}"/>`).join('');
+
+const CONCEPTS = [
+  {
+    key: 'A', name: 'Five bars', pick: true,
+    desc: 'The mic key’s waveform glyph, big and bold on listening orange. The icon is the button you press, so the app and the keyboard feel like one thing.',
+    bg: `<rect width="108" height="108" fill="${REC}"/><rect width="108" height="108" fill="url(#ga)"/>`,
+    defs: `<radialGradient id="ga" cx="30%" cy="20%" r="90%"><stop offset="0" stop-color="#FF8A4C" stop-opacity=".55"/><stop offset="1" stop-color="#C2410C" stop-opacity=".0"/></radialGradient>`,
+    fg: c => bars([32, 43, 54, 65, 76], [14, 30, 48, 26, 12], 7.5, c),
+  },
+  {
+    key: 'B', name: 'Wave M',
+    desc: 'Seven bars whose tops trace a capital M: Murmur’s initial written in sound. Orange on night, so it stands out among bright app icons.',
+    bg: `<rect width="108" height="108" fill="${NIGHT}"/><circle cx="54" cy="40" r="60" fill="url(#gb)"/>`,
+    defs: `<radialGradient id="gb"><stop offset="0" stop-color="#E8590C" stop-opacity=".28"/><stop offset="1" stop-color="#E8590C" stop-opacity="0"/></radialGradient>`,
+    fg: c => { const xs = [29, 37.3, 45.7, 54, 62.3, 70.7, 79], hs = [44, 34, 22, 30, 22, 34, 44];
+      return xs.map((x, i) => `<rect x="${x - 3.2}" y="${76 - hs[i]}" width="6.4" height="${hs[i]}" rx="3.2" fill="${c}"/>`).join(''); },
+    fgColor: REC,
+  },
+  {
+    key: 'C', name: 'Keycap',
+    desc: 'A single cobalt keycap with an orange waveform printed on it. Says “keyboard” and “voice” at once; the most literal of the six.',
+    bg: `<rect width="108" height="108" fill="#E9EDF6"/>`,
+    fg: (c, mono) => `<rect x="24" y="22" width="60" height="62" rx="16" fill="${mono ? c : '#1B2E9E'}"/>
+      <rect x="24" y="22" width="60" height="58" rx="16" fill="${mono ? 'none' : COB}"/>` +
+      (mono ? bars([39, 47, 54, 61, 69], [10, 20, 30, 18, 9], 4.6, '#000', 51).replace(/fill="#000"/g, 'fill="var(--hole)"')
+            : bars([39, 47, 54, 61, 69], [10, 20, 30, 18, 9], 4.6, '#FFB38A', 51)),
+    mono: c => `<rect x="24" y="22" width="60" height="62" rx="16" fill="none" stroke="${c}" stroke-width="5"/>` + bars([39, 47, 54, 61, 69], [10, 20, 30, 18, 9], 4.6, c, 53),
+  },
+  {
+    key: 'D', name: 'Murmuration',
+    desc: 'A swarm of dots rising into a wave, like a murmuration of starlings, and like the Dot matrix waveform. Quiet at the edges, loud in the middle.',
+    bg: `<rect width="108" height="108" fill="#101524"/><rect width="108" height="108" fill="url(#gd)"/>`,
+    defs: `<linearGradient id="gd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2F4BE0" stop-opacity=".35"/><stop offset="1" stop-color="#2F4BE0" stop-opacity="0"/></linearGradient>`,
+    fg: (c, mono) => { let s = ''; const cols = 9, rows = 9, gap = 6.6, x0 = 54 - 4 * gap, y0 = 54 - 4 * gap;
+      for (let i = 0; i < cols; i++) { const amp = Math.round(4 * Math.sin(Math.PI * (i + 0.5) / cols) ** 1.3 * (0.75 + 0.25 * Math.sin(i * 1.7)));
+        for (let r = 0; r < rows; r++) { const d = Math.abs(r - 4); const on = d <= amp;
+          if (!on && mono) continue;
+          s += `<circle cx="${(x0 + i * gap).toFixed(1)}" cy="${(y0 + r * gap).toFixed(1)}" r="${on ? 2.5 : 1.6}" fill="${on ? c : 'rgba(255,255,255,.12)'}" ${on && !mono ? `opacity="${(0.45 + 0.55 * (1 - d / 5)).toFixed(2)}"` : ''}/>`; } }
+      return s; },
+    fgColor: REC,
+  },
+  {
+    key: 'E', name: 'Closed loop',
+    desc: 'A waveform held inside a ring: sound that stays on the phone. The privacy promise as a shape. Works well as a small badge too.',
+    bg: `<rect width="108" height="108" fill="#F4F2EE"/>`,
+    fg: (c, mono) => `<circle cx="54" cy="54" r="30" fill="none" stroke="${mono ? c : REC}" stroke-width="6.5"/>` + bars([42, 48, 54, 60, 66], [10, 20, 28, 18, 9], 4.4, mono ? c : NIGHT),
+  },
+  {
+    key: 'F', name: 'Hush',
+    desc: 'Two sound arcs that turn back toward their source, the opposite of a broadcast icon. Abstract and calm; the least obvious, the most ownable.',
+    bg: `<rect width="108" height="108" fill="${COB}"/><rect width="108" height="108" fill="url(#gf)"/>`,
+    defs: `<radialGradient id="gf" cx="80%" cy="10%" r="100%"><stop offset="0" stop-color="#8EA0FF" stop-opacity=".45"/><stop offset="1" stop-color="#1B2E9E" stop-opacity=".3"/></radialGradient>`,
+    fg: (c, mono) => `<circle cx="33" cy="54" r="7" fill="${mono ? c : REC}"/>
+      <path d="M56 36 a26 26 0 0 1 0 36" fill="none" stroke="${c}" stroke-width="6.5" stroke-linecap="round" transform="rotate(180 54 54) translate(-4 0)"/>
+      <path d="M66 28 a36 36 0 0 1 0 52" fill="none" stroke="${c}" stroke-width="6.5" stroke-linecap="round" opacity="${mono ? 1 : 0.7}" transform="rotate(180 54 54) translate(-10 0)"/>`,
+    fgColor: WHITE,
+  },
+];
+
+// Themed-icon palettes (Material You picks these from the wallpaper)
+const THEMED = { light: { bg: '#D6E3FF', fg: '#0B1E40' }, dark: { bg: '#24324F', fg: '#D6E3FF' } };
+
+let uid = 0;
+function svg(c, { mono = null } = {}) {
+  const id = 'u' + (uid++);
+  const defs = (c.defs || '').replace(/id="(\w+)"/g, `id="$1${id}"`);
+  const bg = c.bg.replace(/url\(#(\w+)\)/g, `url(#$1${id})`);
+  let inner;
+  if (mono) {
+    const shape = c.mono ? c.mono(mono.fg) : c.fg(mono.fg, true);
+    inner = `<rect width="108" height="108" fill="${mono.bg}"/>` + shape.replace(/var\(--hole\)/g, mono.bg);
+  } else inner = bg + c.fg(c.fgColor || WHITE, false);
+  // Launchers show the middle 72 of 108; scale so the visible area fills the tile
+  return `<svg viewBox="18 18 72 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>${defs}</defs>${inner}</svg>`;
+}
+const others = ['#3DDC84', '#F4B400', '#EA4335', '#4285F4'];
+const grid = document.getElementById('grid');
+CONCEPTS.forEach(c => {
+  const el = document.createElement('article');
+  el.className = 'card' + (c.pick ? ' pick' : '');
+  const home = (mode) => {
+    const t = THEMED[mode];
+    return `<div class="home ${mode}">` + [0, 1, 2, 3, 4].map(i => i === 2
+      ? `<div class="app"><div class="ic">${svg(c, mode === 'dark' ? {} : {})}</div><span>Murmur</span></div>`
+      : `<div class="app"><div class="ph" style="background:${mode === 'light' ? others[i % 4] : '#2B3040'}"></div><span>&nbsp;</span></div>`).join('') + `</div>`;
+  };
+  el.innerHTML = `
+    <h2><span class="k">${c.key}</span>${c.name}${c.pick ? '<span class="tag">Recommended</span>' : ''}</h2>
+    <p>${c.desc}</p>
+    <div class="show">
+      <div class="hero" role="img" aria-label="${c.name} icon">${svg(c)}</div>
+      <div class="masks">
+        <div class="m circle">${svg(c)}</div><div class="m squircle">${svg(c)}</div><div class="m square">${svg(c)}</div>
+        <div class="cap">Circle, squircle and rounded-square masks</div>
+        <div class="m mono">${svg(c, { mono: THEMED.light })}</div><div class="m mono">${svg(c, { mono: THEMED.dark })}</div>
+        <div class="sizes"><div class="tiny" style="width:32px;height:32px">${svg(c)}</div><div class="tiny" style="width:22px;height:22px">${svg(c)}</div></div>
+        <div class="cap">Themed (light, dark) · 32 and 22 px</div>
+      </div>
+    </div>
+    ${home('light')}
+    <div class="word"><div class="glyph">${svg(c)}</div><b>murmur</b></div>`;
+  grid.append(el);
+});
+
+// Wordmark lockups with the recommended mark
+const A = CONCEPTS[0];
+const monoMark = (fg, bg) => `<svg viewBox="18 18 72 72" xmlns="http://www.w3.org/2000/svg"><rect width="108" height="108" fill="${bg}"/>${A.fg(fg)}</svg>`;
+document.getElementById('lockups').innerHTML = `
+  <div class="lock dark"><div class="row"><div class="mk">${svg(A)}</div><span class="wm">murmur</span></div><small>On night: the default</small></div>
+  <div class="lock light"><div class="row"><div class="mk">${svg(A)}</div><span class="wm">murmur</span></div><small>On paper: docs, the README</small></div>
+  <div class="lock rec"><div class="row"><div class="mk" style="border-radius:16px">${monoMark(REC, '#FFFFFF')}</div><span class="wm">murmur</span></div><small>Reversed on orange: the landing page hero, stickers</small></div>`;
+</script>
+</body>
+</html>
