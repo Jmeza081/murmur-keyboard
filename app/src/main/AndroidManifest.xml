@@ -99,11 +99,11 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
                 android:resource="@xml/murmur_accessibility" />
         </service>
 
-        <!-- Murmur: download or delete the speech model -->
-        <!-- Launcher icon for now; moves into the settings app in Phase 6. -->
+        <!-- Murmur: the one launcher icon and the keyboard's gear. Dictation settings for now;
+             Phase 7 turns it into the full settings app. -->
         <activity android:name="dev.murmur.speech.ModelActivity"
             android:exported="true"
-            android:label="Murmur dictation"
+            android:label="Murmur"
             android:icon="@mipmap/ic_launcher"
             android:theme="@android:style/Theme.Material.NoActionBar">
             <intent-filter>
@@ -117,10 +117,7 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
                 android:icon="@mipmap/ic_launcher"
                 android:windowSoftInputMode="adjustResize"
                 android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            <!-- Murmur: no launcher icon; reached from "Advanced (temporary)" on Murmur's screen -->
         </activity>
 
         <!-- separate activity that's used internally, only necessary in case the launcher icon is disabled on Android < 10 -->

@@ -1548,7 +1548,7 @@ public class LatinIME extends InputMethodService implements
         requestHideSelf(0);
         closeMainKeyboard();
         Intent intent = new Intent();
-        intent.setClass(LatinIME.this, SettingsActivity2.class);
+        intent.setClass(LatinIME.this, dev.murmur.speech.ModelActivity.class); // Murmur: Murmur's screen, not HeliBoard's
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                 | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
                 | Intent.FLAG_ACTIVITY_CLEAR_TOP);

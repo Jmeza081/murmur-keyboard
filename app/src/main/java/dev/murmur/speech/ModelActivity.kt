@@ -60,7 +60,8 @@ class ModelActivity : ComponentActivity() {
             Modifier.safeDrawingPadding().verticalScroll(rememberScrollState()).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text("Dictation", style = MaterialTheme.typography.headlineMedium)
+            Text("Murmur", style = MaterialTheme.typography.headlineMedium)
+            Text("Dictation", style = MaterialTheme.typography.titleMedium)
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Parakeet TDT v3", style = MaterialTheme.typography.titleMedium)
@@ -109,6 +110,7 @@ class ModelActivity : ComponentActivity() {
 
             CleanupSection()
             WaveSection()
+            AdvancedSection()
         }
     }
 
@@ -151,6 +153,17 @@ class ModelActivity : ComponentActivity() {
         }
         Text("How the keyboard and the power-button sheet show your voice while listening.",
             style = MaterialTheme.typography.bodyMedium)
+    }
+
+    /** Until Phase 7's settings app, HeliBoard's own settings (theme, languages, dictionaries) live here. */
+    @Composable
+    private fun AdvancedSection() {
+        Text("Keyboard", style = MaterialTheme.typography.titleMedium)
+        OutlinedButton(onClick = {
+            startActivity(android.content.Intent(this@ModelActivity, helium314.keyboard.settings.SettingsActivity2::class.java))
+        }) { Text("Advanced (temporary)") }
+        Text("Theme, languages, dictionaries and everything else, until Murmur's own settings replace this.",
+            style = MaterialTheme.typography.bodySmall)
     }
 
     private fun mb(bytes: Long) = "%,d MB".format(bytes / 1_000_000)
