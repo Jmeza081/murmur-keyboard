@@ -163,9 +163,56 @@ private fun CleanupGroup() {
 @Composable
 private fun WaveformChoice() {
     val ctx = LocalContext.current
+    val c = LocalSettingsColors.current
     var style by remember { mutableStateOf(WaveStyle.get(ctx)) }
-    Text("Waveform", fontFamily = RobotoFlex, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = LocalSettingsColors.current.ink)
+    Text("Waveform", fontFamily = RobotoFlex, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = c.ink)
+    // Live preview driven by a simulated voice, like design/waveforms.html
+    androidx.compose.foundation.layout.Box(
+        Modifier.fillMaxWidth().height(88.dp).clip(RoundedCornerShape(16.dp)).background(c.bg).padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        androidx.compose.runtime.key(style) {
+            var view by remember { mutableStateOf<dev.murmur.dictation.LevelBarsView?>(null) }
+            androidx.compose.ui.viewinterop.AndroidView(
+                factory = { dev.murmur.dictation.LevelBarsView(it, dev.murmur.design.MurmurTokens.RECORDING,
+                    android.graphics.Color.argb(255, (c.sub.red * 255).toInt(), (c.sub.green * 255).toInt(), (c.sub.blue * 255).toInt()), style)
+                    .also { v -> view = v } },
+                modifier = Modifier.fillMaxWidth().height(72.dp),
+            )
+            LaunchedEffect(view) {
+                val v = view ?: return@LaunchedEffect
+                val voice = SimulatedVoice()
+                while (true) { v.add(voice.nextRms()); kotlinx.coroutines.delay(50) }
+            }
+        }
+    }
     Segmented(WaveStyle.entries, style, { it.label }) { style = it; WaveStyle.set(ctx, it) }
+}
+
+/** Speech-like levels for the preview: syllables (~5 a second) grouped into words, with pauses. Port of design/waveforms.html. */
+private class SimulatedVoice {
+    private var t = 0.0; private var nextSyllable = 0.0; private var pauseUntil = 0.0; private var wordLeft = 0
+    private var target = 0.0; private var level = 0.0
+    private val rnd = java.util.Random()
+
+    /** Next 50 ms of mic RMS. The waveform maps RMS on a decibel scale (-55 dB to -18 dB), so invert that here. */
+    fun nextRms(): Float {
+        val dt = 0.05
+        t += dt
+        val floor = 0.04
+        if (t > pauseUntil && t > nextSyllable) {
+            if (wordLeft <= 0) {
+                wordLeft = 2 + rnd.nextInt(5)
+                if (rnd.nextDouble() < 0.3) pauseUntil = t + 0.35 + rnd.nextDouble() * 0.5
+            }
+            wordLeft--
+            target = 0.45 + rnd.nextDouble() * 0.45
+            nextSyllable = t + 0.12 + rnd.nextDouble() * 0.12
+        } else if (t > nextSyllable - 0.06) target = maxOf(floor, target * 0.75)
+        if (t < pauseUntil) target = floor + rnd.nextDouble() * 0.03
+        level += (target - level) * (if (target > level) 0.6 else 0.35)
+        val db = level * 37 - 55
+        return Math.pow(10.0, db / 20).toFloat()
+    }
 }
 
 @Composable
