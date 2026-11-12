@@ -143,7 +143,7 @@ Built to the mockup's section 06 in Compose, with its own tokens (surface, tint,
 3. **Theme.** Light/Dark/System, accent swatches checked for contrast, key borders, key height, live preview.
 4. **Typing, clipboard, emoji, tablet layout.** Murmur's own screens for the options kept in Phase 6.
 5. **Dictionary.** Words and replacements; replacements also fix dictation.
-6. **Backup and restore, then retire HeliBoard's settings.**
+6. **Backup and restore, then retire HeliBoard's settings.** Done: a JSON backup of settings, Murmur options and words; HeliBoard's full settings stay behind a long-press on the "Keyboard" title.
 - Setup checklist, then settings for dictation (model, cleanup level, language, silence timeout), power button, theme, typing, dictionary and clipboard.
 - Backup and restore of settings and the dictionary to a file.
 - **Exit:** everything can be configured without rebuilding.

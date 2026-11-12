@@ -39,7 +39,7 @@ fun HomeScreen(open: (Screen) -> Unit, openLegacy: () -> Unit) {
     val ctx = LocalContext.current
     LocalResumeTick.current // values change in Android's settings; re-read on return
     Column(Modifier.verticalScroll(rememberScrollState())) {
-        BigTitle("Keyboard")
+        BigTitle("Keyboard", onLongPress = openLegacy) // hidden way into HeliBoard's full settings
         Column(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             GroupLabel("Try it")
             TryIt()
@@ -65,9 +65,8 @@ fun HomeScreen(open: (Screen) -> Unit, openLegacy: () -> Unit) {
             Group {
                 Item("Setup checklist", if (dev.murmur.settings.SetupState.essentialsDone(ctx)) "All set" else "Steps left to finish",
                     onClick = { open(Screen.SETUP) })
-                GroupDivider()
-                Item("Advanced (temporary)", "Every other option, until these screens replace it", onClick = openLegacy)
             }
+            BackupGroup()
         }
     }
 }
@@ -164,4 +163,29 @@ private fun PlayField(value: String, onChange: (String) -> Unit, placeholder: St
             }
         },
     )
+}
+
+/** Back up every setting, Murmur's own options and your words to a file, or restore them on a new phone. */
+@Composable
+private fun BackupGroup() {
+    val ctx = LocalContext.current
+    var status by remember { mutableStateOf<String?>(null) }
+    val save = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) status = runCatching { dev.murmur.settings.Backup.write(ctx, uri) }
+            .fold({ "Saved ${it.settings} settings and ${it.words} words" }, { "Couldn't save: ${it.message}" })
+    }
+    val open = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) status = runCatching { dev.murmur.settings.Backup.read(ctx, uri) }
+            .fold({ "Restored ${it.settings} settings and ${it.words} new words" }, { "Couldn't restore: ${it.message}" })
+    }
+    GroupLabel("Backup")
+    Group {
+        Item("Back up to a file", status ?: "Settings, cleanup, replacements and your words",
+            R.drawable.ic_murmur_upload, onClick = { save.launch("murmur-backup-${java.time.LocalDate.now()}.json") }, chevron = false)
+        GroupDivider()
+        Item("Restore from a file", "Replaces these settings; your words are added", R.drawable.ic_murmur_download,
+            onClick = { open.launch(arrayOf("application/json", "text/plain", "*/*")) }, chevron = false)
+    }
 }

@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.res.painterResource
@@ -46,8 +47,10 @@ private val colors @Composable get() = LocalSettingsColors.current
 
 /** 30 sp display title for top-level screens (mockup .big-title). */
 @Composable
-fun BigTitle(text: String, sub: String? = null) {
-    Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 12.dp)) {
+fun BigTitle(text: String, sub: String? = null, onLongPress: (() -> Unit)? = null) {
+    Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 12.dp)
+        .then(if (onLongPress != null) Modifier.pointerInput(Unit) {
+            detectTapGestures(onLongPress = { onLongPress() }) } else Modifier)) {
         Text(text, fontFamily = Bricolage, fontSize = 30.sp, fontWeight = FontWeight.Bold, color = colors.ink, lineHeight = 33.sp, letterSpacing = (-0.3).sp)
         if (sub != null) Text(sub, fontFamily = RobotoFlex, fontSize = 13.5.sp, color = colors.sub, modifier = Modifier.padding(top = 4.dp))
     }
