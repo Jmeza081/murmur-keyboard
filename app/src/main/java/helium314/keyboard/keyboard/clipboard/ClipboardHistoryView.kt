@@ -99,7 +99,14 @@ class ClipboardHistoryView @JvmOverloads constructor(
             placeholderView = this@ClipboardHistoryView.placeholderView
         }
         val clipboardStrip = KeyboardSwitcher.getInstance().clipboardStrip!!
-        getEnabledClipboardToolbarKeys(context.prefs()).forEach {
+        // Murmur: the mockup's strip: [ABC] [Clipboard] ... [Clear], replacing HeliBoard's editing toolbar
+        clipboardStrip.addView(stripChip("ABC", filled = false).apply {
+            tag = ToolbarKey.CLOSE_HISTORY
+            setOnClickListener(this@ClipboardHistoryView)
+        })
+        clipboardStrip.addView(stripChip(context.getString(R.string.murmur_clip_title), filled = true))
+        clipboardStrip.addView(View(context), LinearLayout.LayoutParams(0, 1, 1f))
+        listOf(ToolbarKey.CLEAR_CLIPBOARD).forEach {
             val key = createToolbarKey(context, it)
             clipboardStrip.addView(key)
             key.setOnClickListener(this@ClipboardHistoryView)
@@ -107,6 +114,34 @@ class ClipboardHistoryView @JvmOverloads constructor(
             colors.setColor(key, ColorType.TOOL_BAR_KEY)
             colors.setBackground(key, ColorType.STRIP_BACKGROUND)
             toolbarKeys.add(key)
+        }
+        // Murmur: no ABC / space / backspace row; ABC lives in the strip and the list takes the space
+        findViewById<View>(R.id.bottom_row_keyboard).visibility = View.GONE
+        placeholderView.setText(R.string.murmur_clip_empty)
+        placeholderView.setTextColor(colors.get(ColorType.KEY_HINT_TEXT))
+        placeholderView.gravity = android.view.Gravity.CENTER
+    }
+
+    /** Murmur: a rounded text chip for the clipboard strip. */
+    private fun stripChip(text: String, filled: Boolean) = TextView(context).apply {
+        val colors = Settings.getValues().mColors
+        val density = resources.displayMetrics.density
+        this.text = text
+        textSize = 13f
+        typeface = android.graphics.Typeface.DEFAULT_BOLD
+        gravity = android.view.Gravity.CENTER
+        setPadding((12 * density).toInt(), 0, (12 * density).toInt(), 0)
+        minWidth = (44 * density).toInt()
+        val ink = colors.get(ColorType.KEY_TEXT)
+        val onInk = if (androidx.core.graphics.ColorUtils.calculateLuminance(ink) > 0.5) 0xFF121419.toInt() else 0xFFFFFFFF.toInt()
+        setTextColor(if (filled) onInk else ink)
+        background = android.graphics.drawable.GradientDrawable().apply {
+            cornerRadius = 16 * density
+            setColor(if (filled) ink else colors.get(ColorType.FUNCTIONAL_KEY_BACKGROUND))
+        }
+        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, (32 * density).toInt()).apply {
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            marginStart = (6 * density).toInt()
         }
     }
 

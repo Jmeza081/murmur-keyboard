@@ -52,16 +52,20 @@ class ClipboardAdapter(
         private val pinnedIconView: ImageView
         private val contentTextView: TextView
         private val contentImageView: ImageView
+        private val metaView: TextView
 
         init {
             view.apply {
                 setOnClickListener(this@ViewHolder)
                 setOnTouchListener(this@ViewHolder)
                 setOnLongClickListener(this@ViewHolder)
-                setBackgroundResource(itemBackgroundId)
                 isHapticFeedbackEnabled = false
+                // Murmur: rounded card in the key color, as in the mockups
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    cornerRadius = 10 * resources.displayMetrics.density
+                    setColor(Settings.getValues().mColors.get(ColorType.KEY_BACKGROUND))
+                }
             }
-            Settings.getValues().mColors.setBackground(view, ColorType.KEY_BACKGROUND)
             pinnedIconView = view.findViewById<ImageView>(R.id.clipboard_entry_pinned_icon).apply {
                 visibility = View.GONE
                 setImageResource(pinnedIconResId)
@@ -72,6 +76,10 @@ class ClipboardAdapter(
                 setTextSize(TypedValue.COMPLEX_UNIT_PX, itemTextSize)
             }
             contentImageView = view.findViewById(R.id.clipboard_entry_image_content)
+            metaView = view.findViewById<TextView>(R.id.clipboard_entry_meta).apply {
+                setTextColor(Settings.getValues().mColors.get(ColorType.KEY_HINT_TEXT))
+                typeface = itemTypeFace
+            }
             clipboardLayoutParams.setItemProperties(view)
             val colors = Settings.getValues().mColors
             colors.setColor(pinnedIconView, ColorType.CLIPBOARD_PIN)
@@ -86,6 +94,10 @@ class ClipboardAdapter(
                 contentTextView.text = historyEntry.text?.take(1000) // truncate displayed text for performance reasons
             }
             pinnedIconView.visibility = if (historyEntry.isPinned) View.VISIBLE else View.GONE
+            metaView.text = if (historyEntry.isPinned) itemView.context.getString(R.string.murmur_clip_pinned)
+                else android.text.format.DateUtils.getRelativeTimeSpanString(historyEntry.timeStamp,
+                    System.currentTimeMillis(), android.text.format.DateUtils.MINUTE_IN_MILLIS,
+                    android.text.format.DateUtils.FORMAT_ABBREV_RELATIVE)
             contentImageView.visibility = if (historyEntry.filename != null) View.VISIBLE else View.GONE
             contentTextView.visibility = if (contentTextView.text.isNullOrEmpty()) View.GONE else View.VISIBLE
         }
