@@ -19,6 +19,10 @@ import dev.murmur.settings.ui.HomeScreen
 import dev.murmur.settings.ui.LocalSettingsColors
 import dev.murmur.settings.ui.MurmurSettingsTheme
 import dev.murmur.settings.ui.Screen
+import dev.murmur.settings.ui.PowerScreen
+import dev.murmur.settings.ui.SetupScreen
+import dev.murmur.settings.ui.LocalResumeTick
+import androidx.compose.runtime.CompositionLocalProvider
 
 /**
  * Murmur's settings app (design/mockups.html, section 06): the launcher icon and the keyboard's gear.
@@ -29,19 +33,35 @@ class ModelActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         ModelManager.refresh(this)
-        val start = intent.getStringExtra(EXTRA_SCREEN)?.let { runCatching { Screen.valueOf(it) }.getOrNull() } ?: Screen.HOME
+        val start = intent.getStringExtra(EXTRA_SCREEN)?.let { runCatching { Screen.valueOf(it) }.getOrNull() }
+            ?: if (!dev.murmur.settings.SetupState.essentialsDone(this) && !dev.murmur.settings.SetupState.skipped(this)) Screen.SETUP else Screen.HOME
         setContent {
             MurmurSettingsTheme {
                 var screen by rememberSaveable { mutableStateOfScreen(start) }
-                BackHandler(enabled = screen != Screen.HOME) { screen = Screen.HOME }
-                Box(Modifier.fillMaxSize().background(LocalSettingsColors.current.bg).safeDrawingPadding()) {
-                    when (screen) {
-                        Screen.HOME -> HomeScreen(open = { screen = it }, openLegacy = ::openLegacy)
-                        Screen.DICTATION -> DictationScreen(onBack = { screen = Screen.HOME })
+                BackHandler(enabled = screen != Screen.HOME) {
+                    if (screen == Screen.SETUP) dev.murmur.settings.SetupState.setSkipped(this@ModelActivity)
+                    screen = Screen.HOME
+                }
+                CompositionLocalProvider(LocalResumeTick provides resumeTick.intValue) {
+                    Box(Modifier.fillMaxSize().background(LocalSettingsColors.current.bg).safeDrawingPadding()) {
+                        when (screen) {
+                            Screen.HOME -> HomeScreen(open = { screen = it }, openLegacy = ::openLegacy)
+                            Screen.DICTATION -> DictationScreen(onBack = { screen = Screen.HOME })
+                            Screen.POWER -> PowerScreen(onBack = { screen = Screen.HOME })
+                            Screen.SETUP -> SetupScreen(onDone = { dev.murmur.settings.SetupState.setSkipped(this@ModelActivity); screen = Screen.HOME })
+                        }
                     }
                 }
             }
         }
+    }
+
+    private val resumeTick = androidx.compose.runtime.mutableIntStateOf(0)
+
+    override fun onResume() {
+        super.onResume()
+        ModelManager.refresh(this)
+        resumeTick.intValue++ // re-read keyboard, assistant and accessibility state after visiting Android's settings
     }
 
     private fun openLegacy() = startActivity(Intent(this, helium314.keyboard.settings.SettingsActivity2::class.java))

@@ -21,13 +21,14 @@ import helium314.keyboard.latin.utils.prefs
 @Composable
 fun HomeScreen(open: (Screen) -> Unit, openLegacy: () -> Unit) {
     val ctx = LocalContext.current
+    LocalResumeTick.current // values change in Android's settings; re-read on return
     Column(Modifier.verticalScroll(rememberScrollState())) {
         BigTitle("Keyboard")
         Column(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Group {
                 Item("Dictation", dictationValue(ctx), R.drawable.ic_murmur_mic, onClick = { open(Screen.DICTATION) })
                 GroupDivider()
-                Item("Power button", powerValue(ctx), R.drawable.ic_murmur_power, onClick = openAssistantSettings(ctx))
+                Item("Power button", powerValue(ctx), R.drawable.ic_murmur_power, onClick = { open(Screen.POWER) })
             }
             Group {
                 Item("Theme", "Murmur · Follows system", R.drawable.ic_murmur_palette, onClick = openLegacy)
@@ -44,6 +45,9 @@ fun HomeScreen(open: (Screen) -> Unit, openLegacy: () -> Unit) {
                 Item("Tablet layout", "Split in landscape", R.drawable.ic_murmur_split, onClick = openLegacy)
             }
             Group {
+                Item("Setup checklist", if (dev.murmur.settings.SetupState.essentialsDone(ctx)) "All set" else "Steps left to finish",
+                    onClick = { open(Screen.SETUP) })
+                GroupDivider()
                 Item("Advanced (temporary)", "Every other option, until these screens replace it", onClick = openLegacy)
             }
         }
@@ -57,15 +61,8 @@ private fun dictationValue(ctx: Context): String {
 }
 
 /** "On" when Murmur is the phone's digital assistant (what the power button opens). */
-private fun powerValue(ctx: Context): String {
-    val service = android.provider.Settings.Secure.getString(ctx.contentResolver, "voice_interaction_service")
-    return if (service?.startsWith(ctx.packageName + "/") == true) "Hold to talk · On" else "Off · Set Murmur as the digital assistant"
-}
-
-private fun openAssistantSettings(ctx: Context): () -> Unit = {
-    ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_VOICE_INPUT_SETTINGS)
-        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
-}
+private fun powerValue(ctx: Context) =
+    if (dev.murmur.settings.SetupState.isAssistant(ctx)) "On · Stops when you pause" else "Off · Set Murmur as the digital assistant"
 
 private fun clipboardValue(ctx: Context): String {
     val minutes = ctx.prefs().getInt(Settings.PREF_CLIPBOARD_HISTORY_RETENTION_TIME, Defaults.PREF_CLIPBOARD_HISTORY_RETENTION_TIME)
@@ -76,4 +73,4 @@ private fun clipboardValue(ctx: Context): String {
     }
 }
 
-enum class Screen { HOME, DICTATION }
+enum class Screen { HOME, DICTATION, POWER, SETUP }
