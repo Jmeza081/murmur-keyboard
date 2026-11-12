@@ -3,8 +3,10 @@
     SPDX-License-Identifier: GPL-3.0-only
 -->
 <resources>
-    <string name="english_ime_name" translatable="false">Murmur debug</string>
-    <string name="spell_checker_service_name" translatable="false">HeliBoard debug Spell Checker</string>
-    <string name="ime_settings" translatable="false">HeliBoard debug Settings</string>
+    <string name="english_ime_name" translatable="false">Murmur Dev</string>
+    <string name="spell_checker_service_name" translatable="false">Murmur Dev spell checker</string>
+    <string name="ime_settings" translatable="false">Murmur Dev settings</string>
 
+    <!-- debug builds install alongside the real app; a different name and a cobalt icon tell them apart -->
+    <string name="murmur_app_name" translatable="false">Murmur Dev</string>
 </resources>

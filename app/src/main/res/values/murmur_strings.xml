@@ -34,6 +34,7 @@
     <string name="murmur_dictation_back_to_keys" translatable="false">Back to keys</string>
     <string name="murmur_cleanup_on" translatable="false">Cleanup on</string>
     <string name="murmur_cleanup_off" translatable="false">Cleanup off</string>
+    <string name="murmur_app_name" translatable="false">Murmur</string>
     <string name="murmur_open_1password" translatable="false">Open 1Password</string>
     <string name="murmur_key_height" translatable="false">Key height</string>
     <string name="murmur_key_height_smaller" translatable="false">Shorter keys</string>

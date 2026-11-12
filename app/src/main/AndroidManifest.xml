@@ -103,7 +103,7 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
              Phase 7 turns it into the full settings app. -->
         <activity android:name="dev.murmur.speech.ModelActivity"
             android:exported="true"
-            android:label="Murmur"
+            android:label="@string/murmur_app_name"
             android:icon="@mipmap/ic_launcher"
             android:theme="@android:style/Theme.Material.NoActionBar">
             <intent-filter>
