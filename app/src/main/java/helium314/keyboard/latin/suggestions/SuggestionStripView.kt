@@ -158,6 +158,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         setupMurmurMic(colors)
         // Murmur: a fixed tools row from the mockups; HeliBoard's toolbar and pinned-key settings no longer apply
         for (key in MURMUR_TOOLS) {
+            if (key == ToolbarKey.SETTINGS) addPasswordManagerTool(colors) // settings stays last
             val button = createToolbarKey(context, key)
             button.layoutParams = toolbarKeyLayoutParams
             setupKey(button, colors)
@@ -229,7 +230,18 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         suggestionsStrip.layoutDirection = newLayoutDirection
     }
 
-    fun setToolbarVisibility(toolbarVisible: Boolean) {
+    /**
+     * Murmur: password-manager suggestions stay in the strip until you type, pick one, close them or
+     * leave the field. Without this, the tools row (shown for empty fields) and the neutral strip
+     * replaced them as soon as they arrived.
+     */
+    private var pinnedExternal: View? = null
+    val hasExternalSuggestions get() = pinnedExternal != null
+    fun clearExternalSuggestions() { pinnedExternal = null }
+
+    @JvmOverloads
+    fun setToolbarVisibility(toolbarVisible: Boolean, fromUser: Boolean = false) {
+        if (toolbarVisible && !fromUser && pinnedExternal != null) return // Murmur: keep the logins showing
         pinnedKeys.isVisible = !toolbarVisible
         suggestionsStrip.isVisible = !toolbarVisible
         toolbarContainer.isVisible = toolbarVisible
@@ -244,6 +256,14 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     fun setSuggestions(suggestions: SuggestedWords, isRtlLanguage: Boolean) {
+        pinnedExternal?.let { external ->
+            if (suggestions.isEmpty() || suggestions is PunctuationSuggestions) { // neutral strip: keep the logins (Murmur)
+                (external.parent as? ViewGroup)?.removeView(external)
+                setExternalSuggestionView(external, true)
+                return
+            }
+            pinnedExternal = null // you started typing: words take over
+        }
         clear()
         setRtl(isRtlLanguage)
         suggestedWords = reserveEmojiSlot(suggestions)
@@ -257,6 +277,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     fun setExternalSuggestionView(view: View?, addCloseButton: Boolean) {
         clear()
         isExternalSuggestionVisible = true
+        pinnedExternal = view
 
         if (addCloseButton) {
             val wrapper = LinearLayout(context)
@@ -277,7 +298,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             suggestionsStrip.addView(view)
         }
 
-        if (Settings.getValues().mAutoHideToolbar) setToolbarVisibility(false)
+        setToolbarVisibility(false) // Murmur: always, or the tools row hides the logins
     }
 
     fun setMoreSuggestionsHeight(remainingHeight: Int) {
@@ -338,7 +359,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         }
         AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, this, HapticEvent.KEY_PRESS)
         if (view === toolbarExpandKey) {
-            setToolbarVisibility(toolbarContainer.visibility != VISIBLE)
+            setToolbarVisibility(toolbarContainer.visibility != VISIBLE, fromUser = true)
         }
 
         // tag for word views is set in SuggestionStripLayoutHelper (setupWordViewsTextAndColor, layoutPunctuationSuggestions)
@@ -635,6 +656,23 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             words.willAutoCorrect, words.isObsoleteSuggestions, words.inputStyle, words.sequenceNumber)
     }
 
+    /** Murmur: opens 1Password, for sites where autofill doesn't offer the right login. Only if it's installed. */
+    private fun addPasswordManagerTool(colors: Colors) {
+        val launch = context.packageManager.getLaunchIntentForPackage(PASSWORD_MANAGER) ?: return
+        val button = ImageButton(context, null, R.attr.suggestionWordStyle)
+        button.setImageResource(R.drawable.ic_murmur_key)
+        button.scaleType = android.widget.ImageView.ScaleType.CENTER
+        button.contentDescription = context.getString(R.string.murmur_open_1password)
+        button.layoutParams = LinearLayout.LayoutParams(toolbarKeyLayoutParams).apply { weight = 1f }
+        colors.setColor(button, ColorType.TOOL_BAR_KEY)
+        colors.setBackground(button, ColorType.STRIP_BACKGROUND)
+        button.setOnClickListener {
+            AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, this, HapticEvent.KEY_PRESS)
+            context.startActivity(launch.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+        }
+        toolbar.addView(button)
+    }
+
     private fun setupKey(view: ImageButton, colors: Colors) {
         view.setOnClickListener(this)
         view.setOnLongClickListener(this)
@@ -646,6 +684,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     companion object {
         /** Murmur: the tools row, in mockup order. */
         private val MURMUR_TOOLS = listOf(ToolbarKey.CLIPBOARD, ToolbarKey.EMOJI, ToolbarKey.SPLIT, ToolbarKey.SETTINGS)
+        private const val PASSWORD_MANAGER = "com.onepassword.android"
 
         @JvmField
         var DEBUG_SUGGESTIONS = false

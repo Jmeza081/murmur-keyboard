@@ -122,7 +122,14 @@ Steps, each installed and compared against the mockups before the next:
 3. **Keys.** A Murmur key renderer: key size, gap, 8 dp radius and 1 dp bottom shadow, label type, number hints, function-key and Enter styling, shift and backspace stroke icons, key preview popup.
 4. **Strip.** 48 dp strip with three suggestions, the middle one bold, thin separators; the mic pill styled as in the mockup; tools row when the field is empty (clipboard, emoji, split, settings); one slot reserved for the best emoji suggestion, as SwiftKey does.
 5. **Panels.** Listening panel, emoji panel (search, recents, category chips), clipboard panel (pinned and recent cards) and the power-button sheet, matched to the mockups.
-6. **Strip the bloat.** Remove toolbar keys, modes and options the mockups don't have (one-handed and floating modes, the toolbar key picker, gesture data gathering, layout editors). Hide HeliBoard's settings screens; Phase 7's settings app replaces them. Code that only existed for removed features is deleted, not just hidden.
+6. **Strip the bloat.** Remove what the mockups don't have and set Murmur's defaults. Code that only existed for removed features is deleted, not just hidden. Decisions (2026-11-11):
+   - **HeliBoard's settings:** off the gear and the launcher; one "Advanced (temporary)" row on Murmur's screen until Phase 7 replaces it. One launcher icon, "Murmur".
+   - **Delete:** toolbar customizing (key picker, pinned keys, custom codes, toolbar modes), layout editors (custom layouts, custom icons, custom currency key), gesture data gathering, the D-pad key and touchpad mode. **Keep** one-handed and floating modes.
+   - **Feedback:** light haptics, no key sound. Key popup on press: on.
+   - **Gestures on by default:** swipe space to move the cursor, swipe left from backspace to delete words, long-press space for the keyboard picker.
+   - **Suggestions:** learn from typing (on the phone only), installed app names, just-copied text as a paste chip; contacts off. Offensive words allowed.
+   - **Languages:** English and Spanish in one keyboard (multilingual typing, no switching); emoji skin tone default yellow.
+   - **Split (step 7):** on the inner screen in landscape only.
 7. **Tablet split.** The split layout with the mic in the middle, per the mockup.
 8. **Motion and polish.** 200 ms ease-out for the panel swap and sheet, no animation on key presses, reduced-motion respected; light and dark both checked; touch targets at least 44 dp.
 
@@ -142,7 +149,7 @@ Smaller fixes collected along the way, each measured on the Fold before and afte
 
 ## Open questions
 
-- Languages: English only, or Spanish too? Parakeet v3 covers about 25 European languages.
+- None right now. (Languages: English and Spanish, decided in Phase 6 step 6.)
 
 ## References
 

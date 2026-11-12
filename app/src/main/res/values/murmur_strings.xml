@@ -34,6 +34,7 @@
     <string name="murmur_dictation_back_to_keys" translatable="false">Back to keys</string>
     <string name="murmur_cleanup_on" translatable="false">Cleanup on</string>
     <string name="murmur_cleanup_off" translatable="false">Cleanup off</string>
+    <string name="murmur_open_1password" translatable="false">Open 1Password</string>
     <!-- Emoji panel -->
     <string name="murmur_emoji_search" translatable="false">Search emoji</string>
     <string name="murmur_emoji_recents" translatable="false">Recently used</string>

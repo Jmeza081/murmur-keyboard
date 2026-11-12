@@ -53,8 +53,11 @@ public class InlineAutofillUtils {
 
     public static InlineSuggestionsRequest createInlineSuggestionRequest(final Context context) {
         final Colors colors = Settings.getValues().mColors;
-        final int chipBgDrawableId = androidx.autofill.R.drawable.autofill_inline_suggestion_chip_background;
-        final int chipBgColor = colors.get(ColorType.AUTOFILL_BACKGROUND_CHIP);
+        // Murmur: pill chips like the strip's other chips (key color, 18 dp radius)
+        final int chipBgDrawableId = R.drawable.murmur_autofill_chip;
+        final int chipBgColor = colors.get(ColorType.KEY_BACKGROUND);
+        final float density = context.getResources().getDisplayMetrics().density;
+        final int pad = (int) (12 * density);
         final int chipTextColor = colors.get(ColorType.KEY_TEXT);
         final int chipTextHintColor = colors.get(ColorType.KEY_HINT_TEXT);
 
@@ -68,24 +71,25 @@ public class InlineAutofillUtils {
                 .setChipStyle(
                         new ViewStyle.Builder()
                                 .setBackground(Icon.createWithResource(context, chipBgDrawableId).setTint(chipBgColor))
+                                .setPadding(pad, 0, pad, 0)
                                 .build())
-                .setStartIconStyle(new ImageViewStyle.Builder().setLayoutMargin(0, 0, 0, 0).build())
+                .setStartIconStyle(new ImageViewStyle.Builder().setLayoutMargin(0, 0, (int) (8 * density), 0).build())
                 .setTitleStyle(
                         new TextViewStyle.Builder()
                                 .setTextColor(chipTextColor)
-                                .setTextSize(12)
+                                .setTextSize(14)
                                 .build())
                 .setSubtitleStyle(
                         new TextViewStyle.Builder()
                                 .setTextColor(chipTextHintColor)
-                                .setTextSize(10)
+                                .setTextSize(11.5f)
                                 .build())
                 .setEndIconStyle(new ImageViewStyle.Builder().setLayoutMargin(0, 0, 0, 0).build())
                 .build();
         stylesBuilder.addStyle(style);
         Bundle stylesBundle = stylesBuilder.build();
 
-        final int height = context.getResources().getDimensionPixelSize(R.dimen.config_suggestions_strip_height);
+        final int height = (int) (40 * density); // Murmur: a 40 dp pill centered in the 48 dp strip
         final Size min = new Size(100, height);
         final Size max = new Size(740, height);
 
@@ -103,11 +107,24 @@ public class InlineAutofillUtils {
     public static InlineContentClipView createView(final List<InlineSuggestion> inlineSuggestions,
                                                    final Context context) {
         LinearLayout container = new LinearLayout(context);
+        // Murmur: chips centered vertically, 6 dp apart, inset from the strip's left edge
+        final int gap = (int) (6 * context.getResources().getDisplayMetrics().density);
+        container.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        container.setPadding(gap, 0, gap, 0);
         for (InlineSuggestion inlineSuggestion : inlineSuggestions) {
             inlineSuggestion.inflate(context, new Size(ViewGroup.LayoutParams.WRAP_CONTENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT), context.getMainExecutor(), (view) -> {
-                if (view != null)
-                    container.addView(view);
+                if (view != null) {
+                    // Murmur: draw the chip above the keyboard window; Murmur's opaque strip hides it otherwise
+                    view.setZOrderedOnTop(true);
+                    // keep the size the password manager rendered the chip at; only add spacing
+                    final ViewGroup.LayoutParams given = view.getLayoutParams();
+                    final LinearLayout.LayoutParams lp = given != null ? new LinearLayout.LayoutParams(given)
+                            : new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    lp.gravity = android.view.Gravity.CENTER_VERTICAL;
+                    lp.setMarginEnd(gap);
+                    container.addView(view, lp);
+                }
             });
         }
 

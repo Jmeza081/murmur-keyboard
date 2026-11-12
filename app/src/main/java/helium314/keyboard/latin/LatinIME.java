@@ -117,6 +117,8 @@ public class LatinIME extends InputMethodService implements
 
     // TODO: Move these {@link View}s to {@link KeyboardSwitcher}.
     private SuggestionStripView mSuggestionStripView;
+    /** Murmur: the app whose password-manager logins are showing in the strip. */
+    private String mExternalSuggestionsPackage;
 
     private RichInputMethodManager mRichImm;
     final KeyboardSwitcher mKeyboardSwitcher;
@@ -490,6 +492,7 @@ public class LatinIME extends InputMethodService implements
     @Override
     public void onCreate() {
         mDictation = new dev.murmur.dictation.DictationController(this); // Murmur
+        dev.murmur.settings.MurmurDefaults.INSTANCE.applyOnce(this); // Murmur: decided defaults, once
         mSettings.startListener();
         KeyboardIconsSet.Companion.getInstance().loadIcons(this);
         mRichImm = RichInputMethodManager.getInstance();
@@ -764,6 +767,14 @@ public class LatinIME extends InputMethodService implements
 
     private void onStartInputInternal(EditorInfo editorInfo, boolean restarting) {
         super.onStartInput(editorInfo, restarting);
+        // Murmur: password-manager logins belong to the app that asked for them. Chrome restarts input on
+        // the same field all the time, so only clear when another app takes the keyboard.
+        final String pkg = editorInfo == null ? null : editorInfo.packageName;
+        if (mExternalSuggestionsPackage != null && !mExternalSuggestionsPackage.equals(pkg)
+                && mSuggestionStripView != null) {
+            mSuggestionStripView.clearExternalSuggestions();
+            mExternalSuggestionsPackage = null;
+        }
 
         RichInputMethodSubtype subtypeForApp = editorInfo == null
             ? null
@@ -1172,6 +1183,8 @@ public class LatinIME extends InputMethodService implements
 
         final List<InlineSuggestion> inlineSuggestions = response.getInlineSuggestions();
         if (inlineSuggestions.isEmpty()) {
+            // Murmur: Chrome sends empty responses constantly while a login field is open; keep what's
+            // showing. Logins go when you type, pick one, close them or leave the field.
             return false;
         }
 
@@ -1181,6 +1194,8 @@ public class LatinIME extends InputMethodService implements
         mHandler.cancelResumeSuggestions();
 
         mSuggestionStripView.setExternalSuggestionView(inlineSuggestionView, true);
+        final EditorInfo current = getCurrentInputEditorInfo();
+        mExternalSuggestionsPackage = current == null ? null : current.packageName; // Murmur
 
         return true;
     }
@@ -1425,6 +1440,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void removeExternalSuggestions() {
+        if (mSuggestionStripView != null) mSuggestionStripView.clearExternalSuggestions(); // Murmur
         setNeutralSuggestionStrip();
         mHandler.postResumeSuggestions(false);
     }
