@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Murmur: say it, and it's typed</title>
+<meta name="description" content="Murmur is an Android keyboard with dictation that runs entirely on your phone. Hold the power button in any app, talk, and the words land where you were typing.">
+<meta name="theme-color" content="#0B0D11">
+<meta property="og:title" content="Murmur: say it, and it's typed">
+<meta property="og:description" content="An Android keyboard with private, on-device dictation. Nothing you say leaves the phone.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23E8590C'/%3E%3Cpath d='M7 14v4M11.5 10.5v11M16 7v18M20.5 11.5v9M25 14.5v3' stroke='white' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600;8..144,700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Page: a dark stage, so the light and dark phones both read as objects. Orange means "listening"; cobalt means "the keyboard". */
+:root {
+  --bg: #0B0D11; --panel: #13161C; --panel-2: #191C23; --line: #242832; --ink: #ECEEF3; --muted: #A1A8B6;
+  --rec: #E8590C; --rec-hi: #FF8A4C; --acc: #8EA0FF; --cobalt: #2F4BE0;
+  --font-display: "Bricolage Grotesque", "Roboto Flex", system-ui, sans-serif;
+  --font-body: "Roboto Flex", Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, Menlo, monospace;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: inherit; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-offset: 3px; border-radius: 8px; }
+.l-wrap { max-width: 1200px; margin: 0 auto; padding: 0 28px; }
+
+/* Nav */
+.l-nav { position: sticky; top: 0; z-index: 50; backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px); background: color-mix(in srgb, var(--bg) 72%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.l-nav .l-wrap { display: flex; align-items: center; gap: 28px; height: 64px; }
+.l-brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 21px; letter-spacing: -0.01em; text-decoration: none; }
+.l-logo { width: 30px; height: 30px; border-radius: 9px; background: var(--rec); display: grid; place-items: center; color: #fff; }
+.l-nav nav { display: flex; gap: 4px; margin-left: auto; }
+.l-nav nav a { text-decoration: none; color: var(--muted); font-size: 14.5px; font-weight: 500; padding: 8px 12px; border-radius: 10px; transition: color 160ms ease; }
+@media (hover: hover) and (pointer: fine) { .l-nav nav a:hover { color: var(--ink); } }
+@media (max-width: 760px) { .l-nav nav a:not(.l-gh) { display: none; } }
+
+/* Buttons */
+.l-btn { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 22px; border-radius: 26px; font: inherit; font-weight: 600; font-size: 16px; text-decoration: none; border: 0; cursor: pointer; transition: transform 160ms var(--ease-out), background 160ms ease; }
+.l-btn:active { transform: scale(0.97); }
+.l-btn.rec { background: var(--rec); color: #fff; box-shadow: 0 10px 30px -10px color-mix(in srgb, var(--rec) 70%, transparent); }
+.l-btn.ghost { background: var(--panel-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+@media (hover: hover) and (pointer: fine) { .l-btn.rec:hover { background: #F06418; } .l-btn.ghost:hover { background: #20242C; } }
+
+/* Hero */
+.l-hero { position: relative; padding: 72px 0 40px; }
+.l-hero::before { content: ""; position: absolute; inset: -120px 0 auto; height: 720px; pointer-events: none;
+  background: radial-gradient(600px 380px at 78% 40%, rgba(232, 89, 12, 0.20), transparent 70%), radial-gradient(520px 360px at 12% 10%, rgba(47, 75, 224, 0.18), transparent 70%); }
+.l-hero .l-wrap { position: relative; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 48px; align-items: center; }
+.l-eyebrow { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px 0 10px; border-radius: 16px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); color: var(--muted); font-size: 13.5px; font-weight: 500; }
+.l-eyebrow .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rec); box-shadow: 0 0 0 4px color-mix(in srgb, var(--rec) 25%, transparent); }
+.l-hero h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(48px, 7vw, 92px); line-height: 0.96; letter-spacing: -0.035em; margin: 22px 0 22px; text-wrap: balance; }
+.l-hero h1 em { font-style: normal; color: var(--rec-hi); }
+.l-lede { font-size: 19.5px; color: var(--muted); max-width: 34em; margin: 0 0 32px; text-wrap: pretty; }
+.l-lede b { color: var(--ink); font-weight: 600; }
+.l-ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+.l-facts { display: flex; flex-wrap: wrap; gap: 10px 26px; margin: 34px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 14.5px; }
+.l-facts li { display: inline-flex; align-items: center; gap: 8px; }
+.l-facts svg { color: var(--acc); }
+.l-stage { position: relative; display: grid; justify-items: center; }
+@media (min-width: 961px) and (max-height: 980px) { #hero-phone { zoom: 0.86; } }
+.l-said { position: absolute; left: -48px; top: 300px; z-index: 6; max-width: 250px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line), 0 18px 40px -16px rgba(0,0,0,0.6); border-radius: 18px 18px 18px 6px; padding: 12px 16px; font-size: 15px; line-height: 1.4; opacity: 0; transform: translateY(6px); transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out); }
+.l-said.on { opacity: 1; transform: none; }
+.l-said small { display: flex; align-items: center; gap: 6px; color: var(--rec-hi); font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+.l-said .w { opacity: 0.18; transition: opacity 140ms ease; }
+.l-said .w.on { opacity: 1; }
+.l-said .w.um { color: var(--rec-hi); }
+.l-hint { margin-top: 18px; color: var(--muted); font-size: 13.5px; display: flex; align-items: center; gap: 8px; }
+.l-hint kbd { font-family: var(--font-mono); font-size: 12px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); padding: 2px 7px; border-radius: 6px; }
+
+/* Hero phone: the listening sheet (option D, capsule to sheet) */
+#hero-phone .side-btn.pwr { cursor: pointer; transition: background 120ms ease, transform 120ms var(--ease-out); }
+#hero-phone .side-btn.pwr.down { background: var(--rec); transform: translateX(-1px); box-shadow: 0 0 0 5px color-mix(in srgb, var(--rec) 28%, transparent); }
+#hero-phone .side-btn.pwr::before { content: ""; position: absolute; inset: -12px -18px -12px -14px; }
+.l-press { position: absolute; right: -26px; top: 196px; width: 64px; height: 64px; margin-top: 0; border-radius: 50%; pointer-events: none; opacity: 0;
+  background: radial-gradient(closest-side, rgba(232, 89, 12, 0.75), rgba(232, 89, 12, 0)); }
+#hero-phone .scrim { opacity: 0; transition: none; }
+#hero-phone .snack { opacity: 0; transform: translateY(8px); }
+.blink { animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.hl-new { border-radius: 3px; transition: background 1200ms ease; }
+.hl-new.lit { background: color-mix(in srgb, #2F4BE0 18%, transparent); }
+.capsule { position: absolute; left: 50%; bottom: 20px; width: 128px; height: 42px; margin-left: -64px; border-radius: 21px; background: #E8590C; z-index: 3; display: flex; align-items: center; justify-content: center; gap: 3px; opacity: 0; pointer-events: none; }
+.capsule i { width: 3.5px; height: 8px; border-radius: 2px; background: #fff; }
+.msheet { --k-bg: #1E2129; --k-key: #2A2E37; --k-fn: #2A2E37; --k-ink: #ECEEF3; --k-sub: #9AA1B0; --k-rec: #E8590C;
+  position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 3; border-radius: 28px; background: #1E2129; color: #ECEEF3; padding: 12px 18px 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -10px 40px rgba(0,0,0,0.3); opacity: 0; }
+.msheet .grab { width: 36px; height: 4px; border-radius: 2px; background: #9AA1B0; opacity: 0.4; align-self: center; }
+.msheet .mtop { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+.msheet .mtarget { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #9AA1B0; }
+.msheet .mtarget b { color: #ECEEF3; font-weight: 600; }
+.msheet canvas { width: 100%; height: 108px; display: block; margin: 8px 0 6px; }
+.mctrls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 8px; }
+.mctrls .round { width: 48px; height: 48px; background: #2A2E37; color: #ECEEF3; }
+.msend { position: relative; width: 68px; height: 68px; border-radius: 50%; display: grid; place-items: center; background: #E8590C; color: #fff; }
+.msend::before { content: ""; position: absolute; inset: -14px; border-radius: 50%; background: radial-gradient(closest-side, rgba(232, 89, 12, 0.45), rgba(232, 89, 12, 0)); animation: glow 1.8s ease-in-out infinite alternate; z-index: -1; }
+@keyframes glow { from { opacity: 0.55; transform: scale(0.94); } to { opacity: 1; transform: scale(1.06); } }
+.msend .icon { width: 28px; height: 28px; stroke-width: 2.2; }
+.spark-on { background: color-mix(in srgb, #8EA0FF 18%, #2A2E37) !important; color: #B4C0FF !important; }
+
+/* Sections */
+.l-sec { padding: 112px 0 0; scroll-margin-top: 64px; }
+.l-kicker { font-family: var(--font-mono); font-size: 13px; color: var(--rec-hi); letter-spacing: 0.04em; text-transform: uppercase; margin: 0 0 14px; display: flex; align-items: center; gap: 10px; }
+.l-kicker::before { content: ""; width: 22px; height: 1.5px; background: currentColor; }
+.l-sec h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(34px, 4.6vw, 56px); line-height: 1.02; letter-spacing: -0.025em; margin: 0 0 18px; max-width: 16em; text-wrap: balance; }
+.l-sec .l-intro { color: var(--muted); max-width: 40em; margin: 0; font-size: 18.5px; text-wrap: pretty; }
+.l-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; align-items: center; }
+@media (max-width: 960px) {
+  .l-hero .l-wrap, .l-split { grid-template-columns: 1fr; }
+  .l-hero { padding-top: 40px; }
+  .l-said { left: 0; top: 40px; }
+}
+
+/* Three ways in */
+.l-ways { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 48px; }
+.l-way { background: var(--panel); border: 1px solid var(--line); border-radius: 24px; padding: 26px; display: grid; gap: 10px; align-content: start; }
+.l-way .ic { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; background: color-mix(in srgb, var(--cobalt) 22%, var(--panel-2)); color: #B4C0FF; margin-bottom: 8px; }
+.l-way.hot .ic { background: color-mix(in srgb, var(--rec) 22%, var(--panel-2)); color: var(--rec-hi); }
+.l-way h3 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.005em; }
+.l-way p { margin: 0; color: var(--muted); font-size: 15.5px; }
+@media (max-width: 860px) { .l-ways { grid-template-columns: 1fr; } }
+
+/* Gallery of phones */
+.l-gallery { display: flex; gap: 36px; margin-top: 56px; padding: 8px 28px 28px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.l-gallery.center { justify-content: center; }
+.l-gallery::-webkit-scrollbar { height: 8px; } .l-gallery::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+.l-gallery figure { margin: 0; display: grid; gap: 16px; scroll-snap-align: center; flex: none; }
+.l-gallery figcaption { max-width: 340px; padding-left: 4px; }
+.l-gallery figcaption b { display: block; font-weight: 600; font-size: 16px; }
+.l-gallery figcaption span { color: var(--muted); font-size: 14.5px; line-height: 1.45; display: block; }
+.l-bleed { max-width: 1440px; margin: 0 auto; }
+@media (max-width: 1240px) { .l-gallery.center { justify-content: flex-start; } }
+
+/* Phones on the page */
+.phone { box-shadow: 0 40px 80px -40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08); }
+@media (max-width: 440px) { .phone { zoom: 0.82; } .l-gallery { gap: 20px; padding: 8px 16px 24px; } }
+
+/* Cleanup diff */
+.l-diff { background: var(--panel); border: 1px solid var(--line); border-radius: 28px; padding: 28px; display: grid; gap: 18px; }
+.l-diff .row { display: grid; gap: 8px; }
+.l-diff .lab { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+.l-diff .txt { font-size: clamp(20px, 2.4vw, 27px); line-height: 1.4; letter-spacing: -0.01em; font-weight: 500; }
+.l-diff .x { position: relative; color: var(--rec-hi); transition: color 300ms ease, opacity 300ms ease; }
+.l-diff .x::after { content: ""; position: absolute; left: -2px; right: -2px; top: 54%; height: 2px; background: var(--rec-hi); transform: scaleX(0); transform-origin: left; transition: transform 380ms var(--ease-out); }
+.l-diff.go .x { color: var(--muted); opacity: 0.6; }
+.l-diff.go .x::after { transform: scaleX(1); }
+.l-diff .p { background: color-mix(in srgb, var(--cobalt) 30%, transparent); border-radius: 4px; padding: 0 2px; opacity: 0; transition: opacity 300ms ease 400ms; }
+.l-diff.go .p { opacity: 1; }
+.l-diff .x:nth-of-type(2)::after { transition-delay: 140ms; }
+.l-diff .x:nth-of-type(3)::after { transition-delay: 280ms; }
+.l-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.l-tags span { height: 32px; padding: 0 13px; border-radius: 16px; display: inline-flex; align-items: center; font-size: 14px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); }
+.l-tags span.add { color: var(--acc); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acc) 45%, transparent); }
+
+/* Waveform picker */
+.l-wavecard { background: #1E2129; border-radius: 32px; padding: 22px 24px 26px; box-shadow: 0 40px 80px -40px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.05); display: grid; gap: 14px; }
+.l-wavecard .mtop { display: flex; justify-content: space-between; align-items: center; font-size: 13.5px; }
+.l-wavecard canvas { width: 100%; height: 150px; display: block; }
+.l-seg { display: inline-grid; grid-auto-flow: column; gap: 4px; padding: 4px; border-radius: 26px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); }
+.l-seg button { font: inherit; font-size: 14.5px; font-weight: 600; color: var(--muted); background: transparent; border: 0; height: 42px; padding: 0 18px; border-radius: 21px; cursor: pointer; transition: background 160ms ease, color 160ms ease, transform 160ms var(--ease-out); }
+.l-seg button:active { transform: scale(0.97); }
+.l-seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.l-wavecopy p { color: var(--muted); margin: 18px 0 0; font-size: 16px; min-height: 3.2em; }
+
+/* Swipe trail */
+.swipe-trail path { stroke-dasharray: 1; stroke-dashoffset: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .swipe-trail path { animation: trace 3.2s var(--ease-out) infinite; }
+  .swipe-trail circle { animation: dotfade 3.2s ease infinite; }
+}
+@media (prefers-reduced-motion: reduce) { .swipe-trail path { stroke-dashoffset: 0; } }
+@keyframes trace { 0% { stroke-dashoffset: 1; opacity: 0.55; } 35% { stroke-dashoffset: 0; opacity: 0.55; } 70% { stroke-dashoffset: 0; opacity: 0.55; } 85%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes dotfade { 0%, 30% { opacity: 0; } 36%, 70% { opacity: 1; } 85%, 100% { opacity: 0; } }
+
+/* Theme swatches */
+.l-swatches { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+.l-swatches button { width: 48px; height: 48px; border-radius: 50%; border: 0; cursor: pointer; background: var(--c); box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px var(--line); transition: transform 160ms var(--ease-out), box-shadow 160ms ease; display: grid; place-items: center; color: #fff; }
+.l-swatches button:active { transform: scale(0.94); }
+.l-swatches button[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--c); }
+.l-swatches button svg { opacity: 0; transition: opacity 160ms ease; }
+.l-swatches button[aria-pressed="true"] svg { opacity: 1; }
+.l-swname { margin-top: 14px; color: var(--muted); font-size: 15px; }
+.l-swname b { color: var(--ink); }
+.phone, .phone * { transition-property: background-color, color, border-color; transition-duration: 260ms; transition-timing-function: ease; }
+
+/* Fold */
+.l-fold { margin-top: 56px; display: grid; justify-items: center; overflow: hidden; }
+.l-fold-frame { transform-origin: top center; }
+
+/* Privacy */
+.l-priv { margin-top: 48px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 24px; overflow: hidden; }
+.l-priv div { background: var(--panel); padding: 26px 24px; display: grid; gap: 6px; align-content: start; }
+.l-priv b { font-family: var(--font-display); font-weight: 700; font-size: 40px; letter-spacing: -0.02em; line-height: 1; }
+.l-priv span { color: var(--muted); font-size: 15px; }
+@media (max-width: 900px) { .l-priv { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .l-priv { grid-template-columns: 1fr; } }
+.l-list { list-style: none; padding: 0; margin: 36px 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 40px; }
+.l-list li { display: grid; grid-template-columns: 24px 1fr; gap: 12px; color: var(--muted); font-size: 16px; }
+.l-list li b { color: var(--ink); font-weight: 600; }
+.l-list svg { color: var(--acc); margin-top: 3px; }
+@media (max-width: 760px) { .l-list { grid-template-columns: 1fr; } }
+
+/* Closing */
+.l-cta { margin: 128px 0 0; padding: 72px 28px; text-align: center; border-top: 1px solid var(--line); background: radial-gradient(620px 300px at 50% 0%, rgba(232, 89, 12, 0.16), transparent 70%); }
+.l-cta h2 { font-family: var(--font-display); font-weight: 800; font-size: clamp(40px, 6vw, 76px); letter-spacing: -0.03em; line-height: 1; margin: 0 0 18px; }
+.l-cta p { color: var(--muted); margin: 0 auto 30px; max-width: 34em; }
+.l-cta .l-ctas { justify-content: center; }
+footer { border-top: 1px solid var(--line); padding: 28px 0 48px; color: var(--muted); font-size: 14px; }
+footer .l-wrap { display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; }
+footer a { color: var(--ink); }
+
+/* Reveal on scroll */
+@media (prefers-reduced-motion: no-preference) {
+  .rv { opacity: 0; transform: translateY(18px); transition: opacity 600ms var(--ease-out), transform 600ms var(--ease-out); }
+  .rv.in { opacity: 1; transform: none; }
+  .rv.d1 { transition-delay: 80ms; } .rv.d2 { transition-delay: 160ms; }
+}
+
+/* ======== Device styles, from design/mockups.html ======== */
+/* ===== Device ===== */
+.phone {
+  /* Device palette is fixed per frame; it does not follow the page theme. */
+  --k-bg: #E8EBF1; --k-key: #FFFFFF; --k-fn: #CFD5E0; --k-ink: #191B21; --k-sub: #6B7282; --k-acc: #2F4BE0; --k-on-acc: #FFFFFF; --k-rec: #D9480F; --k-shadow: 0 1px 0 rgba(20, 24, 34, 0.18);
+  --s-bg: #F7F8FA; --s-surface: #FFFFFF; --s-ink: #191B21; --s-sub: #5B6272; --s-line: #E1E4EA; --s-tint: #E4E9FF;
+  width: 360px; height: 760px; border-radius: 44px; padding: 10px; background: #0B0C0F; box-shadow: 0 30px 60px -30px rgba(10, 14, 30, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06) inset; position: relative; flex: none;
+}
+.phone.dark {
+  --k-bg: #121419; --k-key: #2A2E37; --k-fn: #1E2129; --k-ink: #ECEEF3; --k-sub: #9AA1B0; --k-acc: #8EA0FF; --k-on-acc: #0D1336; --k-rec: #FF8A4C; --k-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+  --s-bg: #0F1115; --s-surface: #1A1D23; --s-ink: #ECEEF3; --s-sub: #A1A8B6; --s-line: #2A2E36; --s-tint: #232A4A;
+}
+.screen { width: 100%; height: 100%; border-radius: 34px; overflow: hidden; background: var(--s-bg); color: var(--s-ink); display: flex; flex-direction: column; position: relative; }
+.punch { position: absolute; top: 20px; left: 50%; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: #0B0C0F; z-index: 5; }
+.side-btn { position: absolute; right: -4px; width: 4px; border-radius: 0 3px 3px 0; background: #2B2E35; }
+.side-btn.pwr { top: 196px; height: 64px; }
+.side-btn.vol { top: 110px; height: 70px; }
+.side-btn.hot { background: var(--rec); box-shadow: 0 0 0 4px color-mix(in srgb, var(--rec) 30%, transparent); }
+
+.icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.icon.sm { width: 18px; height: 18px; }
+.icon.xs { width: 14px; height: 14px; }
+
+/* App chrome above the keyboard */
+.appbar { padding: 44px 16px 12px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--s-line); background: var(--s-surface); }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 600; font-size: 14px; background: var(--s-tint); color: var(--k-acc); }
+.appbar .t { font-weight: 600; font-size: 16px; line-height: 1.2; }
+.appbar .s { font-size: 12px; color: var(--s-sub); }
+.thread { flex: 1; padding: 16px 14px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; overflow: hidden; }
+.bubble { max-width: 78%; padding: 9px 13px; border-radius: 18px; font-size: 14px; line-height: 1.35; }
+.bubble.in { background: var(--s-surface); border: 1px solid var(--s-line); border-bottom-left-radius: 6px; align-self: flex-start; }
+.bubble.out { background: var(--k-acc); color: var(--k-on-acc); border-bottom-right-radius: 6px; align-self: flex-end; }
+.composer { display: flex; align-items: flex-end; gap: 8px; padding: 8px 10px 10px; background: var(--s-bg); }
+.field { flex: 1; min-height: 44px; border-radius: 22px; background: var(--s-surface); border: 1.5px solid var(--k-acc); padding: 11px 16px; font-size: 14px; line-height: 1.4; }
+.field.idle { border-color: var(--s-line); color: var(--s-sub); }
+.caret { display: inline-block; width: 2px; height: 17px; background: var(--k-acc); vertical-align: -3px; margin-left: 1px; }
+.send { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--k-acc); color: var(--k-on-acc); flex: none; }
+.ghost { color: var(--s-sub); }
+.partial { color: var(--s-sub); }
+
+/* ===== Keyboard ===== */
+.kb { background: var(--k-bg); color: var(--k-ink); padding: 0 4px 10px; position: relative; }
+.strip { height: 48px; display: flex; align-items: center; gap: 2px; padding: 0 2px; }
+.sbtn { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; color: var(--k-sub); flex: none; }
+.sbtn.on { background: var(--k-fn); color: var(--k-ink); }
+.sugs { flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; min-width: 0; }
+.sugs span { text-align: center; font-size: 15px; padding: 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; }
+.sugs span + span::before { content: ""; position: absolute; left: 0; top: 4px; bottom: 4px; width: 1px; background: var(--k-fn); }
+.sugs .mid { font-weight: 600; }
+.tools { flex: 1; display: flex; justify-content: space-around; }
+.mic { height: 40px; min-width: 56px; padding: 0 14px; border-radius: 20px; background: var(--k-acc); color: var(--k-on-acc); display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; font-size: 13px; flex: none; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+.keys { display: grid; grid-template-columns: repeat(20, 1fr); grid-auto-rows: 46px; gap: 9px 4px; }
+.key { grid-column: span 2; border-radius: 8px; background: var(--k-key); box-shadow: var(--k-shadow); display: grid; place-items: center; font-size: 21px; position: relative; line-height: 1; }
+.key sup { position: absolute; top: 4px; right: 5px; font-size: 10px; color: var(--k-sub); font-weight: 500; }
+.key.fn { background: var(--k-fn); font-size: 14px; font-weight: 500; }
+.key.acc { background: var(--k-acc); color: var(--k-on-acc); }
+.key.space { font-size: 12px; color: var(--k-sub); letter-spacing: 0.02em; }
+.key.lit { background: var(--k-fn); }
+.key.pop::after { content: attr(data-c); position: absolute; bottom: 100%; left: 50%; transform: translate(-50%, -6px); width: 48px; height: 56px; border-radius: 10px; background: var(--k-key); box-shadow: 0 8px 20px rgba(0,0,0,0.2); display: grid; place-items: center; font-size: 28px; }
+.swipe-trail { position: absolute; inset: 0; pointer-events: none; }
+.swipe-trail path { fill: none; stroke: var(--k-acc); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; opacity: 0.55; }
+.swipe-trail circle { fill: var(--k-acc); }
+.gesture-bar { height: 18px; display: grid; place-items: center; }
+.gesture-bar::before { content: ""; width: 108px; height: 4px; border-radius: 2px; background: var(--k-ink); opacity: 0.35; }
+
+/* Dictation panel: replaces the key area, same height so nothing jumps */
+.dict { height: 246px; display: flex; flex-direction: column; padding: 4px 10px 6px; gap: 8px; }
+.dict-top { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+.live { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--k-rec); font-variant-numeric: tabular-nums; }
+.live::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--k-rec); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 14px; background: var(--k-fn); color: var(--k-ink); font-size: 12px; font-weight: 500; white-space: nowrap; }
+.wave { flex: 1; display: flex; align-items: center; justify-content: center; gap: 3px; }
+.wave i { width: 4px; border-radius: 2px; background: var(--k-rec); opacity: 0.9; transform-origin: center; }
+.wave.idle i { background: var(--k-sub); opacity: 0.4; }
+@media (prefers-reduced-motion: no-preference) {
+  .wave.anim i { animation: bar 1.1s ease-in-out infinite alternate; }
+  @keyframes bar { from { transform: scaleY(0.55); } to { transform: scaleY(1); } }
+}
+.dict-ctrls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 12px; }
+.round { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--k-fn); color: var(--k-ink); }
+.stop { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; background: var(--k-rec); color: #fff; box-shadow: 0 0 0 8px color-mix(in srgb, var(--k-rec) 18%, transparent); }
+.stop .sq { width: 22px; height: 22px; border-radius: 5px; background: #fff; }
+.hint { text-align: center; font-size: 12px; color: var(--k-sub); }
+
+/* Panels: emoji, clipboard */
+.panel { height: 246px; display: flex; flex-direction: column; gap: 8px; padding: 0 4px; }
+.tabs { display: flex; gap: 4px; overflow: hidden; }
+.tab { height: 32px; min-width: 40px; padding: 0 10px; gap: 6px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; color: var(--k-sub); white-space: nowrap; }
+.tab.on { background: var(--k-ink); color: var(--k-bg); font-weight: 600; }
+.emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; font-size: 25px; line-height: 38px; text-align: center; overflow: hidden; flex: 1; }
+.label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--k-sub); font-weight: 600; padding: 2px 4px 0; }
+.searchbar { height: 40px; border-radius: 20px; background: var(--k-key); display: flex; align-items: center; gap: 8px; padding: 0 14px; color: var(--k-sub); font-size: 14px; box-shadow: var(--k-shadow); }
+.clips { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; overflow: hidden; align-content: start; }
+.clip { background: var(--k-key); border-radius: 10px; padding: 8px 24px 8px 10px; font-size: 12.5px; line-height: 1.35; box-shadow: var(--k-shadow); position: relative; min-height: 62px; display: flex; flex-direction: column; gap: 4px; }
+.clip .src { font-size: 10.5px; color: var(--k-sub); display: flex; align-items: center; gap: 4px; margin-top: auto; }
+.clip .pin { position: absolute; top: 6px; right: 6px; color: var(--k-acc); }
+.clip.img { padding: 0; overflow: hidden; }
+.clip.img .ph { min-height: 34px; }
+.clip.img .ph { flex: 1; background: linear-gradient(135deg, #7B8CDE, #3D4F9F); }
+.clip.img .src { padding: 0 10px 6px; }
+
+/* Review / cleanup panel */
+.review { height: 246px; display: flex; flex-direction: column; gap: 10px; padding: 4px 10px 8px; }
+.review .text { background: var(--k-key); border-radius: 14px; padding: 12px 14px; font-size: 14.5px; line-height: 1.5; box-shadow: var(--k-shadow); flex: 1; }
+del { color: var(--k-sub); text-decoration-color: var(--k-rec); text-decoration-thickness: 1.5px; }
+ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, transparent); border-radius: 4px; padding: 0 2px; }
+.review .acts { display: flex; gap: 8px; }
+.btn { height: 44px; padding: 0 18px; border-radius: 22px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 600; flex: 1; }
+.btn.tonal { background: var(--k-fn); color: var(--k-ink); }
+.btn.filled { background: var(--k-acc); color: var(--k-on-acc); }
+
+/* Overlays for the power-button flow */
+.scrim { position: absolute; inset: 0; background: rgba(8, 10, 16, 0.42); z-index: 2; }
+.sheet { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 3; border-radius: 28px; background: var(--k-bg); color: var(--k-ink); padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 -10px 40px rgba(0,0,0,0.25); }
+.sheet .grab { width: 36px; height: 4px; border-radius: 2px; background: var(--k-sub); opacity: 0.4; align-self: center; }
+.sheet .target { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--k-sub); }
+.sheet .target b { color: var(--k-ink); font-weight: 600; }
+.sheet .transcript { font-size: 17px; line-height: 1.45; min-height: 74px; }
+.snack { position: absolute; left: 12px; right: 12px; bottom: 18px; z-index: 4; border-radius: 14px; background: #24272F; color: #F1F2F5; padding: 12px 14px; display: flex; align-items: center; gap: 12px; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.snack .act { margin-left: auto; color: #A9B6FF; font-weight: 600; min-height: 32px; display: inline-flex; align-items: center; }
+.hold-callout { position: absolute; right: 22px; top: 176px; z-index: 4; background: var(--k-rec); color: #fff; padding: 8px 12px; border-radius: 12px 12px 4px 12px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); }
+.ring { position: absolute; right: -16px; top: 204px; width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--rec); opacity: 0.5; z-index: 0; }
+
+/* Notes-style app (used behind overlays) */
+.notes { flex: 1; background: var(--s-surface); padding: 52px 20px 20px; display: flex; flex-direction: column; gap: 10px; }
+.notes .nt { font-family: var(--font-display); font-size: 24px; font-weight: 700; }
+.notes .nd { font-size: 12px; color: var(--s-sub); }
+.notes p { margin: 0; font-size: 14.5px; line-height: 1.55; }
+.hl { background: color-mix(in srgb, var(--k-acc) 16%, transparent); border-radius: 3px; }
+.browser { flex: 1; background: var(--s-surface); display: flex; flex-direction: column; }
+.urlbar { margin: 44px 12px 8px; height: 44px; border-radius: 22px; background: var(--s-bg); display: flex; align-items: center; gap: 8px; padding: 0 14px; font-size: 13px; color: var(--s-sub); }
+.article { padding: 8px 20px; display: grid; gap: 10px; }
+.article .h { font-family: var(--font-display); font-size: 22px; font-weight: 700; line-height: 1.2; }
+.line { height: 10px; border-radius: 5px; background: var(--s-line); }
+
+/* ===== Settings app ===== */
+.sapp { flex: 1; display: flex; flex-direction: column; background: var(--s-bg); overflow: hidden; }
+.stop-bar { padding: 46px 8px 6px; display: flex; align-items: center; gap: 4px; }
+.stop-bar .t { font-size: 20px; font-weight: 600; padding-left: 4px; }
+.big-title { font-family: var(--font-display); font-size: 30px; font-weight: 700; letter-spacing: -0.01em; padding: 52px 20px 4px; line-height: 1.1; }
+.sub { padding: 0 20px 12px; color: var(--s-sub); font-size: 13.5px; }
+.sbody { flex: 1; overflow: hidden; padding: 4px 12px 16px; display: flex; flex-direction: column; gap: 12px; }
+.group { background: var(--s-surface); border-radius: 20px; overflow: hidden; }
+.group-label { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; color: var(--k-acc); padding: 4px 8px 0; text-transform: uppercase; }
+.item { display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 10px 16px; }
+.item + .item { border-top: 1px solid var(--s-line); }
+.item .ic { width: 36px; height: 36px; border-radius: 10px; background: var(--s-tint); color: var(--k-acc); display: grid; place-items: center; flex: none; }
+.item .tx { flex: 1; min-width: 0; }
+.item .tx b { display: block; font-weight: 500; font-size: 15px; line-height: 1.3; }
+.item .tx span { display: block; font-size: 12.5px; color: var(--s-sub); line-height: 1.35; }
+.item .chev { color: var(--s-sub); }
+.switch { width: 52px; height: 32px; border-radius: 16px; background: var(--s-line); position: relative; flex: none; }
+.switch::after { content: ""; position: absolute; top: 8px; left: 8px; width: 16px; height: 16px; border-radius: 50%; background: var(--s-sub); }
+.switch.on { background: var(--k-acc); }
+.switch.on::after { left: 24px; top: 4px; width: 24px; height: 24px; background: var(--k-on-acc); }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--s-line); border-radius: 22px; overflow: hidden; height: 40px; }
+.seg span { display: grid; place-items: center; font-size: 13px; font-weight: 500; }
+.seg span + span { border-left: 1px solid var(--s-line); }
+.seg .on { background: var(--s-tint); color: var(--k-acc); font-weight: 600; }
+.model { background: var(--s-surface); border-radius: 20px; padding: 16px; display: grid; gap: 12px; }
+.model .row1 { display: flex; align-items: center; gap: 12px; }
+.model .row1 .ic { width: 44px; height: 44px; border-radius: 14px; background: var(--k-acc); color: var(--k-on-acc); display: grid; place-items: center; }
+.model b { font-size: 16px; font-weight: 600; display: block; line-height: 1.25; }
+.model small { color: var(--s-sub); font-size: 12.5px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stats div { background: var(--s-bg); border-radius: 12px; padding: 8px 10px; }
+.stats dt { font-size: 11px; color: var(--s-sub); }
+.stats dd { margin: 0; font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums; }
+.bar { height: 6px; border-radius: 3px; background: var(--s-line); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--k-acc); border-radius: 3px; }
+.slider { position: relative; height: 24px; display: flex; align-items: center; }
+.slider::before { content: ""; position: absolute; left: 0; right: 0; height: 4px; border-radius: 2px; background: var(--s-line); }
+.slider .fill { position: absolute; left: 0; height: 4px; border-radius: 2px; background: var(--k-acc); }
+.slider .knob { position: absolute; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%; background: var(--k-acc); box-shadow: 0 0 0 6px color-mix(in srgb, var(--k-acc) 18%, transparent); }
+.tagrow { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { height: 30px; padding: 0 12px; border-radius: 15px; background: var(--s-bg); border: 1px solid var(--s-line); display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; }
+.tag.add { color: var(--k-acc); border-style: dashed; }
+.fab { position: absolute; right: 18px; bottom: 22px; height: 56px; padding: 0 20px; border-radius: 18px; background: var(--k-acc); color: var(--k-on-acc); display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; box-shadow: 0 8px 20px rgba(20, 30, 90, 0.25); }
+.check { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; flex: none; border: 2px solid var(--s-line); color: var(--s-sub); font-size: 13px; font-weight: 600; }
+.check.done { background: var(--k-acc); border-color: var(--k-acc); color: var(--k-on-acc); }
+.check.now { border-color: var(--k-acc); color: var(--k-acc); }
+.small-btn { height: 36px; padding: 0 14px; border-radius: 18px; background: var(--k-acc); color: var(--k-on-acc); font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; flex: none; }
+.small-btn.tonal { background: var(--s-tint); color: var(--k-acc); }
+.swatches { display: flex; gap: 10px; }
+.sw { width: 40px; height: 40px; border-radius: 50%; position: relative; }
+.sw.on { box-shadow: 0 0 0 3px var(--s-surface), 0 0 0 5px var(--k-acc); }
+.mini-kb { border-radius: 16px; overflow: hidden; }
+.mini-kb .keys { grid-auto-rows: 30px; gap: 5px 3px; }
+.mini-kb .key { font-size: 13px; border-radius: 6px; }
+.mini-kb .key sup { display: none; }
+.mini-kb .strip { height: 36px; }
+.mini-kb .mic { height: 28px; min-width: 40px; padding: 0 10px; font-size: 11px; }
+.mini-kb .sugs span { font-size: 12px; }
+.mini-kb .sbtn { width: 32px; height: 32px; }
+.dict-word { display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-height: 56px; }
+.dict-word + .dict-word { border-top: 1px solid var(--s-line); }
+.dict-word .w { flex: 1; font-size: 15px; }
+.dict-word .w small { display: block; color: var(--s-sub); font-size: 12px; }
+.badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 8px; background: var(--s-bg); color: var(--s-sub); }
+.badge.acc { background: var(--s-tint); color: var(--k-acc); }
+.arrow-r { font-family: var(--font-mono); color: var(--s-sub); }
+
+/* ===== Tablet ===== */
+.tablet { width: 1080px; height: 640px; border-radius: 36px; padding: 12px; background: #0B0C0F; flex: none; box-shadow: 0 30px 60px -30px rgba(10, 14, 30, 0.45);
+  --k-bg: #121419; --k-key: #2A2E37; --k-fn: #1E2129; --k-ink: #ECEEF3; --k-sub: #9AA1B0; --k-acc: #8EA0FF; --k-on-acc: #0D1336; --k-rec: #FF8A4C; --k-shadow: 0 1px 0 rgba(0,0,0,0.5);
+  --s-bg: #0F1115; --s-surface: #1A1D23; --s-ink: #ECEEF3; --s-sub: #A1A8B6; --s-line: #2A2E36; --s-tint: #232A4A; }
+.tablet .screen { border-radius: 26px; }
+.tab-doc { flex: 1; padding: 28px 64px; display: grid; gap: 12px; align-content: start; background: var(--s-surface); }
+.tab-doc .h { font-family: var(--font-display); font-size: 28px; font-weight: 700; }
+.tab-doc p { margin: 0; font-size: 15px; line-height: 1.6; max-width: 70ch; color: var(--s-ink); }
+.split { display: grid; grid-template-columns: 360px 1fr 360px; gap: 0; padding: 4px 20px 16px; align-items: end; }
+.split .keys { grid-template-columns: repeat(11, 1fr); grid-auto-rows: 46px; gap: 9px 6px; }
+.split .key { grid-column: span 2; }
+.split .key.w1 { grid-column: span 1; visibility: hidden; }
+.split .key.w3 { grid-column: span 3; }
+.split .key.w4 { grid-column: span 4; }
+.split .key.w5 { grid-column: span 5; }
+.split .key.w6 { grid-column: span 6; }
+.scroll-x { max-width: 100%; overflow-x: auto; padding-bottom: 8px; }
+.mid-col { display: grid; place-items: center; gap: 10px; align-self: stretch; padding: 8px 0; }
+.mid-col .mic { height: 56px; width: 56px; min-width: 0; padding: 0; border-radius: 50%; }
+.mid-col small { font-size: 11px; color: var(--k-sub); text-align: center; }
+.grip { width: 6px; height: 40px; border-radius: 3px; background: var(--k-fn); }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+    <symbol id="i-clip" viewBox="0 0 24 24"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></symbol>
+    <symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5s1.3 2 3.5 2 3.5-2 3.5-2M9 9.5h.01M15 9.5h.01"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><path d="M12.2 2h-.4a2 2 0 0 0-2 2v.2a2 2 0 0 1-1 1.7l-.4.3a2 2 0 0 1-2 0l-.2-.1a2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7l.2.1a2 2 0 0 1 1 1.7v.5a2 2 0 0 1-1 1.8l-.2.1a2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7l.2-.1a2 2 0 0 1 2 0l.4.3a2 2 0 0 1 1 1.7v.2a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2v-.2a2 2 0 0 1 1-1.7l.4-.3a2 2 0 0 1 2 0l.2.1a2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7l-.2-.1a2 2 0 0 1-1-1.8v-.5a2 2 0 0 1 1-1.7l.2-.1a2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7l-.2.1a2 2 0 0 1-2 0l-.4-.3a2 2 0 0 1-1-1.7V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M21 5H9l-7 7 7 7h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1zM18 9l-6 6M12 9l6 6"/></symbol>
+    <symbol id="i-shift" viewBox="0 0 24 24"><path d="M12 4l8 8h-4v8H8v-8H4z"/></symbol>
+    <symbol id="i-enter" viewBox="0 0 24 24"><path d="M20 5v7a3 3 0 0 1-3 3H5M9 11l-4 4 4 4"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8zM19 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v8M7 6.3a8 8 0 1 0 10 0"/></symbol>
+    <symbol id="i-kbd" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></symbol>
+    <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.6 0-.9-.6-1.3-.6-2.1 0-.9.7-1.6 1.6-1.6H17a4 4 0 0 0 4-4C21 6.9 17 3 12 3z"/><path d="M7.5 11h.01M10 7.5h.01M14.5 7.5h.01"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5zM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="i-split" viewBox="0 0 24 24"><rect x="2" y="7" width="8" height="10" rx="1.5"/><rect x="14" y="7" width="8" height="10" rx="1.5"/></symbol>
+    <symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></symbol>
+    <symbol id="i-gesture" viewBox="0 0 24 24"><path d="M3 17c3-6 5.5-6.5 7.5-3s5 4.5 10.5-7"/><circle cx="20.5" cy="7" r="1.5"/></symbol>
+    <symbol id="i-cursor" viewBox="0 0 24 24"><path d="M8 4h8M8 20h8M12 4v16"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol>
+    <symbol id="i-a11y" viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="1.5"/><path d="M5 8.5h14M12 8.5v5.5l-3 7M12 14l3 7"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-dots" viewBox="0 0 24 24"><path d="M12 5h.01M12 12h.01M12 19h.01"/></symbol>
+    <symbol id="i-chev-up" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M10 10h4v4h-4zM9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></symbol>
+    <symbol id="i-wave" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 10.5v3"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4.5"/><path d="M12 15h9M18 15v3M21 15v2"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></symbol>
+    <symbol id="i-fold" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></symbol>
+    <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M2 8.8a15 15 0 0 1 4.2-2.6M10.7 5.1A15 15 0 0 1 22 8.8M5 12.5a10 10 0 0 1 5.2-2.5M16.8 11a10 10 0 0 1 2.2 1.5M8.5 16a5 5 0 0 1 7 0M12 20h.01M3 3l18 18"/></symbol>
+  </defs>
+</svg>
+
+<header class="l-nav">
+  <div class="l-wrap">
+    <a class="l-brand" href="#top"><span class="l-logo"><svg class="icon sm"><use href="#i-wave"/></svg></span>Murmur</a>
+    <nav aria-label="Sections">
+      <a href="#dictation">Dictation</a>
+      <a href="#keyboard">Keyboard</a>
+      <a href="#theme">Theme</a>
+      <a href="#privacy">Privacy</a>
+      <a class="l-gh" href="https://github.com/Jmeza081/murmur-keyboard"><svg class="icon sm" style="vertical-align: -4px; margin-right: 4px"><use href="#i-github"/></svg>Source</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ============ HERO ============ -->
+<section class="l-hero">
+  <div class="l-wrap">
+    <div>
+      <span class="l-eyebrow rv"><span class="dot"></span>Android keyboard · on-device dictation</span>
+      <h1 class="rv d1">Say it.<br><em>It's typed.</em></h1>
+      <p class="l-lede rv d2">Murmur is a keyboard that listens. <b>Hold the power button in any app</b>, talk, and your words land where you were typing, cleaned of the ums. The speech model runs on your phone, so nothing you say leaves it.</p>
+      <div class="l-ctas rv d2">
+        <a class="l-btn rec" href="#dictation"><svg class="icon"><use href="#i-wave"/></svg>See how it works</a>
+        <a class="l-btn ghost" href="https://github.com/Jmeza081/murmur-keyboard"><svg class="icon"><use href="#i-github"/></svg>View the source</a>
+      </div>
+      <ul class="l-facts rv d2">
+        <li><svg class="icon sm"><use href="#i-wifi-off"/></svg>Works offline</li>
+        <li><svg class="icon sm"><use href="#i-globe"/></svg>25 languages</li>
+        <li><svg class="icon sm"><use href="#i-shield"/></svg>Audio never stored</li>
+      </ul>
+    </div>
+
+    <div class="l-stage">
+      <div class="l-said" id="h-said" aria-hidden="true"><small><svg class="icon xs"><use href="#i-wave"/></svg>You say</small><span id="h-said-text"></span></div>
+      <div class="phone" id="hero-phone" role="img" aria-label="A phone shows a grocery note. Holding the power button opens Murmur's listening sheet, and the spoken sentence is added to the note.">
+        <div class="punch"></div>
+        <span class="side-btn vol"></span><span class="side-btn pwr" id="h-pwr" title="Press and hold"></span>
+        <span class="l-press" id="h-press"></span>
+        <div class="screen">
+          <div class="notes">
+            <div class="nd">Notes · Today 8:12</div>
+            <div class="nt">Groceries</div>
+            <p>Eggs, oat milk, spinach</p>
+            <p>Tortillas and the good salsa</p>
+            <p>Dish soap</p>
+            <p><span class="hl-new" id="h-added"></span><span class="caret blink"></span></p>
+          </div>
+          <div class="scrim" id="h-scrim"></div>
+          <div class="capsule" id="h-capsule"></div>
+          <div class="msheet" id="h-sheet">
+            <span class="grab"></span>
+            <div class="mtop"><span class="live" id="h-time">0:00</span><span class="chip"><svg class="icon xs"><use href="#i-shield"/></svg>On device</span></div>
+            <div class="mtarget"><svg class="icon xs"><use href="#i-cursor"/></svg>Typing into <b>Notes</b></div>
+            <canvas id="h-wave"></canvas>
+            <div class="mctrls">
+              <span class="round" style="justify-self: start"><svg class="icon"><use href="#i-x"/></svg></span>
+              <span class="msend"><svg class="icon"><use href="#i-up"/></svg></span>
+              <span class="round spark-on" style="justify-self: end"><svg class="icon"><use href="#i-spark"/></svg></span>
+            </div>
+          </div>
+          <div class="snack" id="h-snack"><svg class="icon sm"><use href="#i-check"/></svg>Added to Notes<span class="act">Undo</span></div>
+        </div>
+      </div>
+      <p class="l-hint">Try it: press and hold the phone's power button.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ THREE WAYS ============ -->
+<section class="l-sec" id="ways">
+  <div class="l-wrap">
+    <p class="l-kicker rv">Three ways in</p>
+    <h2 class="rv">Dictation wherever your thumb already is.</h2>
+    <div class="l-ways">
+      <article class="l-way rv">
+        <span class="ic"><svg class="icon"><use href="#i-wave"/></svg></span>
+        <h3>The mic key</h3>
+        <p>It sits at the right of the suggestion strip in every state, so it's always one tap away. Tap it, talk, and tap Send.</p>
+      </article>
+      <article class="l-way hot rv d1">
+        <span class="ic"><svg class="icon"><use href="#i-power"/></svg></span>
+        <h3>The power button</h3>
+        <p>Murmur is your digital assistant, so holding power opens a listening sheet over any app. It finishes when you pause.</p>
+      </article>
+      <article class="l-way rv d2">
+        <span class="ic"><svg class="icon"><use href="#i-copy"/></svg></span>
+        <h3>Anywhere else</h3>
+        <p>No field open? The text goes into the focused field through accessibility, or to your clipboard, pinned for an hour.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DICTATION ============ -->
+<section class="l-sec" id="dictation">
+  <div class="l-wrap">
+    <p class="l-kicker rv">Dictation</p>
+    <h2 class="rv">Talk like a person. Get text like an editor wrote it.</h2>
+    <p class="l-intro rv">Parakeet v3, NVIDIA's speech model, runs right on the phone. Tap the mic and the keys turn into a listening panel of the same height, so the app above never jumps.</p>
+  </div>
+  <div class="l-bleed">
+    <div class="l-gallery center">
+      <figure class="rv">
+        <div class="phone">
+          <div class="punch"></div>
+          <div class="screen">
+            <div class="appbar"><span class="avatar">SR</span><div><div class="t">Sam Rivera</div><div class="s">Online</div></div></div>
+            <div class="thread">
+              <div class="bubble in">Found a new brunch spot, want to try it?</div>
+              <div class="bubble out">Always. Where is it?</div>
+              <div class="bubble in">Mission, near the park. Opens at 8</div>
+              <div class="bubble out">Booked us for 9 on Saturday</div>
+              <div class="bubble in">Can you send me the address?</div>
+            </div>
+            <div class="composer"><div class="field idle">Message</div><span class="send"><svg class="icon sm"><use href="#i-send"/></svg></span></div>
+            <div class="kb" data-kb="listen"></div>
+          </div>
+        </div>
+        <figcaption><b>Listening</b><span>The waveform follows your voice. Pause for two seconds, or tap Send, and it's typed.</span></figcaption>
+      </figure>
+      <figure class="rv d1">
+        <div class="phone">
+          <div class="punch"></div>
+          <div class="screen">
+            <div class="appbar"><span class="avatar">SR</span><div><div class="t">Sam Rivera</div><div class="s">Online</div></div></div>
+            <div class="thread">
+              <div class="bubble in">Found a new brunch spot, want to try it?</div>
+              <div class="bubble out">Always. Where is it?</div>
+              <div class="bubble in">Mission, near the park. Opens at 8</div>
+              <div class="bubble out">Booked us for 9 on Saturday</div>
+              <div class="bubble in">Can you send me the address?</div>
+            </div>
+            <div class="composer"><div class="field">So the place is on Valencia, right next to the bookstore.<span class="caret"></span></div><span class="send"><svg class="icon sm"><use href="#i-send"/></svg></span></div>
+            <div class="kb" data-kb="typing2"></div>
+          </div>
+        </div>
+        <figcaption><b>Typed and tidied</b><span>Filler words are gone and the spacing is fixed before the text reaches the field.</span></figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="l-wrap">
+    <div class="l-split" style="margin-top: 72px">
+      <div>
+        <p class="l-kicker rv">Cleanup</p>
+        <h2 class="rv" style="font-size: clamp(30px, 3.6vw, 44px)">The ums come out. Your words stay yours.</h2>
+        <p class="l-intro rv">Light cleanup drops filler words and fixes spacing with simple rules, so it adds no delay and never rewrites what you meant. Add your own fillers, or turn it off.</p>
+      </div>
+      <div class="l-diff rv d1" id="diff">
+        <div class="row">
+          <span class="lab"><svg class="icon xs"><use href="#i-wave"/></svg>What you said</span>
+          <div class="txt">So <span class="x">um</span> the place is on Valencia, <span class="x">like</span> right next to the <span class="x">uh</span> bookstore<span class="p">.</span></div>
+        </div>
+        <div class="row">
+          <span class="lab">Your fillers</span>
+          <div class="l-tags"><span>um</span><span>uh</span><span>erm</span><span>like</span><span>you know</span><span class="add">+ Add</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WAVEFORMS ============ -->
+<section class="l-sec" id="waveforms">
+  <div class="l-wrap l-split">
+    <div>
+      <p class="l-kicker rv">Pick your waveform</p>
+      <h2 class="rv">See that it hears you.</h2>
+      <p class="l-intro rv">Three ways to draw your voice, each tuned to your mic in decibels so quiet speech still moves it. Choose one in settings.</p>
+      <div class="l-wavecopy rv d1">
+        <div class="l-seg" role="group" aria-label="Waveform style" id="wv-seg">
+          <button type="button" data-k="dots" aria-pressed="true">Dot matrix</button>
+          <button type="button" data-k="thread" aria-pressed="false">Voice thread</button>
+          <button type="button" data-k="bars" aria-pressed="false">Ticker</button>
+        </div>
+        <p id="wv-desc"></p>
+      </div>
+    </div>
+    <div class="l-wavecard rv d1">
+      <div class="mtop"><span class="live" style="color: #E8590C" id="wv-time">0:04</span><span class="chip" style="background: #2A2E37; color: #ECEEF3"><svg class="icon xs"><use href="#i-shield"/></svg>On device</span></div>
+      <canvas id="wv-canvas" aria-label="Live waveform preview" role="img"></canvas>
+      <div class="mctrls">
+        <span class="round" style="justify-self: start"><svg class="icon"><use href="#i-x"/></svg></span>
+        <span class="msend"><svg class="icon"><use href="#i-up"/></svg></span>
+        <span class="round spark-on" style="justify-self: end"><svg class="icon"><use href="#i-spark"/></svg></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ KEYBOARD ============ -->
+<section class="l-sec" id="keyboard">
+  <div class="l-wrap">
+    <p class="l-kicker rv">The keyboard</p>
+    <h2 class="rv">A full keyboard, not just a mic.</h2>
+    <p class="l-intro rv">Built on HeliBoard, the open-source Android keyboard: swipe typing, smart suggestions, English and Spanish together, emoji, a clipboard you can pin, and a one-tap 1Password button.</p>
+  </div>
+  <div class="l-bleed">
+    <div class="l-gallery">
+      <figure class="rv">
+        <div class="phone">
+          <div class="punch"></div>
+          <div class="screen">
+            <div class="appbar"><span class="avatar">SR</span><div><div class="t">Sam Rivera</div><div class="s">Online</div></div></div>
+            <div class="thread">
+              <div class="bubble in">Are we still on for Saturday?</div>
+              <div class="bubble out">Yes! What time works?</div>
+              <div class="bubble in">Morning is best for me</div>
+            </div>
+            <div class="composer"><div class="field">Perfect, see you <span class="caret"></span></div><span class="send"><svg class="icon sm"><use href="#i-send"/></svg></span></div>
+            <div class="kb" data-kb="swipe"></div>
+          </div>
+        </div>
+        <figcaption><b>Swipe typing</b><span>Glide through the letters. The trail follows your finger and fades when you lift.</span></figcaption>
+      </figure>
+      <figure class="rv d1">
+        <div class="phone">
+          <div class="punch"></div>
+          <div class="screen">
+            <div class="appbar"><span class="avatar">SR</span><div><div class="t">Sam Rivera</div><div class="s">Online</div></div></div>
+            <div class="thread">
+              <div class="bubble in">Are we still on for Saturday?</div>
+              <div class="bubble out">Yes! What time works?</div>
+              <div class="bubble in">Morning is best for me</div>
+            </div>
+            <div class="composer"><div class="field">Perfect, see you at 9 at the farmers mar<span class="caret"></span></div><span class="send"><svg class="icon sm"><use href="#i-send"/></svg></span></div>
+            <div class="kb" data-kb="typing"></div>
+          </div>
+        </div>
+        <figcaption><b>Suggestions</b><span>Three at a time, likeliest in the middle. Autocorrect is tuned to catch real typos.</span></figcaption>
+      </figure>
+      <figure class="rv d2">
+        <div class="phone dark">
+          <div class="punch"></div>
+          <div class="screen">
+            <div class="appbar"><span class="avatar">SR</span><div><div class="t">Sam Rivera</div><div class="s">Online</div></div></div>
+            <div class="thread"><div class="bubble out">Did the presale work?</div><div class="bubble in">It did. Row F, right in the middle</div><div class="bubble in">Got the tickets!!</div></div>
+            <div class="composer"><div class="field">Amazing <span class="caret"></span></div><span class="send"><svg class="icon sm"><use href="#i-send"/></svg></span></div>
+            <div class="kb" data-kb="emoji"></div>
+          </div>
+        </div>
+        <figcaption><b>Emoji</b><span>Search first, then your recents and every category in one scrolling row.</span></figcaption>
+      </figure>
+      <figure class="rv">
+        <div class="phone">
+          <div class="punch"></div>
+          <div class="screen">
+            <div class="appbar"><span class="avatar">SR</span><div><div class="t">Sam Rivera</div><div class="s">Online</div></div></div>
+            <div class="thread"><div class="bubble out">Booked us for 9 on Saturday</div><div class="bubble in">Nice! Which place again?</div><div class="bubble in">Can you send me the address?</div></div>
+            <div class="composer"><div class="field idle">Message</div><span class="send"><svg class="icon sm"><use href="#i-send"/></svg></span></div>
+            <div class="kb" data-kb="clip"></div>
+          </div>
+        </div>
+        <figcaption><b>Clipboard</b><span>Pin what you reuse. Everything else clears after an hour, and copied passwords are never kept.</span></figcaption>
+      </figure>
+      <figure class="rv d1">
+        <div class="phone">
+          <div class="punch"></div>
+          <div class="screen">
+            <div class="appbar"><span class="avatar">SR</span><div><div class="t">Sam Rivera</div><div class="s">Online</div></div></div>
+            <div class="thread">
+              <div class="bubble in">Are we still on for Saturday?</div>
+              <div class="bubble out">Yes! What time works?</div>
+              <div class="bubble in">Morning is best for me</div>
+            </div>
+            <div class="composer"><div class="field idle">Message</div><span class="send"><svg class="icon sm"><use href="#i-send"/></svg></span></div>
+            <div class="kb" data-kb="tools"></div>
+          </div>
+        </div>
+        <figcaption><b>Tools when the field is empty</b><span>Clipboard, emoji, 1Password and settings. The mic keeps its own spot on the right.</span></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ THEME ============ -->
+<section class="l-sec" id="theme">
+  <div class="l-wrap l-split">
+    <div>
+      <p class="l-kicker rv">Make it yours</p>
+      <h2 class="rv">Five accents. Light, dark, or both.</h2>
+      <p class="l-intro rv">Pick an accent and it colors Enter, the mic, and Send. Every one keeps white icons readable on light and dark keys. Try one here.</p>
+      <div class="l-swatches rv d1" role="group" aria-label="Accent color" id="swatches"></div>
+      <p class="l-swname rv d1" id="swname" aria-live="polite"></p>
+    </div>
+    <div style="display: grid; justify-items: center" class="rv d1">
+      <div class="phone" id="theme-phone">
+        <div class="punch"></div>
+        <div class="screen">
+          <div class="sapp">
+            <div class="stop-bar"><span class="sbtn" style="color: var(--s-ink)"><svg class="icon"><use href="#i-arrow-l"/></svg></span><span class="t">Theme</span></div>
+            <div class="sbody">
+              <div class="phone dark mini-wrap" style="width: auto; height: auto; padding: 0; background: none; box-shadow: none; border-radius: 16px; overflow: hidden">
+                <div class="kb mini-kb" data-kb="mini" style="padding-top: 2px"></div>
+              </div>
+              <div class="group" style="padding: 14px 16px; display: grid; gap: 14px">
+                <div class="seg"><span>Light</span><span>Dark</span><span class="on">System</span></div>
+                <div style="display: grid; gap: 8px"><span style="font-size: 13px; font-weight: 500">Accent</span>
+                  <div class="swatches" id="phone-sw"></div>
+                </div>
+              </div>
+              <div class="group">
+                <div class="item"><div class="tx"><b>Key borders</b><span>Separate each key</span></div><span class="switch on"></span></div>
+                <div class="item"><div class="tx"><b>Key height</b><span>Medium</span><div class="slider" style="margin-top: 6px"><span class="fill" style="width: 50%"></span><span class="knob" style="left: 50%"></span></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOLD ============ -->
+<section class="l-sec" id="fold">
+  <div class="l-wrap">
+    <p class="l-kicker rv">Made for the Fold</p>
+    <h2 class="rv">Open it up, and the keys split for your thumbs.</h2>
+    <p class="l-intro rv">On the inner screen in landscape, the keyboard splits into two thumb zones with the mic in the middle, where either thumb reaches it.</p>
+  </div>
+  <div class="l-fold rv" id="fold-box">
+    <div class="l-fold-frame" id="fold-frame">
+      <div class="tablet">
+        <div class="screen">
+          <div class="tab-doc">
+            <div class="h">Trip notes: Lisbon</div>
+            <p>Day one: land at 7:40, train to Cais do Sodré, drop bags at the hotel. Lunch near Time Out Market, then walk up to Miradouro de Santa Catarina for sunset.</p>
+            <p>Day two: tram 28 early before the crowds, Alfama in the morning, Belém in the afternoon for pastéis<span class="caret"></span></p>
+          </div>
+          <div class="kb" data-kb="split"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SETTINGS ============ -->
+<section class="l-sec" id="settings">
+  <div class="l-wrap">
+    <p class="l-kicker rv">Settings</p>
+    <h2 class="rv">One app. Every row tells you where it stands.</h2>
+    <p class="l-intro rv">A five-step checklist gets you set up, and each step opens the right Android screen and ticks itself when you come back. After that, every option shows its current value, so you rarely need to open it.</p>
+  </div>
+  <div class="l-bleed">
+    <div class="l-gallery center">
+      <figure class="rv">
+        <div class="phone">
+          <div class="punch"></div>
+          <div class="screen">
+            <div class="sapp">
+              <div class="big-title">Set up your keyboard</div>
+              <div class="sub">Five steps. About 3 minutes plus the model download.</div>
+              <div class="sbody">
+                <div class="group">
+                  <div class="item"><span class="check done"><svg class="icon xs"><use href="#i-check"/></svg></span><div class="tx"><b>Turn on the keyboard</b><span>Done in system settings</span></div></div>
+                  <div class="item"><span class="check done"><svg class="icon xs"><use href="#i-check"/></svg></span><div class="tx"><b>Make it your keyboard</b><span>Selected as the default</span></div></div>
+                  <div class="item" style="align-items: flex-start"><span class="check now">3</span><div class="tx"><b>Download the speech model</b><span>415 of 670 MB · keep this screen open</span><div class="bar" style="margin-top: 8px"><i style="width: 62%" id="dl-bar"></i></div></div></div>
+                  <div class="item"><span class="check">4</span><div class="tx"><b>Use power button for dictation</b><span>Set as digital assistant</span></div><span class="small-btn tonal">Open</span></div>
+                  <div class="item"><span class="check">5</span><div class="tx"><b>Type into any app</b><span>Optional. Uses accessibility</span></div><span class="small-btn tonal">Open</span></div>
+                </div>
+                <p style="margin: 4px 8px 0; font-size: 12.5px; color: var(--s-sub); line-height: 1.45">Everything runs on this phone. The app uses the internet only to download the model.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption><b>First run</b><span>Five steps, about three minutes, plus a one-time model download.</span></figcaption>
+      </figure>
+      <figure class="rv d1">
+        <div class="phone">
+          <div class="punch"></div>
+          <div class="screen">
+            <div class="sapp">
+              <div class="big-title">Keyboard</div>
+              <div class="sbody">
+                <div class="group">
+                  <div class="item"><span class="ic"><svg class="icon sm"><use href="#i-wave"/></svg></span><div class="tx"><b>Dictation</b><span>Parakeet v3 · Light cleanup</span></div><svg class="icon sm chev"><use href="#i-chev"/></svg></div>
+                  <div class="item"><span class="ic"><svg class="icon sm"><use href="#i-power"/></svg></span><div class="tx"><b>Power button</b><span>On · Stops when you pause</span></div><svg class="icon sm chev"><use href="#i-chev"/></svg></div>
+                </div>
+                <div class="group">
+                  <div class="item"><span class="ic"><svg class="icon sm"><use href="#i-palette"/></svg></span><div class="tx"><b>Theme</b><span>Cobalt · Follows system</span></div><svg class="icon sm chev"><use href="#i-chev"/></svg></div>
+                  <div class="item"><span class="ic"><svg class="icon sm"><use href="#i-kbd"/></svg></span><div class="tx"><b>Typing</b><span>Swipe, autocorrect, number row</span></div><svg class="icon sm chev"><use href="#i-chev"/></svg></div>
+                  <div class="item"><span class="ic"><svg class="icon sm"><use href="#i-book"/></svg></span><div class="tx"><b>Dictionary</b><span>Your words · English and Spanish</span></div><svg class="icon sm chev"><use href="#i-chev"/></svg></div>
+                </div>
+                <div class="group">
+                  <div class="item"><span class="ic"><svg class="icon sm"><use href="#i-clip"/></svg></span><div class="tx"><b>Clipboard</b><span>Keep for 1 hour</span></div><svg class="icon sm chev"><use href="#i-chev"/></svg></div>
+                  <div class="item"><span class="ic"><svg class="icon sm"><use href="#i-smile"/></svg></span><div class="tx"><b>Emoji</b><span>Skin tone default</span></div><svg class="icon sm chev"><use href="#i-chev"/></svg></div>
+                  <div class="item"><span class="ic"><svg class="icon sm"><use href="#i-split"/></svg></span><div class="tx"><b>Tablet layout</b><span>Split in landscape</span></div><svg class="icon sm chev"><use href="#i-chev"/></svg></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption><b>Home</b><span>Dictation comes first, because it's why the app exists.</span></figcaption>
+      </figure>
+      <figure class="rv d2">
+        <div class="phone dark">
+          <div class="punch"></div>
+          <div class="screen">
+            <div class="sapp">
+              <div class="stop-bar"><span class="sbtn" style="color: var(--s-ink)"><svg class="icon"><use href="#i-arrow-l"/></svg></span><span class="t">Dictation</span></div>
+              <div class="sbody">
+                <div class="model">
+                  <div class="row1"><span class="ic"><svg class="icon"><use href="#i-cpu"/></svg></span><div style="flex: 1"><b>Parakeet TDT v3</b><small>Installed · INT8 · 25 languages</small></div><span class="badge acc">Active</span></div>
+                  <dl class="stats" style="margin: 0">
+                    <div><dt>Size</dt><dd>670 MB</dd></div>
+                    <div><dt>Last run</dt><dd>0.8 s</dd></div>
+                    <div><dt>Memory</dt><dd>~1.4 GB</dd></div>
+                  </dl>
+                </div>
+                <div class="group-label">Cleanup</div>
+                <div class="group" style="padding: 14px 16px; display: grid; gap: 10px">
+                  <div class="seg"><span>Off</span><span class="on">Light</span></div>
+                  <span style="font-size: 12.5px; color: var(--s-sub); line-height: 1.45">Removes filler words and fixes spacing. Your words are never rewritten.</span>
+                  <div class="tagrow"><span class="tag">um</span><span class="tag">uh</span><span class="tag">like</span><span class="tag">you know</span><span class="tag add"><svg class="icon xs"><use href="#i-plus"/></svg>Add</span></div>
+                </div>
+                <div class="group">
+                  <div class="item"><div class="tx"><b>Stop after silence</b><span>2.0 seconds</span><div class="slider" style="margin-top: 6px"><span class="fill" style="width: 33%"></span><span class="knob" style="left: 33%"></span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption><b>Dictation</b><span>See what's installed, how fast it ran last time, and how much cleanup you want.</span></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRIVACY ============ -->
+<section class="l-sec" id="privacy">
+  <div class="l-wrap">
+    <p class="l-kicker rv">Private by design</p>
+    <h2 class="rv">Your voice stays on your phone. Full stop.</h2>
+    <p class="l-intro rv">There's no account and no server. Murmur goes online once, to download the speech model. After that, dictation works in airplane mode.</p>
+    <div class="l-priv rv">
+      <div><b>0</b><span>bytes of audio sent anywhere</span></div>
+      <div><b>670 MB</b><span>model, downloaded once and checksum-verified</span></div>
+      <div><b>25</b><span>languages, detected automatically</span></div>
+      <div><b>&lt;1 s</b><span>to transcribe a typical sentence</span></div>
+    </div>
+    <ul class="l-list">
+      <li class="rv"><svg class="icon sm"><use href="#i-shield"/></svg><span><b>Audio lives in memory only.</b> It's dropped the moment your words are transcribed.</span></li>
+      <li class="rv d1"><svg class="icon sm"><use href="#i-lock"/></svg><span><b>Passwords stay out of history.</b> Clips marked sensitive by password managers are never saved.</span></li>
+      <li class="rv"><svg class="icon sm"><use href="#i-key"/></svg><span><b>Password manager, one tap away.</b> 1Password suggestions show as chips in the strip, with a button to open the app.</span></li>
+      <li class="rv d1"><svg class="icon sm"><use href="#i-github"/></svg><span><b>Open source.</b> GPL-3.0, built on HeliBoard and sherpa-onnx. Read every line.</span></li>
+    </ul>
+  </div>
+</section>
+
+<section class="l-cta">
+  <h2 class="rv">Stop typing so much.</h2>
+  <p class="rv">Murmur is a personal project, built for a Galaxy Z Fold and sideloaded. The code is open if you'd like to build your own.</p>
+  <div class="l-ctas rv">
+    <a class="l-btn rec" href="https://github.com/Jmeza081/murmur-keyboard"><svg class="icon"><use href="#i-github"/></svg>View the source</a>
+    <a class="l-btn ghost" href="#top"><svg class="icon"><use href="#i-chev-up"/></svg>Back to top</a>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="l-wrap">
+    <span>Murmur · GPL-3.0 · A fork of <a href="https://github.com/Helium314/HeliBoard">HeliBoard</a></span>
+    <span>Speech by <a href="https://github.com/k2-fsa/sherpa-onnx">sherpa-onnx</a> and <a href="https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3">NVIDIA Parakeet TDT v3</a> (CC-BY-4.0)</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var I = function (id, cls) { return '<svg class="icon' + (cls ? ' ' + cls : '') + '"><use href="#i-' + id + '"/></svg>'; };
+
+  /* ---------- Keyboard views (from design/mockups.html, updated to the built app) ---------- */
+  var nums = { q: 1, w: 2, e: 3, r: 4, t: 5, y: 6, u: 7, i: 8, o: 9, p: 0 };
+  function letters(opts) {
+    opts = opts || {};
+    var lit = opts.lit || '';
+    var h = '<div class="keys">';
+    'qwertyuiop'.split('').forEach(function (c) { h += '<span class="key' + (lit.indexOf(c) > -1 ? ' lit' : '') + '" data-c="' + c + '">' + c + '<sup>' + nums[c] + '</sup></span>'; });
+    h += '<span style="grid-column: span 1"></span>';
+    'asdfghjkl'.split('').forEach(function (c) { h += '<span class="key' + (lit.indexOf(c) > -1 ? ' lit' : '') + '" data-c="' + c + '">' + c + '</span>'; });
+    h += '<span style="grid-column: span 1"></span>';
+    h += '<span class="key fn" style="grid-column: span 3">' + I('shift', 'sm') + '</span>';
+    'zxcvbnm'.split('').forEach(function (c) { h += '<span class="key' + (lit.indexOf(c) > -1 ? ' lit' : '') + '" data-c="' + c + '">' + c + '</span>'; });
+    h += '<span class="key fn" style="grid-column: span 3">' + I('back', 'sm') + '</span>';
+    h += '<span class="key fn" style="grid-column: span 3">?123</span><span class="key fn">,</span>';
+    h += '<span class="key space" style="grid-column: span 10">English · Español</span>';
+    h += '<span class="key fn">.</span><span class="key acc" style="grid-column: span 3">' + I('enter', 'sm') + '</span>';
+    return h + '</div>';
+  }
+  var mic = '<span class="mic">' + I('wave', 'sm') + '</span>';
+  function strip(inner, left, micHtml) { return '<div class="strip">' + (left || '<span class="sbtn">' + I('grid', 'sm') + '</span>') + inner + (micHtml || mic) + '</div>'; }
+  function sugs(a, b, c) { return '<div class="sugs"><span>' + a + '</span><span class="mid">' + b + '</span><span>' + c + '</span></div>'; }
+  var tools = '<div class="tools"><span class="sbtn">' + I('clip', 'sm') + '</span><span class="sbtn">' + I('smile', 'sm') + '</span><span class="sbtn">' + I('key', 'sm') + '</span><span class="sbtn">' + I('gear', 'sm') + '</span></div>';
+  var abc = '<span class="sbtn on" style="font-size: 13px; font-weight: 600">ABC</span>';
+  var bar = '<div class="gesture-bar"></div>';
+  var emoji = ['😀','😂','🥹','😍','🥳','😎','🤔','😴','👍','🙏','👏','🙌','💪','🔥','✨','🎉','❤️','🧡','💛','💚','💙','💜','🤍','💯','😅','😭','😤','🤯','🫶','👀','🤝','✅','🌮','☕','🌞','🎶'];
+
+  var views = {
+    tools: function () { return strip(tools, '<span class="sbtn">' + I('chev-up', 'sm') + '</span>') + letters() + bar; },
+    typing: function () { return strip(sugs('market', 'market.', 'markets')) + letters() + bar; },
+    typing2: function () { return strip(sugs('I', 'See', 'It’s')) + letters() + bar; },
+    swipe: function () { return strip(sugs('there', 'then', 'the')) + letters({ lit: 'then' }) + bar; },
+    listen: function () {
+      return strip('<div class="sugs" style="grid-template-columns: 1fr"><span class="mid" style="color: var(--k-sub); font-weight: 500">Listening…</span></div>',
+          '<span class="sbtn">' + I('kbd', 'sm') + '</span>', '<span class="mic" style="background: var(--k-rec); color: #fff">' + I('wave', 'sm') + '</span>') +
+        '<div class="dict"><div class="dict-top"><span class="live" data-timer>0:07</span><span class="chip">' + I('shield', 'xs') + 'On device</span></div>' +
+        '<canvas class="kwave" style="width: 100%; height: 92px; display: block"></canvas>' +
+        '<div class="dict-ctrls"><span class="round" style="justify-self: start" aria-label="Cancel">' + I('x') + '</span>' +
+        '<span class="msend" style="width: 64px; height: 64px">' + I('up') + '</span>' +
+        '<span class="round" style="justify-self: end; background: color-mix(in srgb, var(--k-acc) 16%, var(--k-fn)); color: var(--k-acc)" aria-label="Cleanup on">' + I('spark') + '</span></div></div>' + bar;
+    },
+    emoji: function () {
+      var g = emoji.map(function (e) { return '<span>' + e + '</span>'; }).join('');
+      return strip('<div class="tabs" style="flex: 1; padding-left: 4px"><span class="tab on">' + I('clock', 'xs') + '</span><span class="tab">Smileys</span><span class="tab">People</span><span class="tab">Food</span><span class="tab">Travel</span></div>', abc) +
+        '<div class="panel"><div style="display: flex; gap: 8px"><div class="searchbar" style="flex: 1">' + I('search', 'sm') + 'Search emoji</div><span class="key fn" style="width: 56px; height: 40px; flex: none">' + I('back', 'sm') + '</span></div><div class="emoji-grid">' + g + '</div></div>' + bar;
+    },
+    clip: function () {
+      var pin = '<span class="pin">' + I('pin', 'xs') + '</span>';
+      return strip('<div class="tabs" style="flex: 1; padding-left: 4px; align-items: center"><span class="tab on">Clipboard</span><span class="tab">' + I('trash', 'xs') + 'Clear</span></div>', abc) +
+        '<div class="panel"><div class="label">Pinned</div><div class="clips">' +
+        '<div class="clip">' + pin + '1450 Valencia St, Apt 4B<span class="src">' + I('pin', 'xs') + 'Pinned</span></div>' +
+        '<div class="clip">' + pin + 'Wi-Fi: Greenhouse_5G<span class="src">' + I('pin', 'xs') + 'Pinned</span></div>' +
+        '</div><div class="label">Recent</div><div class="clips">' +
+        '<div class="clip">github.com/k2-fsa/sherpa-onnx<span class="src">' + I('clock', 'xs') + '2 min ago</span></div>' +
+        '<div class="clip img"><span class="ph"></span><span class="src">' + I('image', 'xs') + 'Image · 12 min ago</span></div>' +
+        '</div></div>' + bar;
+    },
+    mini: function () { return strip(sugs('the', 'and', 'for')) + letters(); },
+    split: function () {
+      var row = function (s) { return s.split('').map(function (c) { return '<span class="key">' + c + '</span>'; }).join(''); };
+      var pad = '<span class="key w1"></span>';
+      var left = '<div class="keys">' + row('qwert') + pad + pad + row('asdfg') + '<span class="key fn w3">' + I('shift', 'sm') + '</span>' + row('zxcv') +
+        '<span class="key fn w3">?123</span><span class="key fn">,</span><span class="key space w6">space</span></div>';
+      var right = '<div class="keys">' + row('yuiop') + pad + pad + row('hjkl') + '<span class="key">\'</span>' + row('bnm') + '<span class="key fn w5">' + I('back', 'sm') + '</span>' +
+        '<span class="key space w5">space</span><span class="key fn">.</span><span class="key acc w4">' + I('enter', 'sm') + '</span></div>';
+      return '<div class="strip" style="padding: 0 16px"><span class="sbtn">' + I('grid', 'sm') + '</span>' + sugs('pastéis', 'pastéis de nata', 'pastries') +
+        '<span class="sbtn">' + I('smile', 'sm') + '</span><span class="sbtn">' + I('clip', 'sm') + '</span><span class="sbtn">' + I('gear', 'sm') + '</span></div>' +
+        '<div class="split">' + left + '<div class="mid-col"><span class="grip"></span><span class="mic">' + I('wave') + '</span><small>Dictate</small><span class="grip"></span></div>' + right + '</div>';
+    }
+  };
+  document.querySelectorAll('[data-kb]').forEach(function (el) { var v = views[el.getAttribute('data-kb')]; if (v) el.innerHTML = v(); });
+
+  // Swipe trail t → h → e → n, measured with offsets so it survives CSS zoom
+  document.querySelectorAll('[data-kb="swipe"]').forEach(function (kb) {
+    var pts = ['t', 'h', 'e', 'n'].map(function (c) {
+      var k = kb.querySelector('.key[data-c="' + c + '"]');
+      return [k.offsetLeft + k.offsetWidth / 2, k.offsetTop + k.offsetHeight / 2];
+    });
+    var d = 'M' + pts.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L');
+    var last = pts[pts.length - 1];
+    kb.insertAdjacentHTML('beforeend', '<svg class="swipe-trail" aria-hidden="true" width="' + kb.offsetWidth + '" height="' + kb.offsetHeight + '"><path pathLength="1" d="' + d + '"/><circle cx="' + last[0] + '" cy="' + last[1] + '" r="9"/></svg>');
+  });
+
+  /* ---------- Simulated voice: syllables grouped into words, with pauses (from design/waveforms.html) ---------- */
+  function Voice() { this.level = 0; this.target = 0; this.t = 0; this.next = 0; this.left = 0; this.pause = 0; this.on = true; this.hist = []; this.acc = 0; }
+  Voice.prototype.step = function (dt) {
+    var s = this; s.t += dt;
+    var floor = 0.05;
+    if (!s.on) s.target = floor + Math.random() * 0.03;
+    else if (s.t > s.pause && s.t > s.next) {
+      if (s.left <= 0) { s.left = 2 + Math.floor(Math.random() * 5); if (Math.random() < 0.3) { s.pause = s.t + 0.35 + Math.random() * 0.5; s.target = floor; return; } }
+      s.left--; s.target = 0.45 + Math.random() * 0.5; s.next = s.t + 0.12 + Math.random() * 0.12;
+    } else if (s.t > s.next - 0.06) s.target = Math.max(floor, s.target * 0.9);
+    if (s.on && s.t < s.pause) s.target = floor + Math.random() * 0.03;
+    s.level += (s.target - s.level) * (s.target > s.level ? 0.45 : 0.12);
+    s.acc += dt; if (s.acc > 0.05) { s.acc = 0; s.hist.push(s.level); if (s.hist.length > 400) s.hist.shift(); }
+  };
+  function fit(c) {
+    var d = window.devicePixelRatio || 1, w = c.offsetWidth, h = c.offsetHeight;
+    if (c.width !== Math.round(w * d)) { c.width = Math.round(w * d); c.height = Math.round(h * d); }
+    var ctx = c.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); return [ctx, w, h];
+  }
+  function rgba(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  var REC = '#E8590C', CHIP = '#2A2E37';
+  var STYLES = {
+    dots: { name: 'Dot matrix', desc: 'A grid of dots that light from the middle out, column by column, like an LED meter. The default.',
+      draw: function (ctx, w, h, v) {
+        var gap = 9, rows = Math.max(5, Math.min(11, Math.floor(h / gap) | 1)), cols = Math.floor(w / gap), x0 = (w - (cols - 1) * gap) / 2, y0 = (h - (rows - 1) * gap) / 2, H = v.hist;
+        for (var c = 0; c < cols; c++) {
+          var lv = H[H.length - cols + c] || 0, lit = Math.round(lv * ((rows - 1) / 2 + 0.6));
+          for (var r = 0; r < rows; r++) {
+            var dd = Math.abs(r - (rows - 1) / 2), on = dd <= lit - 1 || (dd === 0 && lv > 0.02);
+            ctx.fillStyle = on ? rgba(REC, 0.35 + 0.65 * (c / cols)) : CHIP;
+            ctx.beginPath(); ctx.arc(x0 + c * gap, y0 + r * gap, 2, 0, Math.PI * 2); ctx.fill();
+          }
+        }
+      } },
+    thread: { name: 'Voice thread', desc: 'Three thin lines weave around each other. They lie flat when you’re quiet and swell as you speak.',
+      draw: function (ctx, w, h, v, time) {
+        var mid = h / 2, amp = (0.08 + v.level * 0.92) * (h / 2 - 6);
+        [[1, 1.0, 0], [0.55, 1.6, 2.1], [0.3, 2.3, 4.2]].forEach(function (L) {
+          ctx.strokeStyle = rgba(REC, L[0]); ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.beginPath();
+          for (var x = 0; x <= w; x += 2) {
+            var u = x / w, taper = Math.pow(Math.sin(Math.PI * u), 1.6);
+            var y = mid + Math.sin(u * Math.PI * 2 * L[1] + (reduced ? 0 : time * (2 + L[1])) + L[2]) * amp * taper * (L[0] === 1 ? 1 : 0.8);
+            x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+          }
+          ctx.stroke();
+        });
+      } },
+    bars: { name: 'Ticker', desc: 'Scrolling bars with a fading tail, so the newest sound is brightest. A record of what you just said.',
+      draw: function (ctx, w, h, v) {
+        var bw = 4, gap = 3, n = Math.floor((w + gap) / (bw + gap)), x0 = (w - (n * (bw + gap) - gap)) / 2, H = v.hist;
+        for (var i = 0; i < n; i++) {
+          var lv = H[H.length - n + i] || 0, bh = 6 + (h - 6) * lv;
+          ctx.fillStyle = rgba(REC, 0.25 + 0.75 * (i / n));
+          ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x0 + i * (bw + gap), (h - bh) / 2, bw, bh, 2); else ctx.rect(x0 + i * (bw + gap), (h - bh) / 2, bw, bh); ctx.fill();
+        }
+      } }
+  };
+
+  // Only draw canvases that are on screen
+  var visible = new WeakMap();
+  var io = 'IntersectionObserver' in window ? new IntersectionObserver(function (es) { es.forEach(function (e) { visible.set(e.target, e.isIntersecting); }); }) : null;
+  function watch(el) { if (io) io.observe(el); else visible.set(el, true); }
+
+  var canvases = []; // { el, voice, style() }
+  var picked = 'dots';
+  var wvVoice = new Voice(), kbVoice = new Voice(), heroVoice = new Voice();
+  heroVoice.on = false;
+  var wv = document.getElementById('wv-canvas');
+  canvases.push({ el: wv, voice: wvVoice, style: function () { return picked; } });
+  document.querySelectorAll('canvas.kwave').forEach(function (c) { canvases.push({ el: c, voice: kbVoice, style: function () { return 'dots'; } }); });
+  var heroWave = document.getElementById('h-wave');
+  canvases.push({ el: heroWave, voice: heroVoice, style: function () { return 'dots'; } });
+  canvases.forEach(function (c) { watch(c.el); });
+
+  // Waveform picker
+  var seg = document.getElementById('wv-seg'), desc = document.getElementById('wv-desc');
+  function pick(k) {
+    picked = k; desc.textContent = STYLES[k].desc;
+    seg.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.k === k)); });
+  }
+  seg.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) pick(b.dataset.k); });
+  pick('dots');
+
+  // Pre-fill histories so nothing starts blank
+  [wvVoice, kbVoice].forEach(function (v) { for (var i = 0; i < 400; i++) v.step(0.016); });
+
+  var capsuleBars = [];
+  var cap = document.getElementById('h-capsule');
+  for (var i = 0; i < 14; i++) { var b = document.createElement('i'); cap.appendChild(b); capsuleBars.push(b); }
+
+  var last = performance.now(), secs = 4;
+  var timers = document.querySelectorAll('[data-timer]'), wvTime = document.getElementById('wv-time');
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    wvVoice.step(dt); kbVoice.step(dt); heroVoice.step(dt);
+    secs += dt;
+    var stamp = '0:' + String(Math.floor(secs) % 60).padStart(2, '0');
+    wvTime.textContent = stamp; timers.forEach(function (t) { t.textContent = stamp; });
+    canvases.forEach(function (c) {
+      if (!visible.get(c.el)) return;
+      var f = fit(c.el), ctx = f[0];
+      ctx.clearRect(0, 0, f[1], f[2]);
+      STYLES[c.style()].draw(ctx, f[1], f[2], c.voice, now / 1000);
+    });
+    if (heroCapsuleLive) {
+      var k = now / 120;
+      capsuleBars.forEach(function (b, j) { b.style.height = (6 + heroVoice.level * 20 * Math.abs(Math.sin(k * 0.4 + j * 0.8)) + 4 * Math.abs(Math.sin(k + j))) + 'px'; });
+    }
+    requestAnimationFrame(frame);
+  }
+  var heroCapsuleLive = false;
+  requestAnimationFrame(frame);
+
+  /* ---------- Hero: hold power → capsule → sheet → typed into Notes (option D) ---------- */
+  var EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)', DRAWER = 'cubic-bezier(0.32, 0.72, 0, 1)', EXIT = 'cubic-bezier(0.4, 0, 1, 1)';
+  var H = {
+    pwr: document.getElementById('h-pwr'), press: document.getElementById('h-press'), scrim: document.getElementById('h-scrim'),
+    sheet: document.getElementById('h-sheet'), cap: cap, time: document.getElementById('h-time'), snack: document.getElementById('h-snack'),
+    added: document.getElementById('h-added'), said: document.getElementById('h-said'), saidText: document.getElementById('h-said-text')
+  };
+  H.content = Array.prototype.slice.call(H.sheet.children);
+  var SAID = ['Also', 'grab', 'coffee', 'beans', 'and,', 'um,', 'some', 'lemons.'];
+  var TYPED = ' Also grab coffee beans and some lemons.';
+  H.saidText.innerHTML = SAID.map(function (w) { return '<span class="w' + (w.indexOf('um') === 0 ? ' um' : '') + '">' + w + '</span>'; }).join(' ');
+  var words = H.saidText.querySelectorAll('.w');
+
+  var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+  var anim = function (el, kf, o) { return el.animate(kf, Object.assign({ fill: 'both' }, o)).finished; };
+  var CLIP_CAP = 'inset(calc(100% - 52px) calc(50% - 64px) 10px calc(50% - 64px) round 21px)', CLIP_OPEN = 'inset(0 0 0 0 round 28px)';
+  var state = 'idle', run = 0, t0 = 0, clock = null;
+
+  function tickClock() { var s = Math.floor((performance.now() - t0) / 1000); H.time.textContent = '0:' + String(s).padStart(2, '0'); }
+  async function openSheet(id) {
+    state = 'open'; t0 = performance.now(); H.time.textContent = '0:00'; clock = setInterval(tickClock, 250);
+    anim(H.scrim, [{ opacity: 0 }, { opacity: 1 }], { duration: 240, easing: 'ease-out' });
+    if (reduced) { H.sheet.style.opacity = 1; await anim(H.sheet, [{ opacity: 0 }, { opacity: 1 }], { duration: 150 }); return; }
+    heroCapsuleLive = true;
+    H.cap.style.opacity = 1;
+    await anim(H.cap, [{ opacity: 0, transform: 'translateY(8px) scale(0.9)' }, { opacity: 1, transform: 'none' }], { duration: 160, easing: EASE_OUT });
+    await wait(140); if (id !== run) return;
+    H.sheet.style.opacity = 1;
+    anim(H.cap, [{ opacity: 1 }, { opacity: 0 }], { duration: 160, delay: 60 });
+    H.content.forEach(function (el) { anim(el, [{ opacity: 0 }, { opacity: 0, offset: 0.5 }, { opacity: 1 }], { duration: 360 }); });
+    await anim(H.sheet, [{ clipPath: CLIP_CAP, background: '#E8590C' }, { clipPath: CLIP_OPEN, background: '#1E2129' }], { duration: 360, easing: DRAWER });
+    heroCapsuleLive = false;
+  }
+  async function closeSheet() {
+    clearInterval(clock);
+    anim(H.scrim, [{ opacity: 1 }, { opacity: 0 }], { duration: 220, easing: 'ease-out' });
+    if (reduced) await anim(H.sheet, [{ opacity: 1 }, { opacity: 0 }], { duration: 150 });
+    else {
+      H.content.forEach(function (el) { anim(el, [{ opacity: 1 }, { opacity: 0 }], { duration: 100 }); });
+      await anim(H.sheet, [{ clipPath: CLIP_OPEN, opacity: 1 }, { clipPath: CLIP_CAP, opacity: 0 }], { duration: 220, easing: EXIT });
+    }
+    H.sheet.getAnimations().forEach(function (a) { a.cancel(); });
+    H.content.forEach(function (el) { el.getAnimations().forEach(function (a) { a.cancel(); }); });
+    H.cap.getAnimations().forEach(function (a) { a.cancel(); });
+    H.sheet.style.opacity = 0; H.cap.style.opacity = 0; state = 'idle';
+  }
+  function reset() {
+    H.added.textContent = ''; H.added.classList.remove('lit');
+    H.said.classList.remove('on'); words.forEach(function (w) { w.classList.remove('on'); });
+    H.snack.getAnimations().forEach(function (a) { a.cancel(); });
+  }
+  async function speak(id) {
+    H.said.classList.add('on'); heroVoice.on = true;
+    for (var i = 0; i < words.length; i++) { if (id !== run) return; words[i].classList.add('on'); await wait(i === 4 ? 520 : 330); }
+    heroVoice.on = false;
+  }
+  async function deliver(id) {
+    H.time.textContent = 'Transcribing…'; clearInterval(clock);
+    await wait(650); if (id !== run) return;
+    await closeSheet();
+    H.said.classList.remove('on');
+    H.added.textContent = TYPED; H.added.classList.add('lit');
+    anim(H.snack, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: EASE_OUT });
+    await wait(2200); if (id !== run) return;
+    await anim(H.snack, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(8px)' }], { duration: 160, easing: EXIT });
+    H.added.classList.remove('lit');
+  }
+  async function press(id) {
+    H.pwr.classList.add('down');
+    if (!reduced) anim(H.press, [{ opacity: 0, transform: 'scale(0.6)' }, { opacity: 1, transform: 'scale(1.1)', offset: 0.5 }, { opacity: 0, transform: 'scale(1.4)' }], { duration: 600, easing: 'ease-out' });
+    await wait(500);
+    H.pwr.classList.remove('down');
+  }
+  // The demo loop; a real press on the side button takes over
+  async function loop() {
+    var id = ++run;
+    while (id === run) {
+      reset(); await wait(1400); if (id !== run) return;
+      if (!heroVisible) { await wait(400); continue; }
+      await press(id); if (id !== run) return;
+      await openSheet(id); if (id !== run) return;
+      await wait(250); await speak(id); if (id !== run) return;
+      await wait(700); await deliver(id); if (id !== run) return;
+      await wait(1500);
+    }
+  }
+  var heroVisible = true;
+  if (io) new IntersectionObserver(function (es) { heroVisible = es[0].isIntersecting; }).observe(document.getElementById('hero-phone'));
+
+  // Manual: hold the power button for half a second
+  var holdTimer = null, manual = false;
+  H.pwr.addEventListener('pointerdown', function (e) {
+    e.preventDefault(); H.pwr.setPointerCapture(e.pointerId);
+    run++; manual = true;
+    if (state === 'open') closeSheet();
+    reset(); H.pwr.classList.add('down');
+    holdTimer = setTimeout(async function () {
+      H.pwr.classList.remove('down');
+      var id = run; await openSheet(id); if (id !== run) return;
+      await speak(id); if (id !== run) return;
+      await wait(700); await deliver(id); if (id === run) loop();
+    }, 500);
+  });
+  var release = function () { clearTimeout(holdTimer); H.pwr.classList.remove('down'); if (state === 'idle' && manual) { manual = false; loop(); } };
+  H.pwr.addEventListener('pointerup', release);
+  H.pwr.addEventListener('pointercancel', release);
+  loop();
+
+  /* ---------- Cleanup diff plays when it scrolls in ---------- */
+  var diff = document.getElementById('diff');
+  if (io) new IntersectionObserver(function (es, o) { es.forEach(function (e) { if (e.isIntersecting) { setTimeout(function () { diff.classList.add('go'); }, 500); o.disconnect(); } }); }, { threshold: 0.6 }).observe(diff);
+  else diff.classList.add('go');
+
+  /* ---------- Accent swatches recolor every phone ---------- */
+  var ACCENTS = [['Cobalt', '#2F4BE0'], ['Teal', '#0B7A75'], ['Ember', '#C2410C'], ['Violet', '#7C3AED'], ['Slate', '#4B5563']];
+  var sw = document.getElementById('swatches'), psw = document.getElementById('phone-sw'), swname = document.getElementById('swname');
+  function setAccent(name) {
+    var hex = ACCENTS.filter(function (a) { return a[0] === name; })[0][1];
+    document.querySelectorAll('.phone:not(#hero-phone)').forEach(function (p) {
+      var dark = p.classList.contains('dark');
+      if (name === 'Cobalt') { p.style.removeProperty('--k-acc'); p.style.removeProperty('--k-on-acc'); }
+      else { p.style.setProperty('--k-acc', dark ? hex : hex); p.style.setProperty('--k-on-acc', '#FFFFFF'); }
+    });
+    sw.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.n === name)); });
+    psw.querySelectorAll('.sw').forEach(function (s) { s.classList.toggle('on', s.dataset.n === name); });
+    swname.innerHTML = '<b>' + name + '</b> on every phone on this page.';
+  }
+  ACCENTS.forEach(function (a) {
+    sw.insertAdjacentHTML('beforeend', '<button type="button" data-n="' + a[0] + '" style="--c: ' + a[1] + '" aria-label="' + a[0] + '" aria-pressed="false">' + I('check', 'sm') + '</button>');
+    psw.insertAdjacentHTML('beforeend', '<span class="sw" data-n="' + a[0] + '" style="background: ' + a[1] + '"></span>');
+  });
+  sw.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setAccent(b.dataset.n); });
+  setAccent('Cobalt');
+
+  /* ---------- Fold frame scales to fit ---------- */
+  var foldBox = document.getElementById('fold-box'), foldFrame = document.getElementById('fold-frame');
+  function fitFold() {
+    var s = Math.min(1, (foldBox.clientWidth - 40) / 1080);
+    foldFrame.style.transform = 'scale(' + s + ')';
+    foldFrame.parentElement.style.height = (640 * s) + 'px';
+  }
+  addEventListener('resize', fitFold); fitFold();
+
+  /* ---------- Setup progress bar inches forward ---------- */
+  var dl = document.getElementById('dl-bar');
+  if (!reduced) { var p = 62; setInterval(function () { p = p >= 96 ? 40 : p + 0.6; dl.style.width = p + '%'; }, 120); }
+
+  /* ---------- Reveal on scroll ---------- */
+  var rvs = document.querySelectorAll('.rv');
+  if (io && !reduced) {
+    var ro = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); ro.unobserve(e.target); } }); }, { rootMargin: '0px 0px -8% 0px' });
+    rvs.forEach(function (el) { ro.observe(el); });
+  } else rvs.forEach(function (el) { el.classList.add('in'); });
+})();
+</script>
+</body>
+</html>
