@@ -29,6 +29,10 @@
     <string name="murmur_clip_title" translatable="false">Clipboard</string>
     <string name="murmur_clip_pinned" translatable="false">Pinned</string>
     <string name="murmur_clip_empty" translatable="false">Copied text shows up here.\nLong-press a clip to pin it. Others clear after 1 hour.</string>
+    <string name="murmur_dictation_listening_strip" translatable="false">Listening…</string>
+    <string name="murmur_dictation_back_to_keys" translatable="false">Back to keys</string>
+    <string name="murmur_cleanup_on" translatable="false">Cleanup on</string>
+    <string name="murmur_cleanup_off" translatable="false">Cleanup off</string>
     <!-- Emoji panel -->
     <string name="murmur_emoji_search" translatable="false">Search emoji</string>
     <string name="murmur_emoji_recents" translatable="false">Recently used</string>

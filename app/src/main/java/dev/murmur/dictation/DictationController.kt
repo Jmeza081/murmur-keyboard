@@ -150,6 +150,7 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
     private fun finish() {
         state = State.TRANSCRIBING
         panel?.showMessage(ime.getString(R.string.murmur_dictation_transcribing))
+        strip(ime.getString(R.string.murmur_dictation_transcribing))
         recorder.stop { samples ->
             SharedEngine.transcribe(ime, samples) { result ->
                 val cleaned = result?.let { Cleanup.process(ime, it.text) }
@@ -192,6 +193,7 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
         recorder.cancel()
         state = State.TRANSCRIBING // ignore mic taps while the message shows
         panel?.showMessage(message)
+        strip("") // the panel says what happened; don't keep saying "Listening…"
         main.postDelayed({ if (state == State.TRANSCRIBING) { state = State.IDLE; closePanel() } }, 2500)
     }
 
@@ -213,19 +215,35 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
     private fun showPanel(): DictationPanel? {
         val keyboardView = KeyboardSwitcher.getInstance().mainKeyboardView ?: return null
         val wrapper = keyboardView.parent as? ViewGroup ?: return null
-        val p = panel ?: DictationPanel(ime, onCancel = { cancel() }, onStop = { onMicKey() }).also { panel = it }
+        val p = panel ?: DictationPanel(ime, onCancel = { cancel() }, onStop = { onMicKey() },
+            onToggleCleanup = {
+                val on = Cleanup.level(ime) == Cleanup.Level.OFF
+                Cleanup.setLevel(ime, if (on) Cleanup.Level.LIGHT else Cleanup.Level.OFF)
+                on
+            },
+            cleanupOn = Cleanup.level(ime) != Cleanup.Level.OFF,
+        ).also { panel = it }
         // Exactly the keyboard's height: MATCH_PARENT would let the wrapper grow to fill the screen.
         val params = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, keyboardView.height)
         if (p.parent == null) wrapper.addView(p, params) else p.layoutParams = params
         p.reset()
+        p.styleCleanup(Cleanup.level(ime) != Cleanup.Level.OFF) // may have changed in settings
         // Keep Cancel and Stop above Android's nav buttons, like the keys (the keyboard's bottom padding)
         val bottomPad = keyboardView.keyboard?.let { kb -> kb.mOccupiedHeight - (kb.sortedKeys.maxOfOrNull { it.y + it.height } ?: kb.mOccupiedHeight) }?.coerceAtLeast(0) ?: 0
-        p.setPadding(p.paddingLeft, p.paddingTop, p.paddingRight, bottomPad + (8 * ime.resources.displayMetrics.density).toInt())
+        // Android draws its keyboard-switch and hide buttons ~48 dp tall over the keyboard's bottom edge
+        val density = ime.resources.displayMetrics.density
+        p.setPadding(p.paddingLeft, p.paddingTop, p.paddingRight, maxOf(bottomPad, (48 * density).toInt()) + (8 * density).toInt())
         keyboardView.visibility = View.INVISIBLE // keeps its size, so the panel matches the key area
+        strip(ime.getString(R.string.murmur_dictation_listening_strip))
         return p
     }
 
+    /** Murmur: the strip shows the dictation state; the keyboard button there cancels back to the keys. */
+    private fun strip(status: String?) =
+        KeyboardSwitcher.getInstance().murmurStrip?.setMurmurListening(status) { cancel() }
+
     private fun closePanel() {
+        strip(null)
         panel?.let { (it.parent as? ViewGroup)?.removeView(it) }
         KeyboardSwitcher.getInstance().mainKeyboardView?.visibility = View.VISIBLE
     }

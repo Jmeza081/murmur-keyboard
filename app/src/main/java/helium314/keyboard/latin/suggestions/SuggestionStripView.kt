@@ -562,6 +562,62 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         toolbarExpandKey.background = null
     }
 
+    // Murmur: listening state (design/mockups.html "listen"): keyboard button, status line, orange mic pill
+    private var murmurListenBar: LinearLayout? = null
+    private var murmurListenLabel: TextView? = null
+    private var murmurSaved: List<Pair<View, Int>>? = null
+
+    /** Shows [status] in the strip while dictating, or restores the strip when null. [onKeys] cancels back to the keys. */
+    fun setMurmurListening(status: String?, onKeys: () -> Unit = {}) {
+        val wrapper = murmurMic.parent as? LinearLayout ?: return
+        val colors = Settings.getValues().mColors
+        if (status == null) {
+            murmurSaved?.forEach { (v, vis) -> v.visibility = vis }
+            murmurSaved = null
+            murmurListenBar?.let { wrapper.removeView(it) }
+            murmurListenBar = null
+            setupMurmurMic(colors)
+            return
+        }
+        if (murmurSaved == null) {
+            val hide = listOf<View>(toolbarExpandKey, toolbarContainer, suggestionsStrip, pinnedKeys)
+            murmurSaved = hide.map { it to it.visibility }
+            hide.forEach { it.visibility = GONE }
+            val density = resources.displayMetrics.density
+            val sub = colors.get(ColorType.KEY_HINT_TEXT)
+            val label = TextView(context).apply {
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+                setTextColor(sub)
+                gravity = android.view.Gravity.CENTER
+                isSingleLine = true
+                // the mic pill (62 dp) is wider than the keyboard button (48 dp): nudge so the label centers in the strip
+                setPadding((14 * density).toInt(), 0, 0, 0)
+            }
+            val keys = ImageButton(context).apply {
+                setImageResource(R.drawable.ic_murmur_keyboard)
+                setColorFilter(colors.get(ColorType.KEY_TEXT))
+                background = null
+                contentDescription = context.getString(R.string.murmur_dictation_back_to_keys)
+            }
+            val bar = LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                addView(keys, LinearLayout.LayoutParams((48 * density).toInt(), LinearLayout.LayoutParams.MATCH_PARENT))
+                addView(label, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f))
+            }
+            wrapper.addView(bar, 0, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f))
+            murmurListenBar = bar
+            murmurListenLabel = label
+            murmurMic.background = GradientDrawable().apply {
+                cornerRadius = 20 * density
+                setColor(dev.murmur.design.MurmurTokens.RECORDING)
+            }
+            murmurMic.setColorFilter(Color.WHITE)
+        }
+        murmurListenBar?.getChildAt(0)?.setOnClickListener { onKeys() }
+        murmurListenLabel?.text = status
+    }
+
     /**
      * Murmur: SwiftKey-style emoji slot. If the best emoji suggestion didn't make the three visible
      * slots, it takes the right-hand one.

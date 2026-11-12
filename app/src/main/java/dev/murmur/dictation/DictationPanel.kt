@@ -21,6 +21,9 @@ class DictationPanel(
     context: Context,
     onCancel: () -> Unit,
     onStop: () -> Unit,
+    /** Murmur: the cleanup toggle at the right of the controls; returns whether cleanup is now on. */
+    private val onToggleCleanup: () -> Boolean,
+    cleanupOn: Boolean,
 ) : LinearLayout(context) {
 
     private val colors = Settings.getValues().mColors
@@ -37,9 +40,19 @@ class DictationPanel(
         text = context.getString(R.string.murmur_dictation_on_device)
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
         setTextColor(ink)
+        gravity = Gravity.CENTER_VERTICAL
         setPadding(dp(10), dp(4), dp(10), dp(4))
+        compoundDrawablePadding = dp(6)
+        setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_murmur_shield, 0, 0, 0)
+        androidx.core.widget.TextViewCompat.setCompoundDrawableTintList(this, android.content.res.ColorStateList.valueOf(ink))
         background = pill(fnBackground)
     }
+    /** Red dot before the timer, as in the mockup; hidden for messages. */
+    private val dot = android.view.View(context).apply {
+        background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(RECORDING) }
+    }
+    private val accent = colors.get(ColorType.ACTION_KEY_BACKGROUND)
+    private lateinit var cleanupButton: ImageButton
     private val waveform = LevelBarsView(context, RECORDING, subtle)
 
     init {
@@ -51,6 +64,7 @@ class DictationPanel(
 
         addView(LinearLayout(context).apply {
             gravity = Gravity.CENTER_VERTICAL
+            addView(dot, LayoutParams(dp(9), dp(9)).apply { marginEnd = dp(8) })
             addView(status, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
             addView(chip)
         })
@@ -60,7 +74,20 @@ class DictationPanel(
                 FrameLayout.LayoutParams(dp(52), dp(52), Gravity.START or Gravity.CENTER_VERTICAL))
             addView(roundButton(context, R.drawable.ic_murmur_stop, R.string.murmur_dictation_stop, RECORDING, Color.WHITE, 68, onStop),
                 FrameLayout.LayoutParams(dp(68), dp(68), Gravity.CENTER))
+            cleanupButton = roundButton(context, R.drawable.ic_murmur_spark, R.string.murmur_cleanup_on, fnBackground, ink, 52) {
+                styleCleanup(onToggleCleanup())
+            }
+            addView(cleanupButton, FrameLayout.LayoutParams(dp(52), dp(52), Gravity.END or Gravity.CENTER_VERTICAL))
+            styleCleanup(cleanupOn)
         }, LayoutParams(LayoutParams.MATCH_PARENT, dp(72)))
+    }
+
+    /** On: accent icon on an accent-tinted circle. Off: plain function-key circle. */
+    fun styleCleanup(on: Boolean) {
+        cleanupButton.setColorFilter(if (on) accent else subtle)
+        (cleanupButton.background as GradientDrawable).setColor(
+            if (on) androidx.core.graphics.ColorUtils.blendARGB(fnBackground, accent, 0.16f) else fnBackground)
+        cleanupButton.contentDescription = context.getString(if (on) R.string.murmur_cleanup_on else R.string.murmur_cleanup_off)
     }
 
     fun reset() {
@@ -68,19 +95,24 @@ class DictationPanel(
         chip.visibility = VISIBLE
     }
 
+    private var timing = false
+
+    /** The strip says "Listening…"; the panel shows the timer (or that the model is still loading). */
     fun showListening(loading: Boolean) {
         status.setTextColor(RECORDING)
-        status.text = context.getString(if (loading) R.string.murmur_dictation_loading else R.string.murmur_dictation_listening)
+        dot.visibility = VISIBLE
+        timing = !loading
+        status.text = if (loading) context.getString(R.string.murmur_dictation_loading) else "0:00"
     }
 
     fun setElapsed(ms: Long) {
         val s = ms / 1000
-        if (status.text.startsWith(context.getString(R.string.murmur_dictation_listening))) {
-            status.text = "%s  %d:%02d".format(context.getString(R.string.murmur_dictation_listening), s / 60, s % 60)
-        }
+        if (timing) status.text = "%d:%02d".format(s / 60, s % 60)
     }
 
     fun showMessage(text: String) {
+        timing = false
+        dot.visibility = GONE
         status.setTextColor(ink)
         status.text = text
     }

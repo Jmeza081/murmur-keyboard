@@ -100,6 +100,8 @@ class KeyboardSwitcher private constructor() {
     val wrapperView get() = inputView?.wrapperView
     val stripContainer get() = inputView?.stripContainer
     val emojiTabStrip get() = inputView?.emojiTabStrip
+    /** Murmur: the strip, so dictation can show its listening state there. */
+    val murmurStrip get() = inputView?.suggestionStripView
     val clipboardStrip get() = inputView?.mainKeyboardFrame?.stripContainer?.clipboardStrip
     val isShowingEmojiPalettes get() = emojiPalettes?.isShown == true
     val isShowingClipboardHistory get() = clipboardHistory?.isShown == true
