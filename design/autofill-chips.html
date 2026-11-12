@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Murmur Password Chips</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: a constraints table first, then four options, each shown as a real keyboard strip with 2 and 6 suggestions */
+  --bg: #F3F4F8;
+  --surface: #FFFFFF;
+  --ink: #171A21;
+  --sub: #5D6475;
+  --line: #DFE3EB;
+  --accent: #2F4BE0;
+  --ok: #1F7A4D;
+  --no: #B4232C;
+  /* keyboard (dark, matches the phone) */
+  --kb: #16181D;
+  --kb-chip: #2A2E37;
+  --kb-ink: #ECEEF3;
+  --kb-sub: #9AA1B0;
+  --display: "Bricolage Grotesque", "Roboto Flex", system-ui, sans-serif;
+  --body: "Roboto Flex", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1014; --surface: #171A20; --ink: #ECEEF3; --sub: #9AA1B0; --line: #272B34;
+    --accent: #7D8FFF; --ok: #5CC593; --no: #F07178; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1014; --surface: #171A20; --ink: #ECEEF3; --sub: #9AA1B0; --line: #272B34;
+  --accent: #7D8FFF; --ok: #5CC593; --no: #F07178; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body); }
+main { max-width: 980px; margin: 0 auto; padding: 40px 20px 64px; display: grid; gap: 40px; }
+h1, h2 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: 34px; line-height: 1.1; }
+h2 { font-size: 22px; }
+p { margin: 0; max-width: 68ch; }
+.lede { color: var(--sub); margin-top: 10px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; display: grid; gap: 16px; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 720px) { .cols { grid-template-columns: 1fr; } }
+.cols h3 { margin: 0 0 8px; font: 600 14px var(--body); text-transform: uppercase; letter-spacing: .06em; }
+.can h3 { color: var(--ok); } .cant h3 { color: var(--no); }
+.cols ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--ink); }
+.cols li span { color: var(--sub); }
+.tag { display: inline-block; font: 600 12px var(--body); padding: 3px 10px; border-radius: 99px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.label { font: 500 12.5px var(--body); color: var(--sub); }
+.why { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 720px) { .why { grid-template-columns: 1fr; } }
+.why div { border-top: 2px solid var(--line); padding-top: 8px; font-size: 14px; }
+.why b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--sub); }
+
+/* ---- the keyboard strip mock (dark, as on the phone) ---- */
+.strip { background: var(--kb); border-radius: 14px; height: 64px; display: flex; align-items: center; gap: 6px; padding: 0 8px; overflow: hidden; position: relative; }
+.strip .exp, .strip .x { color: var(--kb-ink); width: 30px; flex: none; display: grid; place-items: center; font-size: 22px; }
+.strip .mic { flex: none; width: 76px; height: 44px; border-radius: 22px; background: #2F4BE0; display: grid; place-items: center; }
+.strip .mic i { display: flex; gap: 3px; align-items: center; }
+.strip .mic i b { width: 3px; border-radius: 2px; background: #fff; }
+.row { flex: 1; display: flex; gap: 6px; min-width: 0; overflow: hidden; align-items: center; }
+.chip { height: 40px; border-radius: 12px; background: var(--kb-chip); display: flex; align-items: center; gap: 10px; padding: 0 14px 0 8px; color: var(--kb-ink); font-size: 14px; min-width: 0; flex: none; }
+.chip .ic { width: 24px; height: 24px; border-radius: 6px; flex: none; display: grid; place-items: center; font: 600 11px var(--body); color: #3A3200; }
+.chip .t { display: grid; min-width: 0; line-height: 1.15; }
+.chip .t span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip .t small { font-size: 11px; color: var(--kb-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip.sq { width: 40px; padding: 0; justify-content: center; }
+.chip.pill { border-radius: 20px; }
+.chip.more { background: transparent; border: 1.5px solid #3A3F4A; color: var(--kb-ink); font-weight: 600; padding: 0 12px; }
+.y { background: #F2DC8C; } .b { background: #9FD6DC; } .v { background: #C3B6F5; } .g { background: #F0E1A0; }
+.op { background: #1A8CFF; color: #fff !important; }
+.cut { position: absolute; top: 8px; bottom: 8px; width: 2px; background: #F07178; }
+.fade::after { content: ""; position: absolute; right: 118px; top: 0; bottom: 0; width: 28px; background: linear-gradient(90deg, transparent, var(--kb)); pointer-events: none; }
+.dots { display: flex; gap: 5px; justify-content: center; }
+.dots i { width: 6px; height: 6px; border-radius: 3px; background: #3A3F4A; }
+.dots i.on { background: #ECEEF3; width: 14px; }
+
+/* expanded sheet for option A */
+.sheet { background: var(--kb); border-radius: 14px; padding: 12px; display: grid; gap: 8px; }
+.sheet .chip { width: 100%; }
+.sheet .top { display: flex; justify-content: space-between; color: var(--kb-sub); font-size: 12.5px; padding: 2px 4px 4px; }
+.mock { display: grid; gap: 10px; }
+footer { color: var(--sub); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Password chips: four ways to fix the strip</h1>
+    <p class="lede">The chips above the keys come from your password manager (Google, Samsung Pass, 1Password). Murmur decides where they go and how big they are, but the password manager draws what's inside them. These options only use what Murmur can actually change.</p>
+  </header>
+
+  <section class="card">
+    <h2>What Murmur can and can't change</h2>
+    <div class="cols">
+      <div class="can">
+        <h3>Murmur controls</h3>
+        <ul>
+          <li>Each chip's width and height <span>(asked for before the chip is drawn)</span></li>
+          <li>The order, spacing, and the row around them <span>(scrolling, paging, our own extra buttons)</span></li>
+          <li>Background shape and color, padding, icon spacing</li>
+          <li>Title and subtitle text color and size</li>
+          <li>How many suggestions to ask for <span>(up to 6 today)</span></li>
+        </ul>
+      </div>
+      <div class="cant">
+        <h3>The password manager controls</h3>
+        <ul>
+          <li>The icon and the words <span>("Generated…", "slack.com", the account name)</span></li>
+          <li>Where the text cuts off with "…"</li>
+          <li>Whether it follows our style at all <span>(some managers ignore it)</span></li>
+          <li>When each chip finishes drawing <span>(they arrive in any order)</span></li>
+          <li>Effects on the chip itself <span>(each is a separate window drawn on top, so no fades, masks, or animations across it)</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head"><h2>Today</h2><span class="label">what you're seeing now</span></div>
+    <div class="mock">
+      <div class="strip">
+        <span class="exp">›</span>
+        <div class="row">
+          <div class="chip" style="width:232px"><span class="ic y">Ge</span><span class="t"><span>Generated password</span></span></div>
+          <div class="chip" style="width:232px"><span class="ic g">sl</span><span class="t"><span>slack.com — jesse@…</span></span></div>
+          <div class="chip" style="width:232px"><span class="ic b">sl</span><span class="t"><span>slack.com</span></span></div>
+        </div>
+        <span class="x">✕</span><span class="mic"><i><b style="height:10px"></b><b style="height:18px"></b><b style="height:24px"></b><b style="height:18px"></b><b style="height:10px"></b></i></span>
+      </div>
+      <p class="label">Three equal chips fill the bar exactly, but the text inside still gets cut with "…" at a different point in each chip. When the row moves, the edge of the last chip shows sliced, and we can't fade it because the chip is drawn on top of everything.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head"><h2>A · Two chips and a "More" button</h2><span class="tag">Recommended</span></div>
+    <div class="mock">
+      <span class="label">2 suggestions</span>
+      <div class="strip">
+        <span class="exp">›</span>
+        <div class="row">
+          <div class="chip" style="flex:1"><span class="ic y">Ge</span><span class="t"><span>Generated password</span><small>Google Password Manager</small></span></div>
+          <div class="chip" style="flex:1"><span class="ic g">sl</span><span class="t"><span>jesse@company.com</span><small>slack.com</small></span></div>
+        </div>
+        <span class="x">✕</span><span class="mic"><i><b style="height:10px"></b><b style="height:18px"></b><b style="height:24px"></b><b style="height:18px"></b><b style="height:10px"></b></i></span>
+      </div>
+      <span class="label">6 suggestions: the best two, then "+4"</span>
+      <div class="strip">
+        <span class="exp">›</span>
+        <div class="row">
+          <div class="chip" style="flex:1"><span class="ic y">Ge</span><span class="t"><span>Generated password</span><small>Google</small></span></div>
+          <div class="chip" style="flex:1"><span class="ic g">sl</span><span class="t"><span>jesse@company.com</span><small>slack.com</small></span></div>
+          <div class="chip more">+4</div>
+        </div>
+        <span class="x">✕</span><span class="mic"><i><b style="height:10px"></b><b style="height:18px"></b><b style="height:24px"></b><b style="height:18px"></b><b style="height:10px"></b></i></span>
+      </div>
+      <span class="label">Tapping "+4" lists all six over the keys, each full width</span>
+      <div class="sheet">
+        <div class="top"><span>Saved for slack.com</span><span>Done</span></div>
+        <div class="chip"><span class="ic y">Ge</span><span class="t"><span>Generated password</span><small>Google Password Manager</small></span></div>
+        <div class="chip"><span class="ic g">sl</span><span class="t"><span>jesse@company.com</span><small>slack.com</small></span></div>
+        <div class="chip"><span class="ic b">sl</span><span class="t"><span>jesse.meza@gmail.com</span><small>slack.com</small></span></div>
+        <div class="chip"><span class="ic v">sl</span><span class="t"><span>design-team@company.com</span><small>slack.com</small></span></div>
+        <div class="chip"><span class="ic op">1P</span><span class="t"><span>Open 1Password</span><small>Search all items</small></span></div>
+      </div>
+    </div>
+    <div class="why">
+      <div><b>Fixes</b>No chip is ever sliced, and two chips are wide enough to show the full account name.</div>
+      <div><b>Cost</b>One more tap when you need the third account. The "+4" button and the list are ours, so they match the keyboard.</div>
+      <div><b>Risk</b>Low. Chip widths are fixed before drawing, which every password manager supports.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head"><h2>B · Pages you swipe</h2></div>
+    <div class="mock">
+      <div class="strip">
+        <span class="exp">›</span>
+        <div class="row">
+          <div class="chip" style="flex:1"><span class="ic y">Ge</span><span class="t"><span>Generated password</span><small>Google</small></span></div>
+          <div class="chip" style="flex:1"><span class="ic g">sl</span><span class="t"><span>jesse@company.com</span><small>slack.com</small></span></div>
+        </div>
+        <span class="x">✕</span><span class="mic"><i><b style="height:10px"></b><b style="height:18px"></b><b style="height:24px"></b><b style="height:18px"></b><b style="height:10px"></b></i></span>
+      </div>
+      <div class="dots"><i class="on"></i><i></i><i></i></div>
+    </div>
+    <div class="why">
+      <div><b>Fixes</b>Two whole chips per page, and a swipe snaps to the next page, so nothing stops halfway.</div>
+      <div><b>Cost</b>The dots take a little room under the bar. Swiping might be hard to discover.</div>
+      <div><b>Risk</b>Medium. Snapping a row of separately drawn chips can lag a frame behind your finger.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head"><h2>C · Short chips, sized to their text</h2></div>
+    <div class="mock">
+      <div class="strip">
+        <span class="exp">›</span>
+        <div class="row">
+          <div class="chip pill"><span class="ic y">Ge</span><span class="t"><span>Generated</span></span></div>
+          <div class="chip pill"><span class="ic g">sl</span><span class="t"><span>jesse@company.com</span></span></div>
+          <div class="chip pill"><span class="ic b">sl</span><span class="t"><span>jesse.meza@…</span></span></div>
+        </div>
+        <span class="x">✕</span><span class="mic"><i><b style="height:10px"></b><b style="height:18px"></b><b style="height:24px"></b><b style="height:18px"></b><b style="height:10px"></b></i></span>
+      </div>
+    </div>
+    <div class="why">
+      <div><b>Fixes</b>Each chip is as wide as its own words, so short ones stop wasting space. Title only, no subtitle.</div>
+      <div><b>Cost</b>The edge chip can still be sliced, and chips of different widths look uneven.</div>
+      <div><b>Risk</b>High. Some password managers don't size to their text and come back at the widest size.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head"><h2>D · Icons first, tap to see the name</h2></div>
+    <div class="mock">
+      <div class="strip">
+        <span class="exp">›</span>
+        <div class="row">
+          <div class="chip" style="flex:1"><span class="ic y">Ge</span><span class="t"><span>Generated password</span><small>Google</small></span></div>
+          <div class="chip sq"><span class="ic g">sl</span></div>
+          <div class="chip sq"><span class="ic b">sl</span></div>
+          <div class="chip sq"><span class="ic v">sl</span></div>
+          <div class="chip sq"><span class="ic op">1P</span></div>
+        </div>
+        <span class="x">✕</span><span class="mic"><i><b style="height:10px"></b><b style="height:18px"></b><b style="height:24px"></b><b style="height:18px"></b><b style="height:10px"></b></i></span>
+      </div>
+    </div>
+    <div class="why">
+      <div><b>Fixes</b>The top suggestion gets the full width. The rest shrink to square icons, so everything fits with no scrolling.</div>
+      <div><b>Cost</b>The same-looking icons ("sl", "sl", "sl") can't be told apart. Tapping one fills it in straight away, with no preview.</div>
+      <div><b>Risk</b>Medium. A square chip only shows the icon if the password manager supplies one.</div>
+    </div>
+  </section>
+
+  <footer>Mock chips use made-up accounts. Sizes follow the phone: a 48 dp strip, 40 dp chips, 6 dp gaps.</footer>
+</main>
+</body>
+</html>

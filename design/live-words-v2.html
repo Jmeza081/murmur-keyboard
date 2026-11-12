@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Murmur · Live words, round 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600;8..144,700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: four options as rows; each row shows the keyboard panel and the power-button sheet side by side, all driven by one shared word stream. Single dark page; phone frames switch light/dark on their own. */
+:root {
+  --bg: #0B0D11; --panel: #13161C; --line: #242832; --ink: #ECEEF3; --muted: #A1A8B6;
+  --acc: #2F4BE0; /* the user's accent; swatches below change it */
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif; --font-body: "Roboto Flex", system-ui, sans-serif; --font-mono: "Roboto Mono", ui-monospace, monospace;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body { margin: 0; color: var(--ink); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 44px 20px 80px; display: grid; gap: 28px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(32px, 5vw, 52px); letter-spacing: -0.03em; margin: 0; line-height: 1; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 62ch; font-size: 16px; line-height: 1.55; margin: 10px 0 0; }
+.ctl { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+button { font: inherit; font-size: 14px; font-weight: 600; border: 0; border-radius: 22px; height: 40px; padding: 0 16px; cursor: pointer; background: #1E222B; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); transition: transform 160ms var(--ease-out); }
+button:active { transform: scale(0.97); }
+button:focus-visible, .sw:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+button.primary { background: var(--acc); color: #fff; box-shadow: none; }
+.sws { display: flex; gap: 8px; align-items: center; margin-left: 6px; color: var(--muted); font-size: 13px; }
+.sw { width: 28px; height: 28px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.15); }
+.sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ink); }
+.legend { display: flex; gap: 16px; color: var(--muted); font-size: 13px; flex-wrap: wrap; }
+.legend span { display: inline-flex; gap: 7px; align-items: center; }
+.legend i { width: 22px; height: 12px; border-radius: 3px; display: inline-block; }
+
+.opt { background: var(--panel); border: 1px solid var(--line); border-radius: 26px; padding: 24px; display: grid; grid-template-columns: minmax(240px, 1fr) auto auto; gap: 28px; align-items: start; }
+@media (max-width: 1060px) { .opt { grid-template-columns: 1fr; justify-items: center; } .opt .about { justify-self: stretch; } }
+.about { display: grid; gap: 12px; align-content: start; }
+.about h2 { margin: 0; font-size: 22px; font-weight: 600; display: flex; gap: 10px; align-items: baseline; text-wrap: balance; }
+.about h2 .k { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.about p { margin: 0; color: var(--muted); font-size: 14.5px; line-height: 1.55; }
+.about dl { margin: 4px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 13px; border-top: 1px solid var(--line); padding-top: 12px; }
+.about dt { color: var(--muted); }
+.about dd { margin: 0; }
+.pick { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 8px; background: color-mix(in srgb, var(--acc) 30%, transparent); color: #fff; }
+.cap { font-size: 12px; color: var(--muted); text-align: center; margin-top: 10px; }
+
+/* ===== Phone frames ===== */
+.phone {
+  --k-bg: #E8EBF1; --k-key: #FFFFFF; --k-fn: #D5DAE3; --k-ink: #191B21; --k-sub: #8A91A0; --k-surface: #FFFFFF;
+  --s-bg: #F4F5F8; --s-surface: #FFFFFF; --s-ink: #191B21; --s-sub: #5B6272; --s-line: #E1E4EA;
+  --tint: color-mix(in srgb, var(--acc) 14%, var(--k-surface));
+  width: 300px; height: 640px; border-radius: 40px; padding: 9px; background: #050608; position: relative; flex: none;
+  box-shadow: 0 30px 60px -30px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.08);
+}
+.dark .phone {
+  --k-bg: #121419; --k-key: #2A2E37; --k-fn: #1E2129; --k-ink: #ECEEF3; --k-sub: #7E8696; --k-surface: #1C1F26;
+  --s-bg: #0F1115; --s-surface: #1A1D23; --s-ink: #ECEEF3; --s-sub: #A1A8B6; --s-line: #2A2E36;
+  --tint: color-mix(in srgb, var(--acc) 22%, var(--k-surface));
+}
+.screen { width: 100%; height: 100%; border-radius: 32px; overflow: hidden; background: var(--s-bg); color: var(--s-ink); display: flex; flex-direction: column; position: relative; }
+.appbar { padding: 34px 14px 10px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--s-line); background: var(--s-surface); }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--tint); color: var(--acc); display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.appbar b { font-size: 14px; font-weight: 600; }
+.thread { flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; overflow: hidden; }
+.bubble { max-width: 80%; padding: 7px 11px; border-radius: 16px; font-size: 12.5px; line-height: 1.35; background: var(--s-surface); border: 1px solid var(--s-line); border-bottom-left-radius: 5px; align-self: flex-start; }
+.composer { padding: 6px 10px 8px; }
+.field { min-height: 36px; border-radius: 18px; background: var(--s-surface); border: 1.5px solid var(--acc); padding: 8px 12px; font-size: 12.5px; color: var(--s-sub); }
+.field.typed { color: var(--s-ink); }
+
+/* Keyboard dictation panel: fixed height, the keyboard's own */
+.panel { height: 282px; flex: none; background: var(--k-bg); color: var(--k-ink); display: flex; flex-direction: column; padding: 12px 14px 14px; gap: 10px; }
+.head { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; height: 22px; flex: none; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--acc); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.35; } }
+.head .st { flex: 1; }
+.chip { font-size: 10.5px; font-weight: 600; padding: 3px 8px; border-radius: 10px; background: var(--k-fn); color: var(--k-sub); display: inline-flex; gap: 4px; align-items: center; }
+.ctrls { height: 60px; flex: none; display: flex; align-items: center; justify-content: space-between; position: relative; }
+.rb { width: 44px; height: 44px; border-radius: 50%; background: var(--k-fn); display: grid; place-items: center; color: var(--k-ink); }
+.stop { width: 58px; height: 58px; border-radius: 50%; background: var(--acc); display: grid; place-items: center; color: #fff; position: relative; z-index: 1; }
+.glow { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; background: var(--acc); opacity: 0.28; filter: blur(10px); transform: scale(var(--lv, 1)); transition: transform 90ms linear; }
+.icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.icon.xs { width: 12px; height: 12px; }
+canvas.wave { width: 100%; display: block; }
+
+/* Words */
+.words { font-size: 15px; line-height: 1.45; overflow: hidden; }
+.w { display: inline; transition: color 220ms ease, background-color 400ms ease; border-radius: 3px; }
+.w.draft { color: var(--k-sub); }
+.w.fresh { animation: rise 220ms var(--ease-out) both; display: inline-block; }
+@keyframes rise { from { opacity: 0; transform: translateY(4px); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+.w.fix { background: color-mix(in srgb, var(--acc) 28%, transparent); }
+.hint { color: var(--k-sub); font-size: 13px; }
+.done-chip { display: inline-flex; gap: 5px; align-items: center; font-size: 11px; font-weight: 600; color: var(--acc); margin-top: 6px; }
+
+/* Option A: transcript card above a slim wave strip */
+.A .card { flex: 1; min-height: 0; background: var(--k-surface); border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px); mask-image: linear-gradient(to bottom, transparent 0, #000 22px); }
+.A canvas.wave { height: 26px; flex: none; }
+
+/* Option B: the words take the wave's place; one live level line underneath */
+.B .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; }
+.B .words { font-size: 17px; line-height: 1.42; flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 26px); mask-image: linear-gradient(to bottom, transparent 0, #000 26px); }
+.B canvas.wave { flex: none; transition: height 320ms var(--ease-out); }
+
+/* Option C: two-line teleprompter over a faint full-height wave */
+.C .stage { flex: 1; min-height: 0; position: relative; display: grid; align-items: center; }
+.C canvas.wave { position: absolute; inset: 0; height: 100%; opacity: var(--wave-op, 1); transition: opacity 400ms ease; }
+.C .tele { position: relative; font-size: 19px; line-height: 1.38; height: calc(19px * 1.38 * 2); overflow: hidden; text-align: center; font-weight: 500; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 40%); mask-image: linear-gradient(to bottom, transparent 0, #000 40%); display: flex; flex-direction: column; justify-content: flex-end; text-shadow: 0 0 10px var(--k-bg), 0 0 4px var(--k-bg); }
+
+/* Option D: a message preview growing above the controls; the level lives in a ring round Send */
+.D .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; }
+.D .bub { max-width: 92%; background: var(--tint); border: 1px solid color-mix(in srgb, var(--acc) 35%, transparent); border-radius: 18px 18px 6px 18px; padding: 9px 13px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; max-height: 100%; transition: opacity 200ms ease; }
+.D .bub.empty { opacity: 0; }
+.D .bub .words { font-size: 15px; }
+.D .ring { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; box-shadow: 0 0 0 calc(3px + var(--lvpx, 0px)) color-mix(in srgb, var(--acc) 35%, transparent); transition: box-shadow 90ms linear; }
+.D .mini { width: 52px; }
+.D canvas.wave { height: 22px; }
+
+/* Power-button sheet */
+.sheetwrap { position: absolute; inset: 0; background: rgba(5,6,10,0.42); display: flex; flex-direction: column; justify-content: flex-end; padding: 8px; }
+.sheet { background: var(--k-bg); color: var(--k-ink); border-radius: 28px; padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 12px; height: 330px; }
+.sheet .panel-like { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.sheet .words { font-size: 16px; }
+.sheet.B .words { font-size: 19px; }
+.sheet.C .tele { font-size: 21px; height: calc(21px * 1.38 * 3); }
+.grab { width: 36px; height: 4px; border-radius: 2px; background: var(--k-fn); align-self: center; flex: none; }
+.home { position: absolute; left: 50%; bottom: 6px; width: 100px; height: 4px; margin-left: -50px; border-radius: 2px; background: var(--k-sub); opacity: 0.6; }
+.bgapp { flex: 1; padding: 34px 16px; display: grid; align-content: start; gap: 10px; }
+.bgapp i { display: block; height: 10px; border-radius: 5px; background: var(--s-line); }
+
+@media (prefers-reduced-motion: reduce) { .w.fresh { animation: none; } .dot { animation: none; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.4 11.6 3.5 3.5 0 0 0 7 18.5z"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8z"/></symbol>
+</defs></svg>
+
+<div class="wrap">
+  <header>
+    <h1>Live words, round 2</h1>
+    <p class="lede">Four ways to show ElevenLabs' live words without the text running into the waveform. Each row plays the same dictation in the keyboard panel and in the power-button sheet: drafts in grey, final words in ink, one word fixed mid-sentence ("sink" becomes "sync"), then Claude's cleanup at the end. The wave, Send button and glow all follow your accent color.</p>
+  </header>
+  <div class="ctl">
+    <button class="primary" id="play">Pause</button>
+    <button id="restart">Restart</button>
+    <button id="theme" aria-pressed="true">Light phones</button>
+    <div class="sws" role="group" aria-label="Accent color">Accent
+      <button class="sw" style="background:#2F4BE0" data-c="#2F4BE0" aria-pressed="true" aria-label="Cobalt"></button>
+      <button class="sw" style="background:#E8590C" data-c="#E8590C" aria-pressed="false" aria-label="Orange"></button>
+      <button class="sw" style="background:#12A150" data-c="#12A150" aria-pressed="false" aria-label="Green"></button>
+      <button class="sw" style="background:#8B5CF6" data-c="#8B5CF6" aria-pressed="false" aria-label="Violet"></button>
+    </div>
+  </div>
+  <div class="legend">
+    <span><i style="background:#7E8696"></i>Draft, may still change</span>
+    <span><i style="background:#ECEEF3"></i>Final</span>
+    <span><i style="background:color-mix(in srgb,var(--acc) 45%,transparent)"></i>Fixed while listening</span>
+  </div>
+  <main id="opts" class="dark"></main>
+</div>
+
+<template id="kb">
+  <div class="phone"><div class="screen">
+    <div class="appbar"><span class="avatar">SR</span><b>Sam Rivera</b></div>
+    <div class="thread">
+      <div class="bubble">Are we still on for the sync tomorrow?</div>
+      <div class="bubble">I can't do Tuesday anymore</div>
+    </div>
+    <div class="composer"><div class="field">Message</div></div>
+    <div class="panel"></div>
+    <div class="home"></div>
+  </div></div>
+</template>
+<template id="pw">
+  <div class="phone"><div class="screen">
+    <div class="bgapp"><i style="width:60%"></i><i></i><i style="width:80%"></i><i style="width:70%"></i><i></i><i style="width:40%"></i></div>
+    <div class="sheetwrap"><div class="sheet"><div class="grab"></div><div class="panel-like"></div></div></div>
+    <div class="home"></div>
+  </div></div>
+</template>
+
+<script>
+const OPTS = [
+  { k: "A", name: "Transcript card", pick: true,
+    text: "The words get their own card that fills the space; the waveform shrinks to a slim strip just above the controls. Every element has a fixed slot, so nothing can overlap however much you say.",
+    rows: [["Height", "No change; card scrolls, oldest line fades out"], ["Reads", "3 to 4 lines in the panel, 6 in the sheet"], ["Build risk", "Low: a fixed-height strip replaces the stretchy waveform"]] },
+  { k: "B", name: "Words replace the wave",
+    text: "Before you speak you see the full waveform. With the first word it folds into a single level line under the text, and the words take the whole stage at a larger size.",
+    rows: [["Height", "No change"], ["Reads", "Biggest text; best on the cover screen"], ["Build risk", "Medium: one animated hand-off from bars to line"]] },
+  { k: "C", name: "Teleprompter",
+    text: "Two large lines, centered, newest at the bottom, older words fading out the top. The waveform keeps its full size but dims behind the text, as a backdrop rather than a neighbor.",
+    rows: [["Height", "No change"], ["Reads", "Only the last ~12 words; calm, but you can't review"], ["Build risk", "Medium: text over the wave needs a halo to stay legible"]] },
+  { k: "D", name: "Message preview",
+    text: "Your words build up as a draft bubble, the way they'll look once sent. The level moves into a ring around Send and a tiny wave in the corner, so the stage belongs to the message.",
+    rows: [["Height", "No change; the bubble grows up to the panel top"], ["Reads", "Feels like chat; odd for notes or search fields"], ["Build risk", "Medium: ring and bubble are new views"]] },
+];
+
+const panelHTML = (k) => {
+  const head = `<div class="head"><span class="dot"></span><span class="st">Listening</span><span class="chip"><svg class="icon xs"><use href="#i-cloud"/></svg>ElevenLabs</span></div>`;
+  const ctrls = (ring) => `<div class="ctrls"><div class="rb"><svg class="icon"><use href="#i-x"/></svg></div><div class="glow"></div>${ring ? '<div class="ring"></div>' : ''}<div class="stop"><svg class="icon"><use href="#i-send"/></svg></div><div class="rb" style="visibility:hidden"></div></div>`;
+  if (k === "A") return head + `<div class="card"><div class="words"></div></div><canvas class="wave"></canvas>` + ctrls();
+  if (k === "B") return head + `<div class="stage"><div class="words"></div><canvas class="wave"></canvas></div>` + ctrls();
+  if (k === "C") return head + `<div class="stage"><canvas class="wave"></canvas><div class="tele words"></div></div>` + ctrls();
+  return head + `<div class="stage"><div class="bub empty"><div class="words"></div></div></div>` + ctrls(true).replace('<div class="rb" style="visibility:hidden"></div>', '<div class="mini"><canvas class="wave"></canvas></div>');
+};
+
+const main = document.getElementById("opts");
+const views = [];
+for (const o of OPTS) {
+  const sec = document.createElement("section");
+  sec.className = "opt";
+  sec.innerHTML = `<div class="about"><h2><span class="k">${o.k}</span>${o.name}${o.pick ? ' <span class="pick">Suggested</span>' : ''}</h2><p>${o.text}</p><dl>${o.rows.map(r => `<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join("")}</dl></div>`;
+  for (const [tpl, cap] of [["kb", "Keyboard panel"], ["pw", "Power-button sheet"]]) {
+    const fig = document.createElement("figure");
+    fig.style.margin = "0";
+    fig.appendChild(document.getElementById(tpl).content.cloneNode(true));
+    const host = fig.querySelector(tpl === "kb" ? ".panel" : ".panel-like");
+    host.classList.add(o.k);
+    if (tpl === "pw") fig.querySelector(".sheet").classList.add(o.k);
+    host.innerHTML = panelHTML(o.k);
+    const c = document.createElement("figcaption"); c.className = "cap"; c.textContent = cap; fig.appendChild(c);
+    sec.appendChild(fig);
+    views.push({ k: o.k, root: fig, words: host.querySelector(".words"), wave: host.querySelector("canvas.wave"), glow: host.querySelector(".glow"), ring: host.querySelector(".ring"), st: host.querySelector(".st"), bub: host.querySelector(".bub"), field: fig.querySelector(".field"), sheet: tpl === "pw" });
+  }
+  main.appendChild(sec);
+}
+
+// One shared stream of what ElevenLabs would send: [final, draft]
+const F1 = "Hey, can we move";
+const F2 = F1 + " the sync to Tuesday, actually Thursday?";
+const F3 = F2 + " I'll bring the slides.";
+const STREAM = [
+  ["", "Hey"], ["", "Hey can"], ["", "Hey can we"], ["", "Hey can we move"], [F1, ""],
+  [F1, "the"], [F1, "the sink"], [F1, "the sync to"], [F1, "the sync to Tuesday"], [F1, "the sync to Tuesday, actually"], [F1, "the sync to Tuesday, actually Thursday"], [F2, ""],
+  [F2, "I'll"], [F2, "I'll bring"], [F2, "I'll bring the"], [F2, "I'll bring the slides"], [F3, ""],
+];
+const CLEAN = "Hey, can we move the sync to Thursday? I'll bring the slides.";
+const STEP = 420;
+let i = -1, prev = [], playing = true, phase = "listen", timer = null, speaking = 0;
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function render(final, draft, done) {
+  const fw = final ? final.split(" ") : [], dw = draft ? draft.split(" ") : [];
+  const all = [...fw.map(t => [t, false]), ...dw.map(t => [t, true])];
+  const html = all.map(([t, isDraft], n) => {
+    const old = prev[n];
+    const cls = ["w"];
+    if (isDraft && !done) cls.push("draft");
+    if (!old && !done) cls.push("fresh");
+    else if (old && old.replace(/[,.?]/g, "") !== t.replace(/[,.?]/g, "") && !done) cls.push("fix");
+    return `<span class="${cls.join(" ")}">${t}</span>`;
+  }).join(" ");
+  prev = all.map(a => a[0]);
+  for (const v of views) {
+    if (done) {
+      v.words.innerHTML = `<div><span class="w">${CLEAN}</span><br><span class="done-chip"><svg class="icon xs"><use href="#i-spark"/></svg>Cleaned up by Claude</span></div>`;
+    } else v.words.innerHTML = `<div>${html}</div>`;
+    if (v.bub) v.bub.classList.toggle("empty", all.length === 0 && !done);
+    v.root.classList.toggle("has-words", all.length > 0);
+    if (v.st) v.st.textContent = done ? "Typed" : phase === "clean" ? "Cleaning up…" : "Listening";
+    if (v.field) { v.field.textContent = done ? CLEAN : "Message"; v.field.classList.toggle("typed", done); }
+  }
+}
+
+function tick() {
+  if (phase === "listen") {
+    i++;
+    if (i < STREAM.length) {
+      speaking = STREAM[i][1] ? 1 : 0.15;
+      render(STREAM[i][0], STREAM[i][1], false);
+      timer = setTimeout(tick, STREAM[i][1] ? STEP : STEP * 1.6);
+    } else { phase = "clean"; speaking = 0; render(F3, "", false); timer = setTimeout(tick, 900); }
+  } else if (phase === "clean") { phase = "done"; render("", "", true); timer = setTimeout(tick, 2600); }
+  else { phase = "listen"; i = -1; prev = []; render("", "", false); speaking = 0.4; timer = setTimeout(tick, 900); }
+}
+
+// Waveform drawing, one style per option
+const levels = Array.from({ length: 48 }, () => 0);
+let t0 = 0;
+function accent() { return getComputedStyle(document.documentElement).getPropertyValue("--acc").trim(); }
+function draw(now) {
+  const live = phase === "listen" && playing;
+  const target = live ? speaking : 0.04;
+  const lv = Math.max(0.04, target * (0.45 + 0.55 * Math.abs(Math.sin(now / 130) * Math.sin(now / 370 + 1))));
+  levels.shift(); levels.push(lv);
+  const col = accent();
+  for (const v of views) {
+    const c = v.wave; if (!c) continue;
+    const r = window.devicePixelRatio || 1;
+    let h = c.clientHeight;
+    if (v.k === "B") { const want = v.root.classList.contains("has-words") ? 10 : (v.sheet ? 120 : 90); if (c.style.height !== want + "px") c.style.height = want + "px"; h = c.clientHeight; }
+    const w = c.clientWidth;
+    if (c.width !== Math.round(w * r) || c.height !== Math.round(h * r)) { c.width = Math.round(w * r); c.height = Math.round(h * r); }
+    const g = c.getContext("2d"); g.setTransform(r, 0, 0, r, 0, 0); g.clearRect(0, 0, w, h);
+    g.fillStyle = col; g.strokeStyle = col;
+    const lineMode = v.k === "B" && v.root.classList.contains("has-words");
+    if (lineMode) {
+      g.lineWidth = 2; g.beginPath();
+      for (let x = 0; x <= w; x += 3) { const idx = Math.floor(x / w * (levels.length - 1)); const a = levels[idx] * (h / 2 - 1); g.lineTo(x, h / 2 + Math.sin(x / 9 + now / 120) * a); }
+      g.stroke(); continue;
+    }
+    const n = v.k === "D" ? 14 : v.k === "A" ? 40 : 28;
+    const gap = v.k === "A" ? 3 : 4; const bw = (w - gap * (n - 1)) / n;
+    g.globalAlpha = v.k === "C" ? (v.root.classList.contains("has-words") ? 0.16 : 0.9) : 1;
+    for (let b = 0; b < n; b++) {
+      const lvB = levels[Math.floor(b / n * levels.length)];
+      const bh = Math.max(3, lvB * h * (0.55 + 0.45 * Math.sin(b * 1.7 + now / 260) ** 2));
+      const y = (h - bh) / 2; const rr = Math.min(bw / 2, 3);
+      g.beginPath(); g.roundRect ? g.roundRect(b * (bw + gap), y, bw, bh, rr) : g.rect(b * (bw + gap), y, bw, bh); g.fill();
+    }
+    g.globalAlpha = 1;
+  }
+  for (const v of views) {
+    if (v.glow) v.glow.style.setProperty("--lv", (1 + lv * 0.9).toFixed(3));
+    if (v.ring) v.ring.style.setProperty("--lvpx", (lv * 10).toFixed(1) + "px");
+  }
+  if (!reduce) requestAnimationFrame(draw);
+}
+
+document.getElementById("play").onclick = (e) => {
+  playing = !playing; e.target.textContent = playing ? "Pause" : "Play";
+  clearTimeout(timer); if (playing) timer = setTimeout(tick, STEP);
+};
+document.getElementById("restart").onclick = () => { clearTimeout(timer); phase = "done"; playing = true; document.getElementById("play").textContent = "Pause"; tick(); };
+document.getElementById("theme").onclick = (e) => {
+  const dark = main.classList.toggle("dark");
+  e.target.textContent = dark ? "Light phones" : "Dark phones";
+  e.target.setAttribute("aria-pressed", String(dark));
+};
+document.querySelectorAll(".sw").forEach(b => b.onclick = () => {
+  document.documentElement.style.setProperty("--acc", b.dataset.c);
+  document.querySelectorAll(".sw").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+});
+
+if (reduce) {
+  // Show a mid-dictation frame at rest instead of animating
+  i = 9; render(STREAM[9][0], STREAM[9][1], false); speaking = 0.8; for (let k = 0; k < 48; k++) levels[k] = 0.3 + 0.5 * Math.abs(Math.sin(k)); draw(0);
+} else {
+  // Open on a frame with words already showing, then keep playing
+  for (let k = 0; k < 8; k++) { i++; render(STREAM[i][0], STREAM[i][1], false); }
+  speaking = 1; timer = setTimeout(tick, STEP); requestAnimationFrame(draw);
+}
+</script>
+</body>
+</html>

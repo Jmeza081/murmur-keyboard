@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Murmur Saved Logins Sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: two phones side by side (today vs proposed), each replays the "+4" tap; notes underneath */
+  --bg: #F3F4F8;
+  --surface: #FFFFFF;
+  --ink: #171A21;
+  --sub: #5D6475;
+  --line: #DFE3EB;
+  --accent: #2F4BE0;
+  /* phone, dark like the user's Slack */
+  --app: #1A1D21;
+  --app-ink: #E8E9EB;
+  --app-sub: #9B9EA3;
+  --kb: #16181D;
+  --key: #2A2E37;
+  --fn: #1E2129;
+  --kb-ink: #ECEEF3;
+  --kb-sub: #9AA1B0;
+  --sheet: #1E2129;
+  --chip: #2A2E37;
+  --display: "Bricolage Grotesque", "Roboto Flex", system-ui, sans-serif;
+  --body: "Roboto Flex", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0E1014; --surface: #171A20; --ink: #ECEEF3; --sub: #9AA1B0; --line: #272B34; --accent: #7D8FFF; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0E1014; --surface: #171A20; --ink: #ECEEF3; --sub: #9AA1B0; --line: #272B34; --accent: #7D8FFF; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body); }
+main { max-width: 900px; margin: 0 auto; padding: 40px 20px 64px; display: grid; gap: 28px; }
+h1 { font: 700 32px/1.1 var(--display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+.lede { color: var(--sub); margin: 10px 0 0; max-width: 66ch; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; justify-items: center; }
+@media (max-width: 700px) { .pair { grid-template-columns: 1fr; } }
+figure { margin: 0; display: grid; gap: 12px; justify-items: center; }
+figcaption { text-align: center; max-width: 34ch; }
+figcaption b { display: block; font: 600 16px var(--display); }
+figcaption span { color: var(--sub); font-size: 14px; }
+.controls { display: flex; gap: 10px; justify-content: center; }
+button { font: 600 14px var(--body); padding: 10px 18px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 50%, transparent); outline-offset: 2px; }
+.notes { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 20px 22px; display: grid; gap: 10px; }
+.notes h2 { font: 600 18px var(--display); margin: 0; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+
+/* ---------- phone ---------- */
+.phone { width: 300px; height: 620px; border-radius: 36px; background: #0B0D11; padding: 8px; box-shadow: 0 20px 40px rgba(0,0,0,.25); }
+.screen { position: relative; width: 100%; height: 100%; border-radius: 29px; overflow: hidden; background: var(--app); color: var(--app-ink); font-size: 11px; display: flex; flex-direction: column; }
+.status { height: 22px; display: flex; justify-content: space-between; padding: 6px 16px 0; font-size: 10px; color: var(--app-sub); }
+.appbar { padding: 8px 14px; border-bottom: 1px solid #2C2F33; }
+.appbar b { font-size: 13px; display: block; }
+.appbar span { color: #4AA3DF; font-size: 10px; }
+.msgs { flex: 1; padding: 12px 14px; display: grid; align-content: end; gap: 10px; }
+.msg { display: grid; grid-template-columns: 26px 1fr; gap: 8px; }
+.av { width: 26px; height: 26px; border-radius: 6px; background: linear-gradient(135deg, #5B6B8C, #8C6B5B); }
+.msg b { font-size: 11px; }
+.msg p { margin: 2px 0 0; color: var(--app-sub); font-size: 10.5px; line-height: 1.4; }
+.compose { padding: 8px 14px 10px; border-top: 1px solid #2C2F33; color: var(--app-sub); }
+.compose .field { border-left: 2px solid #4AA3DF; padding-left: 6px; font-size: 12px; }
+
+/* keyboard */
+.kb { background: var(--kb); padding: 4px 3px 14px; }
+.strip { height: 34px; display: flex; align-items: center; gap: 4px; padding: 0 3px; }
+.strip .exp { color: var(--kb-ink); width: 14px; text-align: center; }
+.chip { height: 26px; border-radius: 8px; background: var(--chip); display: flex; align-items: center; gap: 6px; padding: 0 9px 0 5px; color: var(--kb-ink); font-size: 10px; white-space: nowrap; }
+.ic { width: 16px; height: 16px; border-radius: 4px; display: grid; place-items: center; font: 600 7.5px var(--body); color: #3A3200; flex: none; }
+.y { background: #F2DC8C; } .g { background: #F0E1A0; } .b { background: #9FD6DC; } .v { background: #C3B6F5; } .op { background: #1A8CFF; color: #fff; }
+.more { height: 26px; border-radius: 8px; border: 1.3px solid var(--kb-sub); color: var(--kb-ink); font-weight: 600; font-size: 10px; padding: 0 8px; display: grid; place-items: center; position: relative; }
+.more.tap::after { content: ""; position: absolute; inset: -6px; border-radius: 12px; background: rgba(255,255,255,.18); animation: tap .5s ease-out forwards; }
+@keyframes tap { from { opacity: 1; transform: scale(.8); } to { opacity: 0; transform: scale(1.15); } }
+.sq { width: 26px; padding: 0; justify-content: center; }
+.x { color: var(--kb-ink); width: 16px; text-align: center; margin-left: auto; }
+.mic { width: 44px; height: 26px; border-radius: 13px; background: #2F4BE0; flex: none; }
+.keys { display: grid; gap: 4px; padding: 4px 1px 0; }
+.r { display: flex; gap: 3px; justify-content: center; }
+.k { height: 30px; flex: 1; max-width: 26px; border-radius: 5px; background: var(--key); color: var(--kb-ink); display: grid; place-items: center; font-size: 12px; }
+.k.w { max-width: 40px; background: var(--fn); }
+.k.sp { max-width: 120px; flex: 4; }
+.k.ent { max-width: 40px; background: #2F4BE0; }
+
+/* overlays */
+.scrim { position: absolute; inset: 0; background: rgba(8,10,16,.45); opacity: 0; transition: opacity .2s ease-out; pointer-events: none; }
+.card { position: absolute; left: 6px; right: 6px; bottom: 8px; background: var(--sheet); border-radius: 22px; padding: 9px 12px 8px; box-shadow: 0 10px 30px rgba(0,0,0,.45); transform: translateY(110%); transition: transform .26s cubic-bezier(.32,.72,0,1); }
+.handle { width: 28px; height: 3px; border-radius: 2px; background: var(--kb-sub); opacity: .4; margin: 0 auto 9px; }
+.head { display: flex; align-items: center; margin-bottom: 10px; }
+.head div { flex: 1; }
+.head b { display: block; font-size: 13.5px; font-weight: 600; color: var(--kb-ink); }
+.head small { font-size: 10px; color: var(--kb-sub); }
+.head .done { color: #7D8FFF; font-weight: 600; font-size: 11.5px; }
+.list { display: grid; gap: 6px; }
+.list .chip { height: 32px; font-size: 11px; }
+.list .chip small { color: var(--kb-sub); font-size: 9px; margin-left: auto; }
+.open .scrim { opacity: 1; }
+.open .card { transform: translateY(0); }
+
+/* today: the popover is clipped to the keyboard window */
+.kbwrap { position: relative; overflow: hidden; }
+.pop { position: absolute; inset: 0; }
+.pop .card { border-radius: 18px 18px 0 0; left: 0; right: 0; bottom: 0; padding-top: 7px; }
+.pop .list .chip { height: 24px; }
+.clipline { position: absolute; left: 0; right: 0; top: 0; border-top: 1.5px dashed #F07178; opacity: 0; transition: opacity .2s; }
+.open .clipline { opacity: 1; }
+.cliplabel { position: absolute; right: 8px; top: -16px; font-size: 9px; color: #F07178; background: var(--app); padding: 1px 5px; border-radius: 4px; }
+@media (prefers-reduced-motion: reduce) { .card, .scrim, .clipline { transition: none; } .more.tap::after { animation: none; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Saved logins, as a real bottom sheet</h1>
+    <p class="lede">Tapping "+4" opens every saved login. Today the list is squeezed into the keyboard's own space. The proposal draws the same floating card as the power-button sheet, over the app, using the keyboard's full-height window. The phones below are open; Replay shows the tap.</p>
+  </header>
+
+  <div class="controls">
+    <button class="primary" id="replay" type="button">Replay the tap</button>
+    <button id="toggle" type="button">Close sheets</button>
+  </div>
+
+  <div class="pair">
+    <figure>
+      <div class="phone"><div class="screen" id="today"></div></div>
+      <figcaption><b>Today</b><span>An attached dialog. Android keeps it inside the keyboard, so it covers the keys and nothing above them.</span></figcaption>
+    </figure>
+    <figure>
+      <div class="phone"><div class="screen" id="proposed"></div></div>
+      <figcaption><b>Proposed</b><span>Drawn in the keyboard's full-height window: dims the whole screen and floats the power-button card above the nav bar.</span></figcaption>
+    </figure>
+  </div>
+
+  <section class="notes">
+    <h2>How the proposed sheet behaves</h2>
+    <ul>
+      <li>Same card as the power-button sheet: inset 8 dp, rounded on every corner, handle, then the title and Done in your accent color.</li>
+      <li>Each login is a full-width row drawn by your password manager. Tapping one fills the field and closes the sheet.</li>
+      <li>Tapping the dimmed area, Done, or leaving the field closes it. The text field keeps focus the whole time, which autofill needs.</li>
+      <li>While it's open, the keyboard takes touches across the whole screen. When it closes, only the keys respond again.</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+const app = `
+  <div class="status"><span>2:00</span><span>51%</span></div>
+  <div class="appbar"><b>Thread</b><span>Message in #gfr-2-factor-auth</span></div>
+  <div class="msgs">
+    <div class="msg"><div class="av"></div><div><b>Albert Hong</b><p>Wondering if we can get your eyes on this.</p></div></div>
+    <div class="msg"><div class="av"></div><div><b>Jesse Meza</b><p>Fair point, this is our first time doing something like this. Would love a design review before we implement.</p></div></div>
+  </div>
+  <div class="compose"><div class="field">Add a reply</div></div>`;
+const strip = `
+  <div class="strip">
+    <span class="exp">›</span>
+    <div class="chip"><span class="ic y">Ge</span>Generated…</div>
+    <div class="chip"><span class="ic g">sl</span>jesse@company…</div>
+    <div class="more">+4</div>
+    <div class="chip sq"><span class="ic op">1P</span></div>
+    <span class="x">✕</span><span class="mic"></span>
+  </div>`;
+const row = s => `<div class="r">${[...s].map(c => `<div class="k">${c}</div>`).join("")}</div>`;
+const keys = `<div class="keys">${row("qwertyuiop")}${row("asdfghjkl")}
+  <div class="r"><div class="k w">⇧</div>${[..."zxcvbnm"].map(c => `<div class="k">${c}</div>`).join("")}<div class="k w">⌫</div></div>
+  <div class="r"><div class="k w">?123</div><div class="k">,</div><div class="k sp"></div><div class="k">.</div><div class="k ent">↵</div></div></div>`;
+const logins = (sub) => `
+  <div class="list">
+    <div class="chip"><span class="ic y">Ge</span>Generated password${sub ? "<small>Google</small>" : ""}</div>
+    <div class="chip"><span class="ic g">sl</span>jesse@company.com${sub ? "<small>slack.com</small>" : ""}</div>
+    <div class="chip"><span class="ic b">sl</span>jesse.meza@gmail.com${sub ? "<small>slack.com</small>" : ""}</div>
+    <div class="chip"><span class="ic v">sl</span>design-team@company.com${sub ? "<small>slack.com</small>" : ""}</div>
+    <div class="chip"><span class="ic op">1P</span>Open 1Password${sub ? "<small>Search all</small>" : ""}</div>
+  </div>`;
+const head = `<div class="handle"></div><div class="head"><div><b>Saved logins</b><small>Tap one to fill it in</small></div><span class="done">Done</span></div>`;
+
+document.getElementById("today").innerHTML = app + `
+  <div class="kbwrap kb">${strip}${keys}
+    <div class="pop"><div class="scrim"></div><div class="card">${head}${logins(false)}</div></div>
+    <div class="clipline"><span class="cliplabel">window edge: nothing draws above</span></div>
+  </div>`;
+document.getElementById("proposed").innerHTML = app + `<div class="kb">${strip}${keys}</div>
+  <div class="scrim"></div><div class="card">${head}${logins(true)}</div>`;
+
+const screens = [...document.querySelectorAll(".screen")];
+const setOpen = on => {
+  for (const s of screens) {
+    (s.id === "today" ? s.querySelector(".kbwrap") : s).classList.toggle("open", on);
+  }
+  document.getElementById("toggle").textContent = on ? "Close sheets" : "Open sheets";
+};
+let open = true;
+setOpen(true); // complete at rest: sheets shown on load
+document.getElementById("toggle").addEventListener("click", () => setOpen(open = !open));
+document.getElementById("replay").addEventListener("click", () => {
+  setOpen(open = false);
+  setTimeout(() => {
+    for (const m of document.querySelectorAll(".more")) { m.classList.remove("tap"); void m.offsetWidth; m.classList.add("tap"); }
+    setTimeout(() => setOpen(open = true), 220);
+  }, 450);
+});
+</script>
+</body>
+</html>

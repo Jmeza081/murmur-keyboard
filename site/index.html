@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Murmur: say it, and it's typed</title>
-<meta name="description" content="Murmur is an Android keyboard with dictation that runs entirely on your phone. Hold the power button in any app, talk, and the words land where you were typing.">
+<meta name="description" content="Murmur is an Android keyboard with dictation that runs on your phone by default. Hold the power button in any app, talk, and the words land where you were typing.">
 <meta name="theme-color" content="#0B0D11">
 <meta property="og:title" content="Murmur: say it, and it's typed">
-<meta property="og:description" content="An Android keyboard with private, on-device dictation. Nothing you say leaves the phone.">
+<meta property="og:description" content="An Android keyboard with private, on-device dictation by default, and optional cloud speech and cleanup you switch on yourself.">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta property="og:image" content="https://jmeza081.github.io/murmur-keyboard/icon-512.png">
@@ -15,10 +15,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600;8..144,700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* Page: a dark stage, so the light and dark phones both read as objects. Orange means "listening"; cobalt means "the keyboard". */
+/* Page: a dark stage, so the light and dark phones both read as objects. One accent (--rec, picked with the swatches) colors the whole page, as in the app. */
 :root {
   --bg: #0B0D11; --panel: #13161C; --panel-2: #191C23; --line: #242832; --ink: #ECEEF3; --muted: #A1A8B6;
-  --rec: #E8590C; --rec-hi: #FF8A4C; --acc: #8EA0FF; --cobalt: #2F4BE0;
+  --rec: #2F4BE0; --rec-hi: color-mix(in srgb, var(--rec) 55%, #fff); --acc: color-mix(in srgb, var(--rec) 45%, #fff); --cobalt: var(--rec);
   --font-display: "Bricolage Grotesque", "Roboto Flex", system-ui, sans-serif;
   --font-body: "Roboto Flex", Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "Roboto Mono", ui-monospace, Menlo, monospace;
@@ -50,12 +50,12 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 .l-btn:active { transform: scale(0.97); }
 .l-btn.rec { background: var(--rec); color: #fff; box-shadow: 0 10px 30px -10px color-mix(in srgb, var(--rec) 70%, transparent); }
 .l-btn.ghost { background: var(--panel-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
-@media (hover: hover) and (pointer: fine) { .l-btn.rec:hover { background: #F06418; } .l-btn.ghost:hover { background: #20242C; } }
+@media (hover: hover) and (pointer: fine) { .l-btn.rec:hover { background: color-mix(in srgb, var(--rec) 88%, #fff); } .l-btn.ghost:hover { background: #20242C; } }
 
 /* Hero */
 .l-hero { position: relative; padding: 72px 0 40px; }
 .l-hero::before { content: ""; position: absolute; inset: -120px 0 auto; height: 720px; pointer-events: none;
-  background: radial-gradient(600px 380px at 78% 40%, rgba(232, 89, 12, 0.20), transparent 70%), radial-gradient(520px 360px at 12% 10%, rgba(47, 75, 224, 0.18), transparent 70%); }
+  background: radial-gradient(600px 380px at 78% 40%, color-mix(in srgb, var(--rec) 20%, transparent), transparent 70%), radial-gradient(520px 360px at 12% 10%, color-mix(in srgb, var(--rec) 10.8%, transparent), transparent 70%); }
 .l-hero .l-wrap { position: relative; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 48px; align-items: center; }
 .l-eyebrow { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px 0 10px; border-radius: 16px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); color: var(--muted); font-size: 13.5px; font-weight: 500; }
 .l-eyebrow .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rec); box-shadow: 0 0 0 4px color-mix(in srgb, var(--rec) 25%, transparent); }
@@ -83,16 +83,16 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 #hero-phone .side-btn.pwr.down { background: var(--rec); transform: translateX(-1px); box-shadow: 0 0 0 5px color-mix(in srgb, var(--rec) 28%, transparent); }
 #hero-phone .side-btn.pwr::before { content: ""; position: absolute; inset: -12px -18px -12px -14px; }
 .l-press { position: absolute; right: -26px; top: 196px; width: 64px; height: 64px; margin-top: 0; border-radius: 50%; pointer-events: none; opacity: 0;
-  background: radial-gradient(closest-side, rgba(232, 89, 12, 0.75), rgba(232, 89, 12, 0)); }
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--rec) 75%, transparent), color-mix(in srgb, var(--rec) 0%, transparent)); }
 #hero-phone .scrim { opacity: 0; transition: none; }
 #hero-phone .snack { opacity: 0; transform: translateY(8px); }
 .blink { animation: blink 1s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 .hl-new { border-radius: 3px; transition: background 1200ms ease; }
-.hl-new.lit { background: color-mix(in srgb, #2F4BE0 18%, transparent); }
-.capsule { position: absolute; left: 50%; bottom: 20px; width: 128px; height: 42px; margin-left: -64px; border-radius: 21px; background: #E8590C; z-index: 3; display: flex; align-items: center; justify-content: center; gap: 3px; opacity: 0; pointer-events: none; }
+.hl-new.lit { background: color-mix(in srgb, var(--rec) 18%, transparent); }
+.capsule { position: absolute; left: 50%; bottom: 20px; width: 128px; height: 42px; margin-left: -64px; border-radius: 21px; background: var(--rec); z-index: 3; display: flex; align-items: center; justify-content: center; gap: 3px; opacity: 0; pointer-events: none; }
 .capsule i { width: 3.5px; height: 8px; border-radius: 2px; background: #fff; }
-.msheet { --k-bg: #1E2129; --k-key: #2A2E37; --k-fn: #2A2E37; --k-ink: #ECEEF3; --k-sub: #9AA1B0; --k-rec: #E8590C;
+.msheet { --k-bg: #1E2129; --k-key: #2A2E37; --k-fn: #2A2E37; --k-ink: #ECEEF3; --k-sub: #9AA1B0; --k-rec: var(--rec);
   position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 3; border-radius: 28px; background: #1E2129; color: #ECEEF3; padding: 12px 18px 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -10px 40px rgba(0,0,0,0.3); opacity: 0; }
 .msheet .grab { width: 36px; height: 4px; border-radius: 2px; background: #9AA1B0; opacity: 0.4; align-self: center; }
 .msheet .mtop { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
@@ -101,11 +101,21 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 .msheet canvas { width: 100%; height: 108px; display: block; margin: 8px 0 6px; }
 .mctrls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 8px; }
 .mctrls .round { width: 48px; height: 48px; background: #2A2E37; color: #ECEEF3; }
-.msend { position: relative; width: 68px; height: 68px; border-radius: 50%; display: grid; place-items: center; background: #E8590C; color: #fff; }
-.msend::before { content: ""; position: absolute; inset: -14px; border-radius: 50%; background: radial-gradient(closest-side, rgba(232, 89, 12, 0.45), rgba(232, 89, 12, 0)); animation: glow 1.8s ease-in-out infinite alternate; z-index: -1; }
+.msend { position: relative; width: 68px; height: 68px; border-radius: 50%; display: grid; place-items: center; background: var(--rec); color: #fff; }
+.msend::before { content: ""; position: absolute; inset: -14px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--rec) 45%, transparent), color-mix(in srgb, var(--rec) 0%, transparent)); animation: glow 1.8s ease-in-out infinite alternate; z-index: -1; }
 @keyframes glow { from { opacity: 0.55; transform: scale(0.94); } to { opacity: 1; transform: scale(1.06); } }
 .msend .icon { width: 28px; height: 28px; stroke-width: 2.2; }
-.spark-on { background: color-mix(in srgb, #8EA0FF 18%, #2A2E37) !important; color: #B4C0FF !important; }
+.spark-on { background: color-mix(in srgb, var(--acc) 18%, #2A2E37) !important; color: var(--acc) !important; }
+
+/* Live words as a teleprompter over the dimmed waveform (app: DictationPanel / MurmurSession) */
+.tele { position: relative; }
+.tele canvas { transition: opacity 200ms ease-out; }
+.tele.on canvas { opacity: 0.25; }
+.tp { position: absolute; left: 6px; right: 6px; top: 50%; transform: translateY(-50%); text-align: center; font-weight: 500; line-height: 1.15; letter-spacing: -0.01em;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; pointer-events: none; }
+.tp .d { color: var(--tp-draft, #7F8696); }
+.msheet .tp { font-size: 21px; color: #ECEEF3; }
+.dict .tp { font-size: 19px; color: var(--k-ink); --tp-draft: var(--k-sub); }
 
 /* Sections */
 .l-sec { padding: 112px 0 0; scroll-margin-top: 64px; }
@@ -210,7 +220,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 @media (max-width: 760px) { .l-list { grid-template-columns: 1fr; } }
 
 /* Closing */
-.l-cta { margin: 128px 0 0; padding: 72px 28px; text-align: center; border-top: 1px solid var(--line); background: radial-gradient(620px 300px at 50% 0%, rgba(232, 89, 12, 0.16), transparent 70%); }
+.l-cta { margin: 128px 0 0; padding: 72px 28px; text-align: center; border-top: 1px solid var(--line); background: radial-gradient(620px 300px at 50% 0%, color-mix(in srgb, var(--rec) 16%, transparent), transparent 70%); }
 .l-cta h2 { font-family: var(--font-display); font-weight: 800; font-size: clamp(40px, 6vw, 76px); letter-spacing: -0.03em; line-height: 1; margin: 0 0 18px; }
 .l-cta p { color: var(--muted); margin: 0 auto 30px; max-width: 34em; }
 .l-cta .l-ctas { justify-content: center; }
@@ -229,12 +239,12 @@ footer a { color: var(--ink); }
 /* ===== Device ===== */
 .phone {
   /* Device palette is fixed per frame; it does not follow the page theme. */
-  --k-bg: #E8EBF1; --k-key: #FFFFFF; --k-fn: #CFD5E0; --k-ink: #191B21; --k-sub: #6B7282; --k-acc: #2F4BE0; --k-on-acc: #FFFFFF; --k-rec: #D9480F; --k-shadow: 0 1px 0 rgba(20, 24, 34, 0.18);
+  --k-bg: #E8EBF1; --k-key: #FFFFFF; --k-fn: #CFD5E0; --k-ink: #191B21; --k-sub: #6B7282; --k-acc: #2F4BE0; --k-on-acc: #FFFFFF; --k-rec: var(--rec); --k-shadow: 0 1px 0 rgba(20, 24, 34, 0.18);
   --s-bg: #F7F8FA; --s-surface: #FFFFFF; --s-ink: #191B21; --s-sub: #5B6272; --s-line: #E1E4EA; --s-tint: #E4E9FF;
   width: 360px; height: 760px; border-radius: 44px; padding: 10px; background: #0B0C0F; box-shadow: 0 30px 60px -30px rgba(10, 14, 30, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06) inset; position: relative; flex: none;
 }
 .phone.dark {
-  --k-bg: #121419; --k-key: #2A2E37; --k-fn: #1E2129; --k-ink: #ECEEF3; --k-sub: #9AA1B0; --k-acc: #8EA0FF; --k-on-acc: #0D1336; --k-rec: #FF8A4C; --k-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+  --k-bg: #121419; --k-key: #2A2E37; --k-fn: #1E2129; --k-ink: #ECEEF3; --k-sub: #9AA1B0; --k-acc: #8EA0FF; --k-on-acc: #0D1336; --k-rec: var(--rec-hi); --k-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
   --s-bg: #0F1115; --s-surface: #1A1D23; --s-ink: #ECEEF3; --s-sub: #A1A8B6; --s-line: #2A2E36; --s-tint: #232A4A;
 }
 .screen { width: 100%; height: 100%; border-radius: 34px; overflow: hidden; background: var(--s-bg); color: var(--s-ink); display: flex; flex-direction: column; position: relative; }
@@ -429,7 +439,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
 
 /* ===== Tablet ===== */
 .tablet { width: 1080px; height: 640px; border-radius: 36px; padding: 12px; background: #0B0C0F; flex: none; box-shadow: 0 30px 60px -30px rgba(10, 14, 30, 0.45);
-  --k-bg: #121419; --k-key: #2A2E37; --k-fn: #1E2129; --k-ink: #ECEEF3; --k-sub: #9AA1B0; --k-acc: #8EA0FF; --k-on-acc: #0D1336; --k-rec: #FF8A4C; --k-shadow: 0 1px 0 rgba(0,0,0,0.5);
+  --k-bg: #121419; --k-key: #2A2E37; --k-fn: #1E2129; --k-ink: #ECEEF3; --k-sub: #9AA1B0; --k-acc: #8EA0FF; --k-on-acc: #0D1336; --k-rec: var(--rec-hi); --k-shadow: 0 1px 0 rgba(0,0,0,0.5);
   --s-bg: #0F1115; --s-surface: #1A1D23; --s-ink: #ECEEF3; --s-sub: #A1A8B6; --s-line: #2A2E36; --s-tint: #232A4A; }
 .tablet .screen { border-radius: 26px; }
 .tab-doc { flex: 1; padding: 28px 64px; display: grid; gap: 12px; align-content: start; background: var(--s-surface); }
@@ -521,13 +531,13 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
     <div>
       <span class="l-eyebrow rv"><span class="dot"></span>Android keyboard · on-device dictation</span>
       <h1 class="rv d1">Say it.<br><em>It's typed.</em></h1>
-      <p class="l-lede rv d2">Murmur is a keyboard that listens. <b>Hold the power button in any app</b>, talk, and your words land where you were typing, cleaned of the ums. The speech model runs on your phone, so nothing you say leaves it.</p>
+      <p class="l-lede rv d2">Murmur is a keyboard that listens. <b>Hold the power button in any app</b>, talk, and your words land where you were typing, cleaned of the ums. The speech model runs on your phone, so by default nothing you say leaves it.</p>
       <div class="l-ctas rv d2">
         <a class="l-btn rec" href="#dictation"><svg class="icon"><use href="#i-wave"/></svg>See how it works</a>
         <a class="l-btn ghost" href="https://github.com/Jmeza081/murmur-keyboard"><svg class="icon"><use href="#i-github"/></svg>View the source</a>
       </div>
       <ul class="l-facts rv d2">
-        <li><svg class="icon sm"><use href="#i-wifi-off"/></svg>Works offline</li>
+        <li><svg class="icon sm"><use href="#i-wifi-off"/></svg>Works offline by default</li>
         <li><svg class="icon sm"><use href="#i-globe"/></svg>25 languages</li>
         <li><svg class="icon sm"><use href="#i-shield"/></svg>Audio never stored</li>
       </ul>
@@ -554,7 +564,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
             <span class="grab"></span>
             <div class="mtop"><span class="live" id="h-time">0:00</span><span class="chip"><svg class="icon xs"><use href="#i-shield"/></svg>On device</span></div>
             <div class="mtarget"><svg class="icon xs"><use href="#i-cursor"/></svg>Typing into <b>Notes</b></div>
-            <canvas id="h-wave"></canvas>
+            <div class="tele" id="h-tele"><canvas id="h-wave"></canvas><div class="tp" id="h-tp" aria-hidden="true"></div></div>
             <div class="mctrls">
               <span class="round" style="justify-self: start"><svg class="icon"><use href="#i-x"/></svg></span>
               <span class="msend"><svg class="icon"><use href="#i-up"/></svg></span>
@@ -646,7 +656,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
       <div>
         <p class="l-kicker rv">Cleanup</p>
         <h2 class="rv" style="font-size: clamp(30px, 3.6vw, 44px)">The ums come out. Your words stay yours.</h2>
-        <p class="l-intro rv">Light cleanup drops filler words and fixes spacing with simple rules, so it adds no delay and never rewrites what you meant. Add your own fillers, or turn it off.</p>
+        <p class="l-intro rv">Light cleanup drops filler words and fixes spacing with simple rules, so it adds no delay and never rewrites what you meant. Add your own fillers, or turn it off. Want more? Claude cleanup, off unless you add your own Anthropic key, sends the finished text (never the audio) to Claude Sonnet, which fixes misheard words and follows "scratch that" or "actually, make it Tuesday".</p>
       </div>
       <div class="l-diff rv d1" id="diff">
         <div class="row">
@@ -679,7 +689,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
       </div>
     </div>
     <div class="l-wavecard rv d1">
-      <div class="mtop"><span class="live" style="color: #E8590C" id="wv-time">0:04</span><span class="chip" style="background: #2A2E37; color: #ECEEF3"><svg class="icon xs"><use href="#i-shield"/></svg>On device</span></div>
+      <div class="mtop"><span class="live" style="color: var(--rec-hi)" id="wv-time">0:04</span><span class="chip" style="background: #2A2E37; color: #ECEEF3"><svg class="icon xs"><use href="#i-shield"/></svg>On device</span></div>
       <canvas id="wv-canvas" aria-label="Live waveform preview" role="img"></canvas>
       <div class="mctrls">
         <span class="round" style="justify-self: start"><svg class="icon"><use href="#i-x"/></svg></span>
@@ -911,7 +921,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
                 </div>
                 <div class="group-label">Cleanup</div>
                 <div class="group" style="padding: 14px 16px; display: grid; gap: 10px">
-                  <div class="seg"><span>Off</span><span class="on">Light</span></div>
+                  <div class="seg"><span>Off</span><span class="on">Light</span><span>Claude</span></div>
                   <span style="font-size: 12.5px; color: var(--s-sub); line-height: 1.45">Removes filler words and fixes spacing. Your words are never rewritten.</span>
                   <div class="tagrow"><span class="tag">um</span><span class="tag">uh</span><span class="tag">like</span><span class="tag">you know</span><span class="tag add"><svg class="icon xs"><use href="#i-plus"/></svg>Add</span></div>
                 </div>
@@ -932,10 +942,10 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
 <section class="l-sec" id="privacy">
   <div class="l-wrap">
     <p class="l-kicker rv">Private by design</p>
-    <h2 class="rv">Your voice stays on your phone. Full stop.</h2>
-    <p class="l-intro rv">There's no account and no server. Murmur goes online once, to download the speech model. After that, dictation works in airplane mode.</p>
+    <h2 class="rv">Your voice stays on your phone, unless you say otherwise.</h2>
+    <p class="l-intro rv">Out of the box there's no account and no server. Murmur goes online once, to download the speech model, and after that dictation works in airplane mode. Two cloud options are there if you want them, both off until you add your own key.</p>
     <div class="l-priv rv">
-      <div><b>0</b><span>bytes of audio sent anywhere</span></div>
+      <div><b>0</b><span>bytes of audio sent anywhere, by default</span></div>
       <div><b>670 MB</b><span>model, downloaded once and checksum-verified</span></div>
       <div><b>25</b><span>languages, detected automatically</span></div>
       <div><b>&lt;1 s</b><span>to transcribe a typical sentence</span></div>
@@ -944,7 +954,9 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
       <li class="rv"><svg class="icon sm"><use href="#i-shield"/></svg><span><b>Audio lives in memory only.</b> It's dropped the moment your words are transcribed.</span></li>
       <li class="rv d1"><svg class="icon sm"><use href="#i-lock"/></svg><span><b>Passwords stay out of history.</b> Clips marked sensitive by password managers are never saved.</span></li>
       <li class="rv"><svg class="icon sm"><use href="#i-key"/></svg><span><b>Password manager, one tap away.</b> 1Password suggestions show as chips in the strip, with a button to open the app.</span></li>
-      <li class="rv d1"><svg class="icon sm"><use href="#i-github"/></svg><span><b>Open source.</b> GPL-3.0, built on HeliBoard and sherpa-onnx. Read every line.</span></li>
+      <li class="rv"><svg class="icon sm"><use href="#i-wave"/></svg><span><b>ElevenLabs speech, if you choose it.</b> With your key, recordings go to ElevenLabs for faster, live transcription. Offline or out of hours, the on-phone model takes over.</span></li>
+      <li class="rv d1"><svg class="icon sm"><use href="#i-spark"/></svg><span><b>Claude cleanup, if you choose it.</b> With your key, the finished text (never audio) goes to Claude to fix misheard words and follow "scratch that".</span></li>
+      <li class="rv"><svg class="icon sm"><use href="#i-github"/></svg><span><b>Open source.</b> GPL-3.0, built on HeliBoard and sherpa-onnx. Read every line.</span></li>
     </ul>
   </div>
 </section>
@@ -1007,7 +1019,8 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
       return strip('<div class="sugs" style="grid-template-columns: 1fr"><span class="mid" style="color: var(--k-sub); font-weight: 500">Listening…</span></div>',
           '<span class="sbtn">' + I('kbd', 'sm') + '</span>', '<span class="mic" style="background: var(--k-rec); color: #fff">' + I('wave', 'sm') + '</span>') +
         '<div class="dict"><div class="dict-top"><span class="live" data-timer>0:07</span><span class="chip">' + I('shield', 'xs') + 'On device</span></div>' +
-        '<canvas class="kwave" style="width: 100%; height: 92px; display: block"></canvas>' +
+        '<div class="tele on"><canvas class="kwave" style="width: 100%; height: 92px; display: block"></canvas>' +
+        '<div class="tp" aria-hidden="true">and send Maya the deck <span class="d">by Friday</span></div></div>' +
         '<div class="dict-ctrls"><span class="round" style="justify-self: start" aria-label="Cancel">' + I('x') + '</span>' +
         '<span class="msend" style="width: 64px; height: 64px">' + I('up') + '</span>' +
         '<span class="round" style="justify-self: end; background: color-mix(in srgb, var(--k-acc) 16%, var(--k-fn)); color: var(--k-acc)" aria-label="Cleanup on">' + I('spark') + '</span></div></div>' + bar;
@@ -1074,7 +1087,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
     var ctx = c.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); return [ctx, w, h];
   }
   function rgba(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
-  var REC = '#E8590C', CHIP = '#2A2E37';
+  var REC = '#2F4BE0', CHIP = '#2A2E37'; // REC follows the accent swatches (setAccent)
   var STYLES = {
     dots: { name: 'Dot matrix', desc: 'A grid of dots that light from the middle out, column by column, like an LED meter. The default.',
       draw: function (ctx, w, h, v) {
@@ -1179,7 +1192,13 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
   var TYPED = ' Also grab coffee beans and some lemons.';
   H.saidText.innerHTML = SAID.map(function (w) { return '<span class="w' + (w.indexOf('um') === 0 ? ' um' : '') + '">' + w + '</span>'; }).join(' ');
   var words = H.saidText.querySelectorAll('.w');
-
+  H.tele = document.getElementById('h-tele'); H.tp = document.getElementById('h-tp');
+  // Teleprompter: settled words in ink, the newest two still grey (drafts), the last few words only
+  function tele(n) {
+    var shown = SAID.slice(0, n), cut = Math.max(0, shown.length - 6), fin = shown.length - 2;
+    H.tp.innerHTML = shown.map(function (w, i) { return i >= fin ? '<span class="d">' + w + '</span>' : w; }).slice(cut).join(' ');
+    H.tele.classList.toggle('on', n > 0);
+  }
   var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
   var anim = function (el, kf, o) { return el.animate(kf, Object.assign({ fill: 'both' }, o)).finished; };
   var CLIP_CAP = 'inset(calc(100% - 52px) calc(50% - 64px) 10px calc(50% - 64px) round 21px)', CLIP_OPEN = 'inset(0 0 0 0 round 28px)';
@@ -1197,7 +1216,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
     H.sheet.style.opacity = 1;
     anim(H.cap, [{ opacity: 1 }, { opacity: 0 }], { duration: 160, delay: 60 });
     H.content.forEach(function (el) { anim(el, [{ opacity: 0 }, { opacity: 0, offset: 0.5 }, { opacity: 1 }], { duration: 360 }); });
-    await anim(H.sheet, [{ clipPath: CLIP_CAP, background: '#E8590C' }, { clipPath: CLIP_OPEN, background: '#1E2129' }], { duration: 360, easing: DRAWER });
+    await anim(H.sheet, [{ clipPath: CLIP_CAP, background: REC }, { clipPath: CLIP_OPEN, background: '#1E2129' }], { duration: 360, easing: DRAWER });
     heroCapsuleLive = false;
   }
   async function closeSheet() {
@@ -1216,12 +1235,14 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
   function reset() {
     H.added.textContent = ''; H.added.classList.remove('lit');
     H.said.classList.remove('on'); words.forEach(function (w) { w.classList.remove('on'); });
+    tele(0);
     H.snack.getAnimations().forEach(function (a) { a.cancel(); });
   }
   async function speak(id) {
     H.said.classList.add('on'); heroVoice.on = true;
-    for (var i = 0; i < words.length; i++) { if (id !== run) return; words[i].classList.add('on'); await wait(i === 4 ? 520 : 330); }
+    for (var i = 0; i < words.length; i++) { if (id !== run) return; words[i].classList.add('on'); tele(i + 1); await wait(i === 4 ? 520 : 330); }
     heroVoice.on = false;
+    H.tp.innerHTML = SAID.slice(-6).join(' '); // everything settles
   }
   async function deliver(id) {
     H.time.textContent = 'Transcribing…'; clearInterval(clock);
@@ -1285,21 +1306,26 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
   var sw = document.getElementById('swatches'), psw = document.getElementById('phone-sw'), swname = document.getElementById('swname');
   function setAccent(name) {
     var hex = ACCENTS.filter(function (a) { return a[0] === name; })[0][1];
-    document.querySelectorAll('.phone:not(#hero-phone)').forEach(function (p) {
+    // the whole page follows: buttons, glows, waveforms, the listening sheet
+    document.documentElement.style.setProperty('--rec', hex);
+    REC = hex;
+    try { localStorage.setItem('murmur-accent', name); } catch (e) {}
+    document.querySelectorAll('.phone').forEach(function (p) {
       var dark = p.classList.contains('dark');
       if (name === 'Cobalt') { p.style.removeProperty('--k-acc'); p.style.removeProperty('--k-on-acc'); }
       else { p.style.setProperty('--k-acc', dark ? hex : hex); p.style.setProperty('--k-on-acc', '#FFFFFF'); }
     });
     sw.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.n === name)); });
     psw.querySelectorAll('.sw').forEach(function (s) { s.classList.toggle('on', s.dataset.n === name); });
-    swname.innerHTML = '<b>' + name + '</b> on every phone on this page.';
+    swname.innerHTML = '<b>' + name + '</b> across the whole page.';
   }
   ACCENTS.forEach(function (a) {
     sw.insertAdjacentHTML('beforeend', '<button type="button" data-n="' + a[0] + '" style="--c: ' + a[1] + '" aria-label="' + a[0] + '" aria-pressed="false">' + I('check', 'sm') + '</button>');
     psw.insertAdjacentHTML('beforeend', '<span class="sw" data-n="' + a[0] + '" style="background: ' + a[1] + '"></span>');
   });
   sw.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setAccent(b.dataset.n); });
-  setAccent('Cobalt');
+  var saved = null; try { saved = localStorage.getItem('murmur-accent'); } catch (e) {}
+  setAccent(ACCENTS.some(function (a) { return a[0] === saved; }) ? saved : 'Cobalt');
 
   /* ---------- Fold frame scales to fit ---------- */
   var foldBox = document.getElementById('fold-box'), foldFrame = document.getElementById('fold-frame');
