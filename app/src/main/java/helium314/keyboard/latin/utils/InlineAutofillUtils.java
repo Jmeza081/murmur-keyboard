@@ -63,17 +63,23 @@ public class InlineAutofillUtils {
 
         StylesBuilder stylesBuilder = UiVersions.newStylesBuilder();
         Style style = InlineSuggestionUi.newStyleBuilder()
+                // Murmur: icon-only chips are 40 dp squares (rounded) with the icon centered
                 .setSingleIconChipStyle(
                         new ViewStyle.Builder()
                                 .setBackground(Icon.createWithResource(context, chipBgDrawableId).setTint(chipBgColor))
                                 .setPadding(0, 0, 0, 0)
                                 .build())
+                .setSingleIconChipIconStyle(new ImageViewStyle.Builder()
+                        .setLayoutMargin(0, 0, 0, 0)
+                        .setScaleType(android.widget.ImageView.ScaleType.CENTER_INSIDE)
+                        .build())
                 .setChipStyle(
                         new ViewStyle.Builder()
                                 .setBackground(Icon.createWithResource(context, chipBgDrawableId).setTint(chipBgColor))
-                                .setPadding(pad, 0, pad, 0)
+                                // the start icon brings its own square backdrop, so less room on that side
+                                .setPadding((int) (8 * density), 0, (int) (16 * density), 0)
                                 .build())
-                .setStartIconStyle(new ImageViewStyle.Builder().setLayoutMargin(0, 0, (int) (8 * density), 0).build())
+                .setStartIconStyle(new ImageViewStyle.Builder().setLayoutMargin(0, 0, (int) (10 * density), 0).build())
                 .setTitleStyle(
                         new TextViewStyle.Builder()
                                 .setTextColor(chipTextColor)
@@ -90,7 +96,7 @@ public class InlineAutofillUtils {
         Bundle stylesBundle = stylesBuilder.build();
 
         final int height = (int) (40 * density); // Murmur: a 40 dp pill centered in the 48 dp strip
-        final Size min = new Size(100, height);
+        final Size min = new Size(height, height); // Murmur: an icon-only chip is square
         final Size max = new Size(740, height);
 
         // Three InlinePresentationSpec are required for some password managers

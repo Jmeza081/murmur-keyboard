@@ -65,7 +65,7 @@ object Defaults {
     var PREF_POPUP_ON = true
     const val PREF_AUTO_CORRECTION = true
     const val PREF_MORE_AUTO_CORRECTION = true // Murmur: autocorrect in every normal text field, like SwiftKey
-    const val PREF_AUTO_CORRECT_CONFIDENCE = 0.24f
+    const val PREF_AUTO_CORRECT_CONFIDENCE = 0.7f // Murmur: "Aggressive" (HeliBoard: 0.24, "Modest")
     const val PREF_AUTOCORRECT_SHORTCUTS = true
     const val PREF_BACKSPACE_REVERTS_AUTOCORRECT = true
     const val PREF_AUTOCORRECT_CAPITALIZED_SUGGESTION = true

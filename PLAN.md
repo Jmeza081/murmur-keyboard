@@ -127,6 +127,7 @@ Steps, each installed and compared against the mockups before the next:
    - **Delete:** toolbar customizing (key picker, pinned keys, custom codes, toolbar modes), layout editors (custom layouts, custom icons, custom currency key), gesture data gathering, the D-pad key and touchpad mode. **Keep** one-handed and floating modes.
    - **Feedback:** light haptics, no key sound. Key popup on press: on.
    - **Gestures on by default:** swipe space to move the cursor, swipe left from backspace to delete words, long-press space for the keyboard picker.
+   - **Autocorrect:** "Aggressive" (0.7), raised from HeliBoard's "Modest" after typo feedback.
    - **Suggestions:** learn from typing (on the phone only), installed app names, just-copied text as a paste chip; contacts off. Offensive words allowed.
    - **Languages:** English and Spanish in one keyboard (multilingual typing, no switching); emoji skin tone default yellow.
    - **Split (step 7):** on the inner screen in landscape only.

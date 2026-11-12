@@ -18,12 +18,19 @@ import helium314.keyboard.latin.utils.prefs
  * Bump [VERSION] when a default changes and should reach existing installs.
  */
 object MurmurDefaults {
-    private const val VERSION = 1
+    private const val VERSION = 3
     private const val KEY = "murmur_defaults_version"
 
     fun applyOnce(context: Context) {
         val prefs = context.prefs()
-        if (prefs.getInt(KEY, 0) >= VERSION) return
+        val applied = prefs.getInt(KEY, 0)
+        if (applied >= VERSION) return
+        if (applied < 3) prefs.edit {
+            // v2, v3: autocorrect was too timid at HeliBoard's "Modest"; 0.7 is the strong end of "Aggressive"
+            putFloat(Settings.PREF_AUTO_CORRECT_CONFIDENCE, AUTOCORRECT_AGGRESSIVE)
+            putInt(KEY, VERSION)
+        }
+        if (applied >= 1) return
         prefs.edit {
             putBoolean(Settings.PREF_VIBRATE_ON, true)
             putInt(Settings.PREF_VIBRATION_DURATION_SETTINGS, LIGHT_HAPTIC_MS)
@@ -37,7 +44,6 @@ object MurmurDefaults {
             putBoolean(Settings.PREF_USE_CONTACTS, false)
             putBoolean(Settings.PREF_SUGGEST_CLIPBOARD_CONTENT, true)
             putBoolean(Settings.PREF_BLOCK_POTENTIALLY_OFFENSIVE, false)
-            putInt(KEY, VERSION)
         }
         runCatching { addSpanish(context) }.onFailure { Log.w("MurmurDefaults", "Couldn't add Spanish", it) }
     }
@@ -52,5 +58,6 @@ object MurmurDefaults {
     }
 
     const val LIGHT_HAPTIC_MS = 15
+    const val AUTOCORRECT_AGGRESSIVE = 0.7f
     const val DELETE_SWIPE_WORDS = 2
 }
