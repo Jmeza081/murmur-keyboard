@@ -242,7 +242,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     @JvmOverloads
     fun setToolbarVisibility(toolbarVisible: Boolean, fromUser: Boolean = false) {
         if (toolbarVisible && !fromUser && pinnedExternal != null) return // Murmur: keep the logins showing
-        if (murmurResizeBar != null) return // Murmur: the key height bar owns the strip until Done
+        if (murmurOwnsStrip()) return // Murmur: the listening or key height bar owns the strip
         pinnedKeys.isVisible = !toolbarVisible
         suggestionsStrip.isVisible = !toolbarVisible
         toolbarContainer.isVisible = toolbarVisible
@@ -322,8 +322,10 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     override fun onVisibilityChanged(view: View, visibility: Int) {
         super.onVisibilityChanged(view, visibility)
         // workaround for a bug with inline suggestions views that just keep showing up otherwise, https://github.com/HeliBorg/HeliBoard/pull/386
+        // Murmur: but not while the tools row (or a Murmur bar) is showing; both visible split the strip
+        // and squeeze the tools into a small scrolling viewport (seen after closing the clipboard)
         if (view === this)
-            suggestionsStrip.visibility = visibility
+            suggestionsStrip.visibility = if (visibility == VISIBLE && (toolbarContainer.isVisible || murmurOwnsStrip())) GONE else visibility
     }
 
     override fun onDetachedFromWindow() {
@@ -507,7 +509,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private fun clear() {
         suggestionsStrip.removeAllViews()
         if (DEBUG_SUGGESTIONS) removeAllDebugInfoViews()
-        if (!toolbarContainer.isVisible && murmurResizeBar == null)
+        if (!toolbarContainer.isVisible && !murmurOwnsStrip())
             suggestionsStrip.isVisible = true
         dismissMoreSuggestionsPanel()
         for (word in wordViews) {
@@ -695,6 +697,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private var murmurResizeSaved: List<Pair<View, Int>>? = null
 
     fun isMurmurResizing() = murmurResizeBar != null
+    private fun murmurOwnsStrip() = murmurResizeBar != null || murmurSaved != null
 
     fun setMurmurResizing(on: Boolean) {
         val wrapper = murmurMic.parent as? LinearLayout ?: return

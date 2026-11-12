@@ -220,7 +220,7 @@ private fun SilenceItem() {
     val ctx = LocalContext.current
     var seconds by remember { mutableFloatStateOf(DictationPrefs.silenceMs(ctx) / 1000f) }
     Item("Stop after silence", "%.1f seconds".format(seconds), below = {
-        MurmurSlider(seconds, 1f..4f, steps = 5, onChange = { seconds = it },
+        MurmurSlider(seconds, 1f..10f, steps = 17, onChange = { seconds = it },
             onDone = { DictationPrefs.setSilenceMs(ctx, (seconds * 1000).toInt()) })
     })
 }

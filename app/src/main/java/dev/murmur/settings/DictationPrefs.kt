@@ -7,12 +7,13 @@ object DictationPrefs {
     private const val PREFS = "murmur"
     private const val SILENCE = "silence_stop_ms"
     private const val LAST_DECODE = "last_decode_ms"
-    const val DEFAULT_SILENCE_MS = 2000
-    val SILENCE_RANGE_MS = 1000..4000
+    const val DEFAULT_SILENCE_MS = 5000
+    val SILENCE_RANGE_MS = 1000..10000
 
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun silenceMs(context: Context) = prefs(context).getInt(SILENCE, DEFAULT_SILENCE_MS).coerceIn(SILENCE_RANGE_MS)
+    fun clearSilence(context: Context) = prefs(context).edit().remove(SILENCE).apply()
     fun setSilenceMs(context: Context, ms: Int) = prefs(context).edit().putInt(SILENCE, ms.coerceIn(SILENCE_RANGE_MS)).apply()
 
     /** How long the last transcription took, or -1 if none yet. */

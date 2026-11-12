@@ -18,7 +18,7 @@ import helium314.keyboard.latin.utils.prefs
  * Bump [VERSION] when a default changes and should reach existing installs.
  */
 object MurmurDefaults {
-    private const val VERSION = 3
+    private const val VERSION = 4
     private const val KEY = "murmur_defaults_version"
 
     fun applyOnce(context: Context) {
@@ -29,6 +29,11 @@ object MurmurDefaults {
             // v2, v3: autocorrect was too timid at HeliBoard's "Modest"; 0.7 is the strong end of "Aggressive"
             putFloat(Settings.PREF_AUTO_CORRECT_CONFIDENCE, AUTOCORRECT_AGGRESSIVE)
             putInt(KEY, VERSION)
+        }
+        if (applied < 4) {
+            // v4: 2 s of silence cut people off mid-thought; drop any saved value so the 5 s default applies
+            dev.murmur.settings.DictationPrefs.clearSilence(context)
+            prefs.edit { putInt(KEY, VERSION) }
         }
         if (applied >= 1) return
         prefs.edit {

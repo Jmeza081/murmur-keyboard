@@ -107,7 +107,7 @@ class MicRecorder(private val listener: Listener) {
     companion object {
         private const val TAG = "MurmurMic"
         const val SPEECH_RMS = 0.02f
-        const val SILENCE_STOP_MS = 2000
+        const val SILENCE_STOP_MS = dev.murmur.settings.DictationPrefs.DEFAULT_SILENCE_MS
         const val NO_SPEECH_MS = 8000
         const val MAX_SECONDS = 300
     }
