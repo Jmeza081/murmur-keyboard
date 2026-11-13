@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Murmur · Waiting on the transcript</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600;8..144,700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0B0D11; --panel: #13161C; --line: #242832; --ink: #ECEEF3; --muted: #A1A8B6;
+  --acc: #2F4BE0;
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif; --font-body: "Roboto Flex", system-ui, sans-serif; --font-mono: "Roboto Mono", ui-monospace, monospace;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-io: cubic-bezier(0.77, 0, 0.175, 1);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body { margin: 0; color: var(--ink); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 44px 20px 80px; display: grid; gap: 28px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(32px, 5vw, 52px); letter-spacing: -0.03em; margin: 0; line-height: 1; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 64ch; font-size: 16px; line-height: 1.55; margin: 10px 0 0; }
+.ctl { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ctl .lbl { color: var(--muted); font-size: 13px; margin-right: 2px; }
+.seg { display: inline-flex; background: #1E222B; border-radius: 22px; padding: 3px; box-shadow: inset 0 0 0 1px var(--line); }
+.seg button { font: inherit; font-size: 13px; font-weight: 600; border: 0; border-radius: 19px; height: 34px; padding: 0 14px; cursor: pointer; background: transparent; color: var(--muted); transition: background 160ms ease, color 160ms ease; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.seg button:focus-visible, .sw:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.sws { display: flex; gap: 8px; align-items: center; margin-left: 6px; }
+.sw { width: 28px; height: 28px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.15); }
+.sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ink); }
+.hint { color: var(--muted); font-size: 13px; }
+
+.opt { background: var(--panel); border: 1px solid var(--line); border-radius: 26px; padding: 24px; display: grid; grid-template-columns: minmax(240px, 1fr) auto auto; gap: 28px; align-items: start; }
+@media (max-width: 1060px) { .opt { grid-template-columns: 1fr; justify-items: center; } .opt .about { justify-self: stretch; } }
+.about { display: grid; gap: 12px; align-content: start; }
+.about h2 { margin: 0; font-size: 22px; font-weight: 600; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; text-wrap: balance; }
+.about h2 .k { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.about p { margin: 0; color: var(--muted); font-size: 14.5px; line-height: 1.55; }
+.about dl { margin: 4px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 13px; border-top: 1px solid var(--line); padding-top: 12px; }
+.about dt { color: var(--muted); }
+.about dd { margin: 0; }
+.pick { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 8px; background: color-mix(in srgb, var(--acc) 30%, transparent); color: #fff; }
+.cap { font-size: 12px; color: var(--muted); text-align: center; margin-top: 10px; }
+.state { font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-align: center; margin-top: 4px; min-height: 14px; }
+
+/* ===== The dictation surface (keyboard panel or power-button sheet) ===== */
+.stage { --k-bg: #E8EBF1; --k-fn: #D5DAE3; --k-ink: #191B21; --k-sub: #8A91A0; --k-surface: #FFFFFF; --scrim: #C9CED8;
+  width: 320px; border-radius: 30px; padding: 0; overflow: hidden; background: var(--scrim); box-shadow: 0 0 0 1px rgba(255,255,255,0.06); }
+.dark .stage { --k-bg: #121419; --k-fn: #23262E; --k-ink: #ECEEF3; --k-sub: #7E8696; --k-surface: #1C1F26; --scrim: #08090C; }
+.stage.kb { height: 270px; display: flex; flex-direction: column; justify-content: flex-end; }
+.stage.sheet { height: 330px; display: flex; flex-direction: column; justify-content: flex-end; padding: 8px; }
+.pnl { background: var(--k-bg); color: var(--k-ink); padding: 12px 16px 14px; display: flex; flex-direction: column; height: 246px; position: relative; }
+.stage.kb .pnl { border-top: 1px solid color-mix(in srgb, var(--k-ink) 8%, transparent); }
+.stage.sheet .pnl { border-radius: 28px; height: 290px; padding-top: 22px; background: var(--k-surface); box-shadow: 0 12px 30px -10px rgba(0,0,0,0.5); }
+.stage.sheet .pnl::before { content: ""; position: absolute; top: 8px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: color-mix(in srgb, var(--k-ink) 20%, transparent); }
+
+.row1 { display: flex; align-items: center; gap: 8px; height: 26px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--acc); transition: opacity 200ms ease, transform 200ms var(--ease-out); }
+.status { flex: 1; font-weight: 700; font-size: 15px; color: var(--acc); font-variant-numeric: tabular-nums; transition: color 200ms ease; }
+.chip { font-size: 11.5px; padding: 4px 10px; border-radius: 14px; background: var(--k-fn); color: var(--k-ink); display: inline-flex; gap: 6px; align-items: center; }
+.chip svg { width: 12px; height: 12px; }
+
+.mid { flex: 1; position: relative; margin: 14px 0 16px; display: flex; align-items: center; justify-content: center; min-height: 0; }
+.bars { display: flex; align-items: center; gap: 3px; height: 100%; transition: opacity 250ms ease; }
+.bars i { width: 4px; border-radius: 2px; background: var(--acc); height: 6px; transition: background 250ms ease; }
+.words { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 18px; font-weight: 500; line-height: 1.15; padding: 0 4px; transition: opacity 250ms ease; }
+.words .d { color: var(--k-sub); }
+.has-words .bars { opacity: 0.25; }
+
+.ctrls { height: 72px; position: relative; display: flex; align-items: center; justify-content: space-between; }
+.c { width: 52px; height: 52px; border-radius: 50%; border: 0; background: var(--k-fn); color: var(--k-ink); display: grid; place-items: center; transition: opacity 200ms ease, transform 250ms var(--ease-out); padding: 0; }
+.c svg { width: 22px; height: 22px; }
+.c.clean { color: var(--acc); background: color-mix(in srgb, var(--k-fn) 84%, var(--acc)); }
+.sendwrap { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.glow { position: absolute; width: 132px; height: 132px; left: -66px; top: -66px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--acc) 45%, transparent) 0%, transparent 65%); transform: scale(var(--lvl, 0.6)); transition: opacity 300ms ease; pointer-events: none; }
+.send { position: absolute; height: 68px; width: 68px; left: -34px; top: -34px; border-radius: 34px; border: 0; padding: 0; background: var(--acc); color: #fff; overflow: hidden;
+  transition: width 340ms var(--ease-out), left 340ms var(--ease-out), background 220ms ease, transform 160ms var(--ease-out); }
+.send.press { transform: scale(0.94); }
+.ico { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(1); transition: opacity 180ms ease, transform 220ms var(--ease-out); }
+.ico.stop { width: 22px; height: 22px; border-radius: 5px; background: #fff; }
+.ico.arrow, .ico.check { width: 26px; height: 26px; opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+.ico.spin { width: 26px; height: 26px; opacity: 0; border-radius: 50%; border: 3px solid color-mix(in srgb, var(--acc) 25%, transparent); border-top-color: var(--acc); }
+.ico.dots { display: flex; gap: 5px; opacity: 0; }
+.ico.dots b { width: 6px; height: 6px; border-radius: 50%; background: #fff; }
+.ico.lbl { white-space: nowrap; font-size: 15px; font-weight: 600; opacity: 0; display: flex; gap: 8px; align-items: center; }
+.ico.lbl .sp { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; animation: rot 700ms linear infinite; }
+.ring { position: absolute; width: 84px; height: 84px; left: -42px; top: -42px; opacity: 0; transition: opacity 200ms ease; pointer-events: none; }
+.ring circle { fill: none; stroke: var(--acc); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 60 204; transform-origin: 42px 42px; }
+
+.note { position: absolute; left: 0; right: 0; bottom: 98px; text-align: center; font-size: 12.5px; color: var(--k-sub); opacity: 0; transform: translateY(4px); transition: opacity 250ms ease, transform 250ms var(--ease-out); pointer-events: none; }
+.stage.sheet .note { bottom: 96px; }
+.note u { color: var(--acc); text-decoration: none; font-weight: 600; }
+
+@keyframes rot { to { transform: rotate(360deg); } }
+@keyframes rotc { to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes arc { 0% { stroke-dasharray: 10 254; transform: rotate(0deg); } 50% { stroke-dasharray: 150 114; transform: rotate(200deg); } 100% { stroke-dasharray: 10 254; transform: rotate(720deg); } }
+@keyframes bob { 0%, 80%, 100% { transform: translateY(0); opacity: 0.5; } 40% { transform: translateY(-5px); opacity: 1; } }
+@keyframes breathe { 0%, 100% { transform: scale(0.55); opacity: 0.55; } 50% { transform: scale(0.85); opacity: 1; } }
+@keyframes shimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+@keyframes ell { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75%, 100% { content: "..."; } }
+
+/* ---- shared waiting / done ---- */
+[data-s="wait"] .dot, [data-s="done"] .dot { opacity: 0; transform: scale(0.4); }
+[data-s="wait"] .status, [data-s="done"] .status { color: var(--k-ink); }
+[data-s="wait"] .glow, [data-s="done"] .glow { opacity: 0; }
+[data-s="wait"] .ico.stop, [data-s="done"] .ico.stop { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+[data-s="done"] .ico.check { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+[data-slow] .note { opacity: 1; transform: none; }
+[data-s="done"] .note { opacity: 0; }
+
+/* A · Ring */
+[data-o="A"][data-s="wait"] .ring { opacity: 1; }
+[data-o="A"][data-s="wait"] .ring circle { animation: arc 1.6s var(--ease-io) infinite; }
+[data-o="A"][data-s="wait"] .ico.arrow { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+[data-o="A"][data-s="wait"] .c { opacity: 0.35; }
+
+/* B · Bars sweep */
+[data-o="B"][data-s="wait"] .words { opacity: 0; }
+[data-o="B"][data-s="wait"] .bars { opacity: 1; }
+[data-o="B"][data-s="wait"] .send { background: color-mix(in srgb, var(--acc) 16%, var(--k-surface)); }
+[data-o="B"][data-s="wait"] .ico.spin { opacity: 1; animation: rotc 700ms linear infinite; }
+[data-o="B"][data-s="wait"] .c { opacity: 0.35; }
+
+/* C · Pill */
+[data-o="C"][data-s="wait"] .send { width: 184px; left: -92px; }
+[data-o="C"][data-s="wait"] .ico.lbl { opacity: 1; transition-delay: 120ms; }
+[data-o="C"][data-s="wait"] .c { opacity: 0; transform: scale(0.85); pointer-events: none; }
+
+/* D · Shimmer */
+[data-o="D"][data-s="wait"] .glow { opacity: 1; animation: breathe 1.6s ease-in-out infinite; }
+[data-o="D"][data-s="wait"] .ico.dots { opacity: 1; }
+[data-o="D"][data-s="wait"] .ico.dots b { animation: bob 1s ease-in-out infinite; }
+[data-o="D"][data-s="wait"] .ico.dots b:nth-child(2) { animation-delay: 0.15s; }
+[data-o="D"][data-s="wait"] .ico.dots b:nth-child(3) { animation-delay: 0.3s; }
+[data-o="D"][data-s="wait"] .words span { color: transparent; background: linear-gradient(100deg, var(--k-sub) 35%, var(--k-ink) 50%, var(--k-sub) 65%) 0 0 / 250% 100%; -webkit-background-clip: text; background-clip: text; animation: shimmer 1.4s linear infinite; }
+[data-o="D"][data-s="wait"] .c { opacity: 0.35; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 3s !important; transition-duration: 0ms !important; }
+}
+</style>
+</head>
+<body class="dark">
+<div class="wrap">
+  <header>
+    <h1>Waiting on the transcript</h1>
+    <p class="lede">After you tap the stop button, ElevenLabs can take a moment to send back the last words, and Claude cleanup adds more. Here are four ways to show that wait on the keyboard panel and the power-button sheet. Each one loops: listening, tap, waiting, inserted.</p>
+  </header>
+  <div class="ctl">
+    <span class="lbl">Network</span>
+    <div class="seg" id="net">
+      <button data-ms="250">Fast · 0.25s</button>
+      <button data-ms="1600" aria-pressed="true">Typical · 1.6s</button>
+      <button data-ms="5500">Slow · 5.5s</button>
+    </div>
+    <span class="lbl" style="margin-left:10px">Theme</span>
+    <div class="seg" id="theme">
+      <button data-t="light">Light</button>
+      <button data-t="dark" aria-pressed="true">Dark</button>
+    </div>
+    <div class="sws" id="sws"></div>
+  </div>
+  <p class="hint">In every option the loader only appears if the wait passes 300 ms, so a fast reply never flashes a spinner. Past 3 s, a line offers the on-device model instead. Try "Fast" and "Slow" to see both.</p>
+  <main id="opts" style="display:grid;gap:22px"></main>
+</div>
+
+<script>
+const OPTS = [
+  { k: 'A', name: 'Ring', pick: true,
+    p: 'The stop square turns into an upload arrow, and a ring sweeps around the button. It is the same idea as Material’s progress ring around a button, so it reads as “sending” right away.',
+    dl: [['Where', 'The button itself'], ['Motion', 'Arc grows and shrinks while it turns, 1.6 s loop'], ['Build', 'One custom view around the existing stop button']] },
+  { k: 'B', name: 'Bars sweep',
+    p: 'The waveform keeps moving, but as a calm wave across low bars instead of your voice. The button goes quiet with a small spinner. The motion stays where your eyes already are.',
+    dl: [['Where', 'Waveform plus button'], ['Motion', 'Wave travels left to right across the bars'], ['Build', 'New mode in LevelBarsView, spinner in the button']] },
+  { k: 'C', name: 'Pill',
+    p: 'The button stretches into a pill that says “Transcribing”, and cancel and cleanup step aside. It is the most explicit: words, not just motion.',
+    dl: [['Where', 'Button grows into a labeled pill'], ['Motion', 'Width change 340 ms, label fades in after'], ['Build', 'Animate button width; hide side buttons']] },
+  { k: 'D', name: 'Shimmer',
+    p: 'The teleprompter words stay up and a shimmer runs across them, as if they are being finalized. The glow behind the button slows into a breathing pulse, with three dots inside.',
+    dl: [['Where', 'The live words'], ['Motion', 'Shimmer 1.4 s, glow breathes 1.6 s'], ['Build', 'Shader on the words TextView; reuse StopGlowView']] },
+];
+const ACCENTS = ['#2F4BE0', '#E8590C', '#0F9D76', '#9C36B5'];
+const WORDS = 'Send me the notes from Wednesday’s call by noon'.split(' ');
+
+const ic = {
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  spark: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.3L20.5 10l-6.3 2.2L12 18.5l-2.2-6.3L3.5 10l6.3-1.7z"/><circle cx="19" cy="19" r="2"/></svg>',
+  arrow: '<svg class="ico arrow" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  check: '<svg class="ico check" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  cloud: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 18a5 5 0 01-.6-9.96A6 6 0 0118 9a4.5 4.5 0 01-.5 9z"/></svg>',
+};
+
+function surface(kind, o) {
+  return `<div class="stage ${kind}" data-o="${o.k}" data-s="listen">
+    <div class="pnl">
+      <div class="row1"><i class="dot"></i><span class="status">0:00</span><span class="chip">${ic.cloud}ElevenLabs</span></div>
+      <div class="mid"><div class="bars">${'<i></i>'.repeat(30)}</div><div class="words"></div></div>
+      <div class="note">Slow connection · <u>Use on-device</u></div>
+      <div class="ctrls">
+        <button class="c" aria-label="Cancel">${ic.x}</button>
+        <div class="sendwrap">
+          <div class="glow"></div>
+          <svg class="ring" viewBox="0 0 84 84"><circle cx="42" cy="42" r="40"/></svg>
+          <button class="send" aria-label="Stop and insert">
+            <span class="ico stop"></span>${ic.arrow}${ic.check}
+            <span class="ico spin"></span>
+            <span class="ico dots"><b></b><b></b><b></b></span>
+            <span class="ico lbl"><span class="sp"></span>Transcribing</span>
+          </button>
+        </div>
+        <button class="c clean" aria-label="Cleanup on">${ic.spark}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+const host = document.getElementById('opts');
+const runs = OPTS.map(o => {
+  const el = document.createElement('section');
+  el.className = 'opt';
+  el.innerHTML = `<div class="about">
+      <h2><span class="k">${o.k}</span>${o.name}${o.pick ? ' <span class="pick">Recommended</span>' : ''}</h2>
+      <p>${o.p}</p>
+      <dl>${o.dl.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>
+    </div>
+    <div>${surface('kb', o)}<div class="cap">Keyboard panel</div></div>
+    <div>${surface('sheet', o)}<div class="cap">Power-button sheet</div></div>`;
+  host.appendChild(el);
+  return { o, stages: [...el.querySelectorAll('.stage')], s: 'listen', t0: 0, words: 0, lvl: [] };
+});
+
+let netMs = 1600;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function set(run, patch) {
+  for (const st of run.stages) {
+    if ('s' in patch) st.dataset.s = patch.s;
+    if ('slow' in patch) patch.slow ? st.dataset.slow = '' : delete st.dataset.slow;
+  }
+  Object.assign(run, patch);
+}
+function text(run, sel, html) { for (const st of run.stages) st.querySelector(sel).innerHTML = html; }
+
+async function loop(run, offset) {
+  await sleep(offset);
+  for (;;) {
+    set(run, { s: 'listen', slow: false, words: 0, t0: performance.now() });
+    text(run, '.status', '0:00');
+    text(run, '.words', '');
+    run.stages.forEach(st => st.classList.remove('has-words'));
+    // Listening: words arrive one at a time
+    for (let i = 1; i <= WORDS.length; i++) {
+      await sleep(260);
+      run.words = i;
+      const fin = WORDS.slice(0, Math.max(0, i - 2)).join(' ');
+      const dr = WORDS.slice(Math.max(0, i - 2), i).join(' ');
+      text(run, '.words', `<span>${fin}</span> <span class="d">${dr}</span>`);
+      run.stages.forEach(st => st.classList.add('has-words'));
+    }
+    await sleep(500);
+    // Tap
+    run.stages.forEach(st => st.querySelector('.send').classList.add('press'));
+    await sleep(140);
+    run.stages.forEach(st => st.querySelector('.send').classList.remove('press'));
+    text(run, '.words', `<span>${WORDS.join(' ')}</span>`);
+    run.frozen = true;
+    const wait = netMs, start = performance.now();
+    // Only show the loader past 300 ms
+    if (wait > 300) {
+      await sleep(300);
+      set(run, { s: 'wait' });
+      text(run, '.status', 'Transcribing…');
+      const slowAt = setTimeout(() => set(run, { slow: true }), 3000 - 300);
+      await sleep(wait - 300);
+      clearTimeout(slowAt);
+    } else {
+      await sleep(wait);
+    }
+    run.frozen = false;
+    set(run, { s: 'done', slow: false });
+    text(run, '.status', 'Inserted');
+    await sleep(1100);
+  }
+}
+
+// Bars and glow, one frame loop for everything
+function frame(now) {
+  for (const run of runs) {
+    for (const st of run.stages) {
+      const bars = st.querySelectorAll('.bars i');
+      const sweep = run.o.k === 'B' && run.s === 'wait';
+      bars.forEach((b, i) => {
+        let h;
+        if (sweep) { const w = 0.5 + 0.5 * Math.sin(now / 160 - i * 0.42); h = 6 + 26 * w * w * w; }
+        else if (run.s === 'listen') { const n = Math.abs(Math.sin(now / 130 + i * 1.7) * Math.sin(now / 410 + i * 0.6)); h = 6 + 48 * n * (0.5 + 0.5 * Math.sin(i / 30 * Math.PI)); }
+        else h = 6;
+        b.style.height = h.toFixed(1) + 'px';
+        b.style.background = sweep ? 'color-mix(in srgb, var(--acc) 70%, var(--k-sub))' : (run.s === 'listen' ? 'var(--acc)' : 'var(--k-sub)');
+      });
+      if (run.s === 'listen') {
+        st.querySelector('.glow').style.setProperty('--lvl', (0.55 + 0.35 * Math.abs(Math.sin(now / 220))).toFixed(2));
+        const sec = Math.floor((now - run.t0) / 1000);
+        st.querySelector('.status').textContent = `0:${String(sec).padStart(2, '0')}`;
+      }
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+runs.forEach((r, i) => loop(r, i * 350));
+requestAnimationFrame(frame);
+
+// Controls
+function seg(id, fn) {
+  const g = document.getElementById(id);
+  g.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    g.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    fn(b);
+  });
+}
+seg('net', b => { netMs = +b.dataset.ms; });
+seg('theme', b => document.body.classList.toggle('dark', b.dataset.t === 'dark'));
+const sws = document.getElementById('sws');
+ACCENTS.forEach((c, i) => {
+  const b = document.createElement('button');
+  b.className = 'sw'; b.style.background = c; b.setAttribute('aria-label', 'Accent ' + c); b.setAttribute('aria-pressed', i === 0);
+  b.onclick = () => { document.documentElement.style.setProperty('--acc', c); sws.querySelectorAll('.sw').forEach(x => x.setAttribute('aria-pressed', x === b)); };
+  sws.appendChild(b);
+});
+</script>
+</body>
+</html>

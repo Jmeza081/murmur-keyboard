@@ -19,14 +19,28 @@ import helium314.keyboard.keyboard.KeyboardSwitcher
  * styled like the power-button sheet. Opened from the "+N" chip. Picking a login fills the field, which
  * moves the cursor, and that closes the sheet (LatinIME.onUpdateSelection).
  */
-@RequiresApi(30)
 object AutofillSheet {
     private var sheet: View? = null
     private const val LIST = "murmur_logins"
 
     val isShowing get() = sheet?.parent != null
 
-    fun show(context: Context, logins: Array<View?>) {
+    @RequiresApi(30)
+    fun show(context: Context, logins: Array<View?>) = open(context, "Saved logins", "Tap one to fill it in") { list, width ->
+        // The extra logins, already drawn by the password manager at this width (InlineAutofillUtils)
+        val height = (40 * context.resources.displayMetrics.density).toInt()
+        for (view in logins) {
+            if (view == null) continue
+            (view.parent as? ViewGroup)?.removeView(view)
+            list.addView(view, LinearLayout.LayoutParams(width, height).apply { bottomMargin = (8 * context.resources.displayMetrics.density).toInt() })
+        }
+    }
+
+    /**
+     * The sheet itself, shared by saved logins and snippets: a floating card with a title, "Done", and rows
+     * that [fill] adds to the list (given the list's width).
+     */
+    fun open(context: Context, title: String, subtitle: String, fill: (LinearLayout, Int) -> Unit) {
         dismiss()
         // Drawn in the keyboard's own window, which runs the full height of the screen; only the keys
         // normally show and take touches (design/logins-sheet.html)
@@ -55,11 +69,11 @@ object AutofillSheet {
                 addView(LinearLayout(context).apply {
                     orientation = LinearLayout.VERTICAL
                     addView(TextView(context).apply {
-                        text = "Saved logins"; typeface = medium
+                        text = title; typeface = medium
                         setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f); setTextColor(ink)
                     })
                     addView(TextView(context).apply {
-                        text = "Tap one to fill it in"
+                        text = subtitle
                         setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f); setTextColor(subtle)
                     })
                 }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
@@ -99,14 +113,7 @@ object AutofillSheet {
         card.animate().translationY(0f).setDuration(260).setInterpolator(android.view.animation.PathInterpolator(0.32f, 0.72f, 0f, 1f)).start()
         android.animation.ValueAnimator.ofInt(0, 255).apply { duration = 200; addUpdateListener { scrim.alpha = it.animatedValue as Int } }.start()
 
-        // The extra logins, already drawn by the password manager at this width (InlineAutofillUtils)
-        val width = context.resources.displayMetrics.widthPixels - dp(16f) - dp(32f)
-        val height = dp(40f)
-        for (view in logins) {
-            if (view == null) continue
-            (view.parent as? ViewGroup)?.removeView(view)
-            list.addView(view, LinearLayout.LayoutParams(width, height).apply { bottomMargin = dp(8f) })
-        }
+        fill(list, context.resources.displayMetrics.widthPixels - dp(16f) - dp(32f))
     }
 
     fun dismiss() {

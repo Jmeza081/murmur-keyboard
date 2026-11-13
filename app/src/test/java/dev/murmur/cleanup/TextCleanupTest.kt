@@ -81,4 +81,43 @@ class TextCleanupTest {
         assertEquals("Hello there. How are you?", clean("hello there.  how are you ?"))
         assertEquals("Okay, sounds good.", clean("Okay , , sounds good ."))
     }
+
+    @Test fun keepsTextingSlangLowercase() {
+        assertEquals("lol that's wild.", clean("LOL that's wild."))
+        assertEquals("That's wild, lol.", clean("That's wild, LOL."))
+        assertEquals("omg, idk.", clean("OMG, IDK."))
+    }
+
+    @Test fun researchFillerRules() {
+        assertEquals("I want to go.", clean("I, umm, want to go."))
+        assertEquals("Uh-huh, that works.", clean("Uh-huh, that works."))
+        assertEquals("Mm-hmm, sounds good.", clean("Mm-hmm, sounds good."))
+        assertEquals("I'm gonna try it.", clean("I'm gonna tr- try it."))
+        assertEquals("But I said no.", clean("B-b-but I said no."))
+        assertEquals("It was fine.", clean("It was, hmm, fine."))
+        assertEquals("It's a good idea.", clean("It's, basically, a good idea."))
+    }
+
+    @Test fun keepsMeaningfulDoubles() {
+        assertEquals("She had had enough.", clean("She had had enough."))
+        assertEquals("Flight one one two.", clean("Flight one one two."))
+        assertEquals("What they do do is fine.", clean("What they do do is fine."))
+    }
+
+    @Test fun removesEngineJunk() {
+        assertEquals("See you soon.", clean("See you soon. [BLANK_AUDIO]"))
+        assertEquals("That was funny.", clean("That was funny (laughs)."))
+    }
+
+    @Test fun startOverDropsEverythingBefore() {
+        assertEquals("I want to meet Wednesday.", clean("I'm gonna say something. Let's start over. I want to meet Wednesday."))
+    }
+
+    @Test fun joinsSpokenEmail() {
+        assertEquals("Send it to alex.rivera@gmail.com.", clean("Send it to alex.rivera at gmail dot com."))
+    }
+
+    @Test fun collapsesRepeatedSentences() {
+        assertEquals("Thanks for the help.", clean("Thanks for the help. Thanks for the help. Thanks for the help."))
+    }
 }

@@ -22,6 +22,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.View.OnLongClickListener
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.view.accessibility.AccessibilityEvent
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -158,6 +159,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         setupMurmurMic(colors)
         // Murmur: a fixed tools row from the mockups; HeliBoard's toolbar and pinned-key settings no longer apply
         for (key in MURMUR_TOOLS) {
+            if (key == ToolbarKey.SPLIT) addSnippetsTool(colors) // Murmur: next to the clipboard
             if (key == ToolbarKey.SETTINGS) { addPasswordManagerTool(colors); addHeightTool(colors) } // settings stays last
             val button = createToolbarKey(context, key)
             button.layoutParams = toolbarKeyLayoutParams
@@ -585,25 +587,29 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         toolbarExpandKey.background = null
     }
 
-    // Murmur: listening state (design/mockups.html "listen"): keyboard button, status line, orange mic pill
-    private var murmurListenBar: LinearLayout? = null
+    // Murmur: listening state (design/dictation-layout.html): keyboard button left, timer centered, style dropdown right
+    private var murmurListenBar: FrameLayout? = null
     private var murmurListenLabel: TextView? = null
     private var murmurSaved: List<Pair<View, Int>>? = null
 
-    /** Shows [status] in the strip while dictating, or restores the strip when null. [onKeys] cancels back to the keys. */
-    fun setMurmurListening(status: String?, onKeys: () -> Unit = {}) {
+    /**
+     * Shows [status] in the strip while dictating, or restores the strip when null. [onKeys] cancels back to the keys.
+     * With [center] (the panel's timer) and [end] (its style dropdown), those replace the label and the mic pill.
+     */
+    @JvmOverloads
+    fun setMurmurListening(status: String?, onKeys: () -> Unit = {}, center: View? = null, end: View? = null) {
         val wrapper = murmurMic.parent as? LinearLayout ?: return
         val colors = Settings.getValues().mColors
         if (status == null) {
             murmurSaved?.forEach { (v, vis) -> v.visibility = vis }
             murmurSaved = null
-            murmurListenBar?.let { wrapper.removeView(it) }
+            murmurListenBar?.let { it.removeAllViews(); wrapper.removeView(it) }
             murmurListenBar = null
             setupMurmurMic(colors)
             return
         }
         if (murmurSaved == null) {
-            val hide = listOf<View>(toolbarExpandKey, toolbarContainer, suggestionsStrip, pinnedKeys)
+            val hide = listOfNotNull<View>(toolbarExpandKey, toolbarContainer, suggestionsStrip, pinnedKeys, if (center != null) murmurMic else null)
             murmurSaved = hide.map { it to it.visibility }
             hide.forEach { it.visibility = GONE }
             val density = resources.displayMetrics.density
@@ -622,11 +628,14 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
                 background = null
                 contentDescription = context.getString(R.string.murmur_dictation_back_to_keys)
             }
-            val bar = LinearLayout(context).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = android.view.Gravity.CENTER_VERTICAL
-                addView(keys, LinearLayout.LayoutParams((48 * density).toInt(), LinearLayout.LayoutParams.MATCH_PARENT))
-                addView(label, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f))
+            val bar = FrameLayout(context).apply {
+                addView(keys, FrameLayout.LayoutParams((48 * density).toInt(), LayoutParams.MATCH_PARENT, android.view.Gravity.START))
+                if (center == null) addView(label, FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+                center?.let { (it.parent as? ViewGroup)?.removeView(it)
+                    addView(it, FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, android.view.Gravity.CENTER)) }
+                end?.let { (it.parent as? ViewGroup)?.removeView(it)
+                    addView(it, FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, android.view.Gravity.END or android.view.Gravity.CENTER_VERTICAL)
+                        .apply { marginEnd = (8 * density).toInt() }) }
             }
             wrapper.addView(bar, 0, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f))
             murmurListenBar = bar
@@ -683,6 +692,22 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         button.setOnClickListener {
             AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, this, HapticEvent.KEY_PRESS)
             context.startActivity(launch.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+        }
+        toolbar.addView(button)
+    }
+
+    /** Murmur: lists your snippets in a sheet; tap one to type it (design/styles-snippets.html, 02). */
+    private fun addSnippetsTool(colors: Colors) {
+        val button = ImageButton(context, null, R.attr.suggestionWordStyle)
+        button.setImageResource(R.drawable.ic_murmur_snippet)
+        button.scaleType = android.widget.ImageView.ScaleType.CENTER
+        button.contentDescription = "Snippets"
+        button.layoutParams = LinearLayout.LayoutParams(toolbarKeyLayoutParams).apply { weight = 1f }
+        colors.setColor(button, ColorType.TOOL_BAR_KEY)
+        colors.setBackground(button, ColorType.STRIP_BACKGROUND)
+        button.setOnClickListener {
+            AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, this, HapticEvent.KEY_PRESS)
+            dev.murmur.snippets.SnippetChips.showSheet(context)
         }
         toolbar.addView(button)
     }

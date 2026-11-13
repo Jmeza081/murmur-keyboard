@@ -925,6 +925,8 @@ public class LatinIME extends InputMethodService implements
                 mSuggestionStripView.setToolbarVisibility(true);
             }
         }
+        // Murmur: an email, phone, address or link field offers your matching snippets in the strip
+        dev.murmur.snippets.SnippetChips.onStartInput(this, editorInfo, restarting, hasSuggestionStripView() ? mSuggestionStripView : null);
 
         mainKeyboardView.setMainDictionaryAvailability(mDictionaryFacilitator.hasAtLeastOneInitializedMainDictionary());
         mainKeyboardView.setKeyPreviewPopupEnabled(currentSettingsValues.mKeyPreviewPopupOn);

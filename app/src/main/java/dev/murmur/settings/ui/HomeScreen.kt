@@ -47,6 +47,8 @@ fun HomeScreen(open: (Screen) -> Unit, openLegacy: () -> Unit) {
                 Item("Dictation", dictationValue(ctx), R.drawable.ic_murmur_mic, onClick = { open(Screen.DICTATION) })
                 GroupDivider()
                 Item("Power button", powerValue(ctx), R.drawable.ic_murmur_power, onClick = { open(Screen.POWER) })
+                GroupDivider()
+                Item("Writing style", "Casual in chats, Polished in email", R.drawable.ic_murmur_pen, onClick = { open(Screen.STYLE) })
             }
             Group {
                 Item("Theme", themeValue(ctx), R.drawable.ic_murmur_palette, onClick = { open(Screen.THEME) })
@@ -54,6 +56,9 @@ fun HomeScreen(open: (Screen) -> Unit, openLegacy: () -> Unit) {
                 Item("Typing", "Swipe, autocorrect, number row", R.drawable.ic_murmur_keyboard, onClick = { open(Screen.TYPING) })
                 GroupDivider()
                 Item("Dictionary", dictionaryValue(ctx), R.drawable.ic_murmur_book, onClick = { open(Screen.DICTIONARY) })
+                GroupDivider()
+                Item("Snippets", dev.murmur.snippets.Snippets.all(ctx).size.let { if (it == 0) "Your email, phone, address" else "$it saved" },
+                    R.drawable.ic_murmur_snippet, onClick = { open(Screen.SNIPPETS) })
             }
             Group {
                 Item("Clipboard", clipboardValue(ctx), R.drawable.ic_murmur_clip, onClick = { open(Screen.CLIPBOARD) })
@@ -120,7 +125,7 @@ private fun dictionaryValue(ctx: Context): String {
     return "$w word${if (w == 1) "" else "s"} · $r replacement${if (r == 1) "" else "s"}"
 }
 
-enum class Screen { HOME, DICTATION, POWER, SETUP, THEME, TYPING, CLIPBOARD, EMOJI, TABLET, DICTIONARY }
+enum class Screen { HOME, DICTATION, POWER, SETUP, THEME, TYPING, CLIPBOARD, EMOJI, TABLET, DICTIONARY, SNIPPETS, STYLE }
 
 /** A small playground: a text field and a password field, to try the keyboard, dictation and autofill chips. */
 @Composable

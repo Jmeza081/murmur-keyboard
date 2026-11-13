@@ -5,6 +5,7 @@
     <string name="murmur_dictation_listening" translatable="false">Listening</string>
     <string name="murmur_dictation_loading" translatable="false">Loading speech model…</string>
     <string name="murmur_dictation_transcribing" translatable="false">Transcribing…</string>
+    <string name="murmur_dictation_slow" translatable="false">Slow connection…</string>
     <string name="murmur_dictation_on_device" translatable="false">On device · Parakeet v3</string>
     <string name="murmur_assistant_on_device" translatable="false">On device</string>
     <string name="murmur_cloud_chip" translatable="false">ElevenLabs</string>

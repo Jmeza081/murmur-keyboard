@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dictation Panel Layout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600;8..144,700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* Layout: three phone-width panels side by side (now · proposed · menu open), notes underneath. Single dark theme, like the phone. */
+:root {
+  --bg: #0B0D11; --card: #13161C; --line: #242832; --ink: #ECEEF3; --muted: #A1A8B6;
+  --acc: #2F4BE0; --acc-ink: #8EA0FF; --rec: #E8590C;
+  --k-bg: #13151B; --k-fn: #23262E; --k-sub: #7E8696; --k-pop: #1E2129;
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-body: "Roboto Flex", system-ui, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, monospace;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body { margin: 0; color: var(--ink); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 40px 20px 72px; display: grid; gap: 28px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(30px, 5vw, 46px); letter-spacing: -0.03em; margin: 0; line-height: 1.05; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 64ch; font-size: 16px; line-height: 1.55; margin: 10px 0 0; }
+
+.boards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+@media (max-width: 1100px) { .boards { grid-template-columns: 1fr; justify-items: center; } }
+.board { display: grid; gap: 12px; justify-items: center; align-content: start; }
+.board h2 { margin: 0; font-size: 15px; font-weight: 600; display: flex; gap: 8px; align-items: center; }
+.tag { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 8px; background: var(--k-fn); color: var(--muted); }
+.tag.new { background: color-mix(in srgb, var(--acc) 35%, transparent); color: #fff; }
+.cap { font-size: 13px; color: var(--muted); text-align: center; max-width: 34ch; line-height: 1.45; margin: 0; }
+
+/* ===== Phone: app above, keyboard area below ===== */
+.phone { width: 340px; border-radius: 30px; overflow: hidden; background: #08090C; box-shadow: 0 0 0 1px rgba(255,255,255,0.07); position: relative; }
+.app { height: 70px; padding: 14px 16px; }
+.field { height: 42px; border-radius: 21px; background: #1A1C21; color: #6A707C; font-size: 14px; display: flex; align-items: center; padding: 0 16px; }
+.kb { background: var(--k-bg); height: 396px; display: flex; flex-direction: column; position: relative; }
+
+.strip { height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 12px; }
+.ib { width: 34px; height: 34px; display: grid; place-items: center; color: var(--ink); flex: none; }
+.ib svg { width: 24px; height: 24px; }
+.mic { margin-left: auto; height: 38px; width: 56px; border-radius: 19px; background: var(--acc); display: grid; place-items: center; color: #fff; }
+.mic svg { width: 22px; height: 22px; }
+
+.timer { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; color: var(--ink); }
+.timer i { width: 8px; height: 8px; border-radius: 50%; background: var(--rec); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.35; } }
+.chips { margin-left: auto; display: flex; gap: 6px; }
+
+/* Both chips share one size: 32 tall, 13px label, same fill */
+.chip { height: 32px; border-radius: 16px; padding: 0 11px 0 9px; display: inline-flex; align-items: center; gap: 6px; font: 500 13px/1 var(--font-body); background: var(--k-fn); color: var(--ink); border: 0; white-space: nowrap; }
+.chip svg { width: 15px; height: 15px; flex: none; }
+.chip.style { color: var(--acc-ink); background: color-mix(in srgb, var(--k-fn) 78%, var(--acc)); cursor: pointer; transition: transform 140ms var(--ease-out), background 160ms ease; }
+.chip.style:active { transform: scale(0.97); }
+.chip.style .car { width: 12px; height: 12px; margin-left: -1px; transition: transform 200ms var(--ease-out); }
+.chip.style[aria-expanded="true"] .car { transform: rotate(180deg); }
+.chip.style:focus-visible { outline: 2px solid var(--acc-ink); outline-offset: 2px; }
+
+/* Old layout's chips: what you have today */
+.old .chip { height: 30px; font-size: 12.5px; }
+.old .chip.style { padding: 0 12px; }
+
+.panel { flex: 1; display: flex; flex-direction: column; padding: 4px 16px 0; min-height: 0; }
+.row1 { display: flex; align-items: center; gap: 6px; min-height: 40px; }
+.row1 .msg { flex: 1; font-weight: 700; font-size: 14.5px; line-height: 1.2; }
+
+.mid { flex: 1; position: relative; min-height: 0; margin: 10px 0 8px; border-radius: 12px; }
+.mid canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.measure { position: absolute; right: -4px; top: 0; bottom: 0; width: 14px; border: 1px dashed color-mix(in srgb, var(--acc-ink) 60%, transparent); border-left: 0; border-radius: 0 6px 6px 0; pointer-events: none; }
+.measure b { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font: 500 10.5px var(--font-mono); color: var(--acc-ink); background: var(--k-bg); padding: 2px 4px; border-radius: 4px; white-space: nowrap; }
+
+.words { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 19px; font-weight: 500; line-height: 1.3; padding: 0 22px; }
+.words s { color: var(--k-sub); text-decoration-color: var(--acc-ink); text-decoration-thickness: 2px; }
+.words .d { color: var(--k-sub); }
+.words.msg { font-size: 16px; font-weight: 600; color: var(--ink); }
+
+.ctrls { height: 86px; display: flex; align-items: center; justify-content: space-between; flex: none; }
+.c { width: 50px; height: 50px; border-radius: 50%; background: var(--k-fn); display: grid; place-items: center; color: var(--ink); }
+.c svg { width: 22px; height: 22px; }
+.c.clean { color: var(--acc-ink); background: color-mix(in srgb, var(--k-fn) 80%, var(--acc)); }
+.send { width: 66px; height: 66px; border-radius: 50%; background: var(--acc); display: grid; place-items: center; color: #fff; box-shadow: 0 0 34px -4px color-mix(in srgb, var(--acc) 70%, transparent); }
+.send i { width: 20px; height: 20px; border-radius: 5px; background: #fff; }
+.nav { height: 40px; display: flex; align-items: center; justify-content: space-between; padding: 0 26px; color: var(--ink); flex: none; }
+.nav svg { width: 22px; height: 22px; }
+
+/* ===== Style menu ===== */
+.menu { position: absolute; top: 44px; right: 10px; width: 232px; background: var(--k-pop); border-radius: 18px; padding: 6px; z-index: 5;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.07), 0 18px 40px -12px rgba(0,0,0,0.75);
+  transform-origin: 70% 0; transition: opacity 160ms ease, transform 200ms var(--ease-out); }
+.menu[hidden] { display: block; opacity: 0; transform: scale(0.96) translateY(-4px); pointer-events: none; }
+.menu .hd { font-size: 11.5px; color: var(--k-sub); padding: 8px 10px 6px; }
+.menu button { all: unset; box-sizing: border-box; width: 100%; display: grid; grid-template-columns: 1fr 18px; align-items: center; gap: 2px 8px; padding: 9px 10px; border-radius: 12px; cursor: pointer; min-height: 48px; }
+.menu button:hover, .menu button:focus-visible { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+.menu .t { font-size: 14.5px; font-weight: 600; display: flex; gap: 6px; align-items: center; }
+.menu .t em { font-style: normal; font-size: 10.5px; font-weight: 600; padding: 2px 6px; border-radius: 6px; background: var(--k-fn); color: var(--k-sub); }
+.menu .h { grid-column: 1; font-size: 12px; color: var(--k-sub); }
+.menu .ck { grid-row: 1 / span 2; grid-column: 2; width: 18px; height: 18px; color: var(--acc-ink); opacity: 0; }
+.menu [aria-checked="true"] .ck { opacity: 1; }
+.menu [aria-checked="true"] .t { color: var(--acc-ink); }
+.menu .ft { border-top: 1px solid color-mix(in srgb, var(--ink) 8%, transparent); margin: 4px 4px 0; padding: 8px 6px 4px; font-size: 11.5px; color: var(--k-sub); line-height: 1.4; }
+
+/* ===== Notes ===== */
+.notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 900px) { .notes { grid-template-columns: 1fr; } }
+.note { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 18px 20px; display: grid; gap: 8px; align-content: start; }
+.note h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.note p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+.note .n { font: 500 12px var(--font-mono); color: var(--acc-ink); }
+
+@media (prefers-reduced-motion: reduce) { .timer i { animation: none; } .menu, .chip.style .car { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Dictation panel, rearranged</h1>
+    <p class="lede">The timer moves up next to the keyboard icon, and both chips join it on that top row. That frees the whole status row, so the teleprompter and waveform get about 60% more height. Tap <b>Polished</b> in the middle panel to try the menu.</p>
+  </header>
+
+  <section class="boards">
+    <!-- NOW -->
+    <div class="board">
+      <h2>Now <span class="tag">today's build</span></h2>
+      <div class="phone old">
+        <div class="app"><div class="field">Type / for commands</div></div>
+        <div class="kb">
+          <div class="strip">
+            <span class="ib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 10h.01M9 10h.01M12 10h.01M15 10h.01M18 10h.01M8 14h8"/></svg></span>
+            <span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 10v4M10 6v12M14 8v8M18 11v2"/></svg></span>
+          </div>
+          <div class="panel">
+            <div class="row1">
+              <span class="timer"><i></i>0:12</span>
+              <span style="flex:1"></span>
+              <span class="chip style"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Polished</span>
+              <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 10 4 4 0 0 0 7 18z"/></svg>ElevenLabs</span>
+            </div>
+            <div class="mid" data-wave="0.5">
+              <canvas></canvas>
+              <div class="words"><span>so I was thinking <s>um</s> we could meet at <span class="d">noon</span></span></div>
+              <div class="measure"><b>≈ 112 dp</b></div>
+            </div>
+            <div class="ctrls">
+              <span class="c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
+              <span class="send"><i></i></span>
+              <span class="c clean"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 3l1.8 5.2L17 10l-5.2 1.8L10 17l-1.8-5.2L3 10l5.2-1.8zM18 14l.9 2.1L21 17l-2.1.9L18 20l-.9-2.1L15 17l2.1-.9z"/></svg></span>
+            </div>
+          </div>
+          <div class="nav"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 8h2v2H4zM8 8h2v2H8zM12 8h2v2h-2zM16 8h2v2h-2zM20 8h1v2h-1zM4 13h2v2H4zM8 13h2v2H8zM12 13h2v2h-2zM16 13h2v2h-2zM7 17h10v1.6H7z"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l7 7 7-7"/></svg></div>
+        </div>
+      </div>
+      <p class="cap">Timer, style and engine share their own row, and a long message like “Didn’t catch that” wraps to two lines and squeezes the chips.</p>
+    </div>
+
+    <!-- PROPOSED -->
+    <div class="board">
+      <h2>Proposed <span class="tag new">tap Polished</span></h2>
+      <div class="phone" id="live">
+        <div class="app"><div class="field">Type / for commands</div></div>
+        <div class="kb">
+          <div class="strip">
+            <span class="ib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 10h.01M9 10h.01M12 10h.01M15 10h.01M18 10h.01M8 14h8"/></svg></span>
+            <span class="timer"><i></i>0:12</span>
+            <div class="chips">
+              <button class="chip style" id="styleBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="menu1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg><span class="lbl">Polished</span><svg class="car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+              <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 10 4 4 0 0 0 7 18z"/></svg>ElevenLabs</span>
+            </div>
+          </div>
+          <div class="menu" id="menu1" role="menu" hidden></div>
+          <div class="panel">
+            <div class="mid" data-wave="0.5">
+              <canvas></canvas>
+              <div class="words"><span>so I was thinking <s>um</s> we could meet at noon <s>heart emoji</s> ❤️ <span class="d">see you</span></span></div>
+              <div class="measure"><b>≈ 178 dp</b></div>
+            </div>
+            <div class="ctrls">
+              <span class="c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
+              <span class="send"><i></i></span>
+              <span class="c clean"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 3l1.8 5.2L17 10l-5.2 1.8L10 17l-1.8-5.2L3 10l5.2-1.8zM18 14l.9 2.1L21 17l-2.1.9L18 20l-.9-2.1L15 17l2.1-.9z"/></svg></span>
+            </div>
+          </div>
+          <div class="nav"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 8h2v2H4zM8 8h2v2H8zM12 8h2v2h-2zM16 8h2v2h-2zM20 8h1v2h-1zM4 13h2v2H4zM8 13h2v2H8zM12 13h2v2h-2zM16 13h2v2h-2zM7 17h10v1.6H7z"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l7 7 7-7"/></svg></div>
+        </div>
+      </div>
+      <p class="cap">The top row holds the keyboard icon, timer and both chips. The dictation button hides while you’re recording, since the panel is already open.</p>
+    </div>
+
+    <!-- MENU OPEN + MESSAGE -->
+    <div class="board">
+      <h2>Menu open <span class="tag">and a message</span></h2>
+      <div class="phone">
+        <div class="app"><div class="field">Type / for commands</div></div>
+        <div class="kb">
+          <div class="strip">
+            <span class="ib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 10h.01M9 10h.01M12 10h.01M15 10h.01M18 10h.01M8 14h8"/></svg></span>
+            <span class="timer" style="color:var(--k-sub)"><i style="animation:none;background:var(--k-sub)"></i>0:08</span>
+            <div class="chips">
+              <span class="chip style" aria-expanded="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Polished<svg class="car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+              <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 10 4 4 0 0 0 7 18z"/></svg>ElevenLabs</span>
+            </div>
+          </div>
+          <div class="menu" id="menu2" role="menu"></div>
+          <div class="panel">
+            <div class="mid" data-wave="0.08">
+              <canvas></canvas>
+              <div class="words msg"><span>Didn’t catch that. Nothing was typed.</span></div>
+            </div>
+            <div class="ctrls">
+              <span class="c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
+              <span class="send"><i></i></span>
+              <span class="c clean"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 3l1.8 5.2L17 10l-5.2 1.8L10 17l-1.8-5.2L3 10l5.2-1.8zM18 14l.9 2.1L21 17l-2.1.9L18 20l-.9-2.1L15 17l2.1-.9z"/></svg></span>
+            </div>
+          </div>
+          <div class="nav"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 8h2v2H4zM8 8h2v2H8zM12 8h2v2h-2zM16 8h2v2h-2zM20 8h1v2h-1zM4 13h2v2H4zM8 13h2v2H8zM12 13h2v2h-2zM16 13h2v2h-2zM7 17h10v1.6H7z"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l7 7 7-7"/></svg></div>
+        </div>
+      </div>
+      <p class="cap">The menu drops down from the chip and covers the waveform, not the buttons. Messages show in the middle of the teleprompter, so they never push the chips around.</p>
+    </div>
+  </section>
+
+  <section class="notes">
+    <div class="note">
+      <span class="n">01 · Taller teleprompter</span>
+      <h3>About 112 dp to about 178 dp</h3>
+      <p>Removing the status row gives back about 40 dp, and tightening the gaps around the waveform adds about 26 dp more. Three lines of live words now fit without the oldest line folding away.</p>
+    </div>
+    <div class="note">
+      <span class="n">02 · One chip size</span>
+      <h3>Style becomes a real dropdown</h3>
+      <p>Both chips are 32 dp tall with the same label size, padding and corner radius. The style chip adds a small arrow, and the menu marks which style is automatic for the app you’re in.</p>
+    </div>
+    <div class="note">
+      <span class="n">03 · Same for the power button</span>
+      <h3>The sheet gets the same top row</h3>
+      <p>The power-button sheet already has its header row, so the timer and both chips move there too. Both surfaces end up looking the same.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+const STYLES = [
+  { k: "Casual", h: "lowercase, no end period" },
+  { k: "Neutral", h: "proper sentences, as spoken" },
+  { k: "Polished", h: "email-ready", auto: true },
+];
+const check = '<svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+function fillMenu(menu, current) {
+  menu.innerHTML = '<div class="hd">Writing style in Claude</div>' +
+    STYLES.map(s => `<button role="menuitemradio" aria-checked="${s.k === current}" data-k="${s.k}"><span class="t">${s.k}${s.auto ? "<em>Auto</em>" : ""}</span>${check}<span class="h">${s.h}</span></button>`).join("") +
+    '<div class="ft">Remembered for this app. Change the defaults in Settings → Writing style.</div>';
+}
+fillMenu(document.getElementById("menu2"), "Polished");
+
+const btn = document.getElementById("styleBtn"), menu = document.getElementById("menu1");
+let current = "Polished";
+fillMenu(menu, current);
+function setOpen(open) {
+  menu.hidden = !open;
+  btn.setAttribute("aria-expanded", open);
+  if (open) menu.querySelector('[aria-checked="true"]').focus();
+}
+btn.addEventListener("click", e => { e.stopPropagation(); setOpen(menu.hidden); });
+menu.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  current = b.dataset.k; btn.querySelector(".lbl").textContent = current;
+  fillMenu(menu, current); setOpen(false); btn.focus();
+});
+document.addEventListener("click", e => { if (!menu.hidden && !menu.contains(e.target)) setOpen(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !menu.hidden) { setOpen(false); btn.focus(); } });
+
+// Dot-grid waveform, as on the phone: dim dots, the middle row lights up with the level
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const waves = [...document.querySelectorAll(".mid")].map(mid => {
+  const cv = mid.querySelector("canvas"), dpr = devicePixelRatio || 1;
+  const r = mid.getBoundingClientRect();
+  cv.width = r.width * dpr; cv.height = r.height * dpr;
+  return { cv, ctx: cv.getContext("2d"), w: r.width, h: r.height, dpr, amp: +mid.dataset.wave, dim: !!mid.querySelector(".words") };
+});
+function draw(t) {
+  for (const w of waves) {
+    const { ctx, dpr } = w, gap = 11, cols = Math.floor(w.w / gap), rows = Math.floor(w.h / gap);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w.w, w.h);
+    const ox = (w.w - (cols - 1) * gap) / 2, oy = (w.h - (rows - 1) * gap) / 2, mid = (rows - 1) / 2;
+    for (let c = 0; c < cols; c++) {
+      const lvl = w.amp * (0.35 + 0.65 * Math.abs(Math.sin(c * 0.37 + t / 420) * Math.sin(c * 0.13 - t / 900)));
+      const reach = lvl * mid;
+      for (let r = 0; r < rows; r++) {
+        const on = Math.abs(r - mid) <= reach;
+        ctx.fillStyle = on ? (w.dim ? "rgba(47,75,224,0.42)" : "#2F4BE0") : "rgba(126,134,150,0.16)";
+        ctx.beginPath(); ctx.arc(ox + c * gap, oy + r * gap, 2.1, 0, 7); ctx.fill();
+      }
+    }
+  }
+  if (!reduce) requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>

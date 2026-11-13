@@ -66,11 +66,14 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
     private lateinit var transcript: TextView
     private lateinit var bars: LevelBarsView
     /** Live words as a teleprompter over the dimmed waveform (design/live-words-v2.html, C). */
-    private lateinit var live: TextView
+    private lateinit var live: dev.murmur.dictation.TeleprompterView
     private lateinit var hint: TextView
     private lateinit var target: TextView
     /** The field the accessibility service saw when the sheet opened, before the sheet took focus. */
     private var a11yTargetAtStart: String? = null
+    /** The app the text will go to, for its writing style. */
+    private var styleTarget: String? = null
+    private lateinit var styleChip: dev.murmur.cleanup.StyleChip
 
     override fun onCreateContentView(): View {
         val c = context
@@ -81,33 +84,16 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
         }
         // Murmur design: red dot before the timer, shield on the chip, cursor before the target (mockup step 2)
         dot = View(c).apply { background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(recording) } }
-        val chip = TextView(c).apply {
-            text = c.getString(if (dev.murmur.speech.CloudEngine.active(c)) R.string.murmur_cloud_chip else R.string.murmur_assistant_on_device)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
-            setTextColor(ink)
-            gravity = Gravity.CENTER_VERTICAL
-            compoundDrawablePadding = dp(6)
-            setCompoundDrawablesRelativeWithIntrinsicBounds(
-                if (dev.murmur.speech.CloudEngine.active(c)) R.drawable.ic_murmur_cloud else R.drawable.ic_murmur_shield, 0, 0, 0)
-            androidx.core.widget.TextViewCompat.setCompoundDrawableTintList(this, android.content.res.ColorStateList.valueOf(ink))
-            setPadding(dp(10), dp(4), dp(10), dp(4))
-            background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(chipColor) }
-        }
         transcript = TextView(c).apply {
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
             setTextColor(ink)
             visibility = View.GONE // shown once there's text
         }
         bars = LevelBarsView(c, recording, subtle)
-        live = TextView(c).apply {
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
-            setLineSpacing(0f, 1.1f)
-            typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
-            gravity = android.view.Gravity.CENTER
-            maxLines = 2
-            visibility = View.GONE
-        }
+        live = dev.murmur.dictation.TeleprompterView(c, 22f, ink, subtle, recording).apply { visibility = View.GONE }
         glow = StopGlowView(c, recording, 34f)
+        ring = dev.murmur.dictation.SendRingView(c, recording)
+        sending = dev.murmur.dictation.SendingIndicator(ring, glow) { status.text = c.getString(R.string.murmur_dictation_slow) }
         target = TextView(c).apply {
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f)
             setTextColor(subtle)
@@ -150,12 +136,17 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
                 background = GradientDrawable().apply { cornerRadius = dp(2f); setColor(subtle) }
                 alpha = 0.4f
             }, LinearLayout.LayoutParams(dp(36), dp(4)).apply { gravity = Gravity.CENTER_HORIZONTAL; bottomMargin = dp(12) })
-            addView(LinearLayout(c).apply {
-                gravity = Gravity.CENTER_VERTICAL
-                addView(dot, LinearLayout.LayoutParams(dp(9), dp(9)).apply { marginEnd = dp(8) })
-                addView(status, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-                addView(chip)
-            })
+            // Murmur (design/dictation-layout.html): timer centered, writing style dropdown on the right
+            addView(FrameLayout(c).apply {
+                minimumHeight = dp(36)
+                addView(LinearLayout(c).apply {
+                    gravity = Gravity.CENTER_VERTICAL
+                    addView(dot, LinearLayout.LayoutParams(dp(8), dp(8)).apply { marginEnd = dp(7) })
+                    addView(status)
+                }, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER))
+                styleChip = dev.murmur.cleanup.StyleChip(c, recording, chipColor) { styleTarget }
+                addView(styleChip, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.END or Gravity.CENTER_VERTICAL))
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
             addView(target, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) })
             addView(transcript, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) })
             // The waveform takes whatever height the card's minimum leaves, so the card scales with the screen
@@ -168,6 +159,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
             addView(FrameLayout(c).apply {
                 clipChildren = false
                 addView(glow, FrameLayout.LayoutParams(dp(132), dp(132), Gravity.CENTER))
+                addView(ring, FrameLayout.LayoutParams(dp(84), dp(84), Gravity.CENTER))
                 addView(cancel, FrameLayout.LayoutParams(dp(52), dp(52), Gravity.START or Gravity.CENTER_VERTICAL))
                 addView(done, FrameLayout.LayoutParams(dp(68), dp(68), Gravity.CENTER))
             }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(72)))
@@ -226,12 +218,14 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
         transcript.visibility = View.GONE
         dot.visibility = View.VISIBLE
         bars.clear()
-        live.text = ""; live.visibility = View.GONE
+        live.clear(); live.visibility = View.GONE
+        sending.reset()
         bars.animate().cancel(); bars.alpha = 1f
         capsuleBars.clear()
         glow.clear()
         playOpen()
         target.text = targetLine()
+        styleChip.refresh()
         if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             context.startActivity(Intent(context, MicPermissionActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             return hide()
@@ -245,8 +239,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
             override fun onWords(final: String, draft: String) {
                 if (state != State.LISTENING && state != State.TRANSCRIBING) return
                 if (!dev.murmur.settings.DictationPrefs.teleprompter(context)) return
-                live.text = dev.murmur.speech.CloudStream.styled(final, draft, ink, subtle, tail = 60)
-                if ((final.isNotBlank() || draft.isNotBlank()) && live.visibility != View.VISIBLE) {
+                if (live.setWords(final, draft) && live.visibility != View.VISIBLE) {
                     live.visibility = View.VISIBLE; bars.animate().alpha(0.25f).setDuration(200).start()
                 }
             }
@@ -261,9 +254,11 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
 
     override fun onHide() {
         super.onHide()
+        if (::styleChip.isInitialized) styleChip.dismissMenu()
         if (state == State.LISTENING || state == State.TRANSCRIBING) recorder.cancel()
         stream?.cancel(); stream = null
         state = State.IDLE
+        if (::sending.isInitialized) sending.reset()
         main.removeCallbacksAndMessages(null) // pending typing lives in the keyboard, not here
     }
 
@@ -272,10 +267,11 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
         status.setTextColor(ink)
         dot.visibility = View.GONE
         status.text = context.getString(R.string.murmur_dictation_transcribing)
+        sending.start()
         val live = stream.also { stream = null }
         recorder.stop { samples ->
             SharedEngine.finish(context, live, samples) { result ->
-                Cleanup.processAsync(context, result?.text.orEmpty()) { cleaned ->
+                Cleanup.processAsync(context, result?.text.orEmpty(), styleTarget) { cleaned ->
                 main.post {
                     if (state != State.TRANSCRIBING) return@post
                     val text = cleaned
@@ -294,6 +290,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
      * Delivers the text: Murmur's keyboard, then the accessibility service, then the clipboard.
      */
     private fun deliver(text: String) {
+        sending.reset()
         transcript.text = text
         transcript.visibility = View.VISIBLE
         // 1. Murmur's keyboard, if it's the active keyboard and a field had focus.
@@ -331,6 +328,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
     private fun targetLine(): CharSequence {
         a11yTargetAtStart = MurmurAccessibilityService.instance?.focusedFieldPackage()
         val target = DictationController.active?.focusedFieldPackage() ?: a11yTargetAtStart
+        styleTarget = target
         if (target == null) return context.getString(R.string.murmur_assistant_target_clipboard)
         val app = appLabel(target)
         val line = context.getString(R.string.murmur_assistant_target, app)
@@ -349,8 +347,11 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
     } catch (e: PackageManager.NameNotFoundException) { pkg }
 
     private fun showResult(message: String, close: Boolean) {
+        sending.reset()
         state = State.DONE
         dot.visibility = View.GONE
+        styleChip.dismissMenu()
+        styleChip.visibility = View.GONE // a long message gets the whole row
         status.setTextColor(ink)
         status.text = message
         if (close) main.postDelayed({ dismiss() }, 1600)
@@ -359,7 +360,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
     private fun tick() {
         if (state != State.LISTENING) return
         val s = (SystemClock.elapsedRealtime() - startedAt) / 1000
-        status.setTextColor(recording)
+        status.setTextColor(ink)
         status.text = "%d:%02d".format(s / 60, s % 60)
         main.postDelayed({ tick() }, 250)
     }
@@ -377,6 +378,8 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
     private lateinit var capsule: FrameLayout
     private lateinit var capsuleBars: LevelBarsView
     private lateinit var glow: StopGlowView
+    private lateinit var ring: dev.murmur.dictation.SendRingView
+    private lateinit var sending: dev.murmur.dictation.SendingIndicator
     private lateinit var scrim: android.graphics.drawable.ColorDrawable
     /** 0 = clipped to the capsule, 1 = the full sheet. */
     private var reveal = 1f

@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Murmur · Writing styles and snippets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600;8..144,700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0B0D11; --panel: #13161C; --line: #242832; --ink: #ECEEF3; --muted: #A1A8B6;
+  --acc: #2F4BE0;
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif; --font-body: "Roboto Flex", system-ui, sans-serif; --font-mono: "Roboto Mono", ui-monospace, monospace;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body { margin: 0; color: var(--ink); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 44px 20px 90px; display: grid; gap: 30px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(32px, 5vw, 52px); letter-spacing: -0.03em; margin: 0; line-height: 1; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 700; font-size: 30px; letter-spacing: -0.02em; margin: 0; display: flex; gap: 12px; align-items: baseline; }
+h2 .k { font-family: var(--font-mono); font-size: 13px; color: var(--muted); font-weight: 500; letter-spacing: 0; }
+h3 { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
+.lede { color: var(--muted); max-width: 66ch; font-size: 16px; line-height: 1.55; margin: 10px 0 0; }
+.ctl { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ctl .lbl { color: var(--muted); font-size: 13px; }
+.seg { display: inline-flex; background: #1E222B; border-radius: 22px; padding: 3px; box-shadow: inset 0 0 0 1px var(--line); }
+.seg button { font: inherit; font-size: 13px; font-weight: 600; border: 0; border-radius: 19px; height: 34px; padding: 0 14px; cursor: pointer; background: transparent; color: var(--muted); transition: background 160ms ease, color 160ms ease; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+button:focus-visible, .sw:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.sws { display: flex; gap: 8px; align-items: center; margin-left: 6px; }
+.sw { width: 28px; height: 28px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.15); }
+.sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ink); }
+
+section.feat { background: var(--panel); border: 1px solid var(--line); border-radius: 28px; padding: 28px; display: grid; gap: 24px; }
+.intro { display: grid; grid-template-columns: 1.1fr 1fr; gap: 28px; }
+@media (max-width: 900px) { .intro { grid-template-columns: 1fr; } }
+.intro p { color: var(--muted); font-size: 15px; line-height: 1.6; margin: 8px 0 0; }
+.pick { display: inline-block; font-family: var(--font-body); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 8px; background: color-mix(in srgb, var(--acc) 30%, transparent); color: #fff; }
+ul.how { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; font-size: 14px; line-height: 1.5; }
+ul.how li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; }
+ul.how li b { font-weight: 600; }
+ul.how .n { width: 22px; height: 22px; border-radius: 50%; background: color-mix(in srgb, var(--acc) 25%, transparent); color: #fff; font-size: 12px; font-weight: 700; display: grid; place-items: center; }
+.phones { display: flex; gap: 18px; overflow-x: auto; padding: 4px 4px 12px; scroll-snap-type: x mandatory; }
+.phones > figure { margin: 0; flex: none; scroll-snap-align: start; }
+figcaption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 12px; max-width: 268px; line-height: 1.45; }
+figcaption b { color: var(--ink); font-weight: 600; }
+
+/* ===== Phone ===== */
+.phone {
+  --k-bg: #E8EBF1; --k-key: #FFFFFF; --k-fn: #D5DAE3; --k-ink: #191B21; --k-sub: #7C8393; --k-surface: #FFFFFF;
+  --s-bg: #F4F5F8; --s-surface: #FFFFFF; --s-ink: #191B21; --s-sub: #5B6272; --s-line: #E1E4EA;
+  --tint: color-mix(in srgb, var(--acc) 13%, var(--k-surface));
+  width: 268px; height: 600px; border-radius: 38px; padding: 9px; background: #050608; position: relative;
+  box-shadow: 0 30px 60px -30px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.08);
+}
+.dark .phone {
+  --k-bg: #121419; --k-key: #2A2E37; --k-fn: #1E2129; --k-ink: #ECEEF3; --k-sub: #858D9C; --k-surface: #1C1F26;
+  --s-bg: #0F1115; --s-surface: #1A1D23; --s-ink: #ECEEF3; --s-sub: #A1A8B6; --s-line: #2A2E36;
+  --tint: color-mix(in srgb, var(--acc) 24%, var(--k-surface));
+}
+.screen { width: 100%; height: 100%; border-radius: 32px; overflow: hidden; background: var(--s-bg); color: var(--s-ink); display: flex; flex-direction: column; position: relative; font-size: 12.5px; }
+.appbar { padding: 32px 14px 10px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--s-line); background: var(--s-surface); flex: none; }
+.appbar b { font-size: 14px; font-weight: 600; }
+.appbar small { display: block; color: var(--s-sub); font-size: 11px; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--tint); color: var(--acc); display: grid; place-items: center; font-size: 12px; font-weight: 700; flex: none; }
+.body { flex: 1; min-height: 0; padding: 12px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+.thread { justify-content: flex-end; }
+.bubble { max-width: 80%; padding: 7px 11px; border-radius: 16px; line-height: 1.35; background: var(--s-surface); border: 1px solid var(--s-line); border-bottom-left-radius: 5px; align-self: flex-start; }
+.bubble.me { align-self: flex-end; background: var(--acc); color: #fff; border: 0; border-radius: 16px 16px 5px 16px; }
+.composer { padding: 6px 10px 8px; flex: none; }
+.field { min-height: 36px; border-radius: 18px; background: var(--s-surface); border: 1.5px solid var(--acc); padding: 8px 12px; line-height: 1.4; }
+.ph { color: var(--s-sub); }
+.caret { display: inline-block; width: 1.5px; height: 14px; background: var(--acc); vertical-align: -2px; margin-left: 1px; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.mail { background: var(--s-surface); flex: 1; padding: 0; gap: 0; }
+.mail .row { padding: 9px 14px; border-bottom: 1px solid var(--s-line); color: var(--s-sub); display: flex; gap: 8px; }
+.mail .row span { color: var(--s-ink); }
+.mail .text { padding: 12px 14px; line-height: 1.5; white-space: pre-line; }
+.form { gap: 12px; padding: 16px 16px; }
+.form label { font-size: 11px; color: var(--s-sub); display: block; margin-bottom: 5px; font-weight: 600; }
+.input { height: 40px; border-radius: 10px; border: 1.5px solid var(--s-line); background: var(--s-surface); padding: 0 12px; display: flex; align-items: center; }
+.input.on { border-color: var(--acc); }
+.ins { animation: ins 380ms var(--ease-out) both; display: inline-block; }
+@keyframes ins { from { opacity: 0; transform: translateY(5px); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+
+/* Keyboard */
+.kb { flex: none; background: var(--k-bg); color: var(--k-ink); padding: 0 4px 22px; position: relative; }
+.strip { height: 42px; display: flex; align-items: center; gap: 6px; padding: 0 6px; overflow: hidden; }
+.tool { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: var(--k-sub); flex: none; }
+.tool.on { background: var(--tint); color: var(--acc); }
+.sug { flex: 1; text-align: center; font-size: 13px; color: var(--k-ink); }
+.sug + .sug { border-left: 1px solid color-mix(in srgb, var(--k-ink) 12%, transparent); }
+.chipk { height: 30px; border-radius: 15px; padding: 0 11px; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; background: var(--k-key); color: var(--k-ink); white-space: nowrap; box-shadow: 0 1px 0 rgba(0,0,0,0.08); flex: none; cursor: pointer; border: 0; font-family: inherit; transition: transform 160ms var(--ease-out); }
+.chipk:active { transform: scale(0.96); }
+.chipk.acc { background: var(--tint); color: var(--acc); font-weight: 600; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acc) 35%, transparent); }
+.chipk .ic { width: 14px; height: 14px; }
+.style-pill { height: 26px; border-radius: 13px; padding: 0 9px 0 7px; display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; background: var(--tint); color: var(--acc); flex: none; white-space: nowrap; }
+.style-pill .ic { width: 13px; height: 13px; }
+.rows { display: grid; gap: 7px; padding: 4px 2px 0; }
+.r { display: flex; gap: 5px; justify-content: center; }
+.key { height: 38px; flex: 1; max-width: 25px; border-radius: 7px; background: var(--k-key); display: grid; place-items: center; font-size: 14px; box-shadow: 0 1px 0 rgba(0,0,0,0.08); }
+.key.fn { background: var(--k-fn); max-width: 38px; font-size: 11px; }
+.key.space { max-width: none; flex: 4; }
+.key.go { background: var(--acc); color: #fff; max-width: 38px; }
+.homebar { position: absolute; left: 50%; bottom: 7px; width: 96px; height: 4px; margin-left: -48px; border-radius: 2px; background: var(--k-sub); opacity: 0.5; }
+.ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* Popover on the style pill */
+.pop { position: absolute; left: 10px; bottom: 228px; background: var(--k-surface); color: var(--k-ink); border-radius: 16px; padding: 6px; width: 200px; box-shadow: 0 14px 34px -8px rgba(0,0,0,0.45), 0 0 0 1px color-mix(in srgb, var(--k-ink) 8%, transparent); z-index: 3; }
+.pop .o { padding: 8px 10px; border-radius: 10px; display: grid; gap: 1px; }
+.pop .o b { font-size: 12.5px; font-weight: 600; }
+.pop .o span { font-size: 11px; color: var(--k-sub); }
+.pop .o.sel { background: var(--tint); }
+.pop .o.sel b { color: var(--acc); }
+.pop .foot { font-size: 10.5px; color: var(--k-sub); padding: 6px 10px 4px; border-top: 1px solid color-mix(in srgb, var(--k-ink) 8%, transparent); margin-top: 4px; }
+
+/* Panels that replace the keys */
+.kpanel { height: 236px; padding: 4px 10px 0; display: flex; flex-direction: column; gap: 8px; }
+.kpanel .hd { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 600; color: var(--k-sub); padding: 0 2px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; overflow: hidden; }
+.snip { background: var(--k-key); border-radius: 12px; padding: 8px 10px; display: grid; gap: 2px; min-height: 52px; box-shadow: 0 1px 0 rgba(0,0,0,0.06); cursor: pointer; transition: transform 160ms var(--ease-out); }
+.snip:active { transform: scale(0.97); }
+.snip b { font-size: 11px; font-weight: 600; color: var(--k-sub); display: flex; gap: 5px; align-items: center; }
+.snip b .ic { width: 12px; height: 12px; }
+.snip span { font-size: 12px; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.snip.new { background: transparent; box-shadow: inset 0 0 0 1.5px dashed; border: 1.5px dashed color-mix(in srgb, var(--k-ink) 22%, transparent); place-items: center; color: var(--k-sub); font-weight: 600; font-size: 12px; }
+
+/* Dictation panel */
+.dpanel { height: 236px; padding: 6px 14px 0; display: flex; flex-direction: column; }
+.dhead { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--acc); height: 22px; }
+.dhead .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--acc); }
+.dhead .st { flex: 1; }
+.cchip { font-size: 10.5px; font-weight: 600; padding: 3px 8px; border-radius: 10px; background: var(--k-fn); color: var(--k-sub); }
+.tele { flex: 1; display: grid; place-items: center; text-align: center; font-size: 17px; font-weight: 500; line-height: 1.3; padding: 0 6px; }
+.tele .cmd { color: var(--acc); background: var(--tint); border-radius: 6px; padding: 0 4px; }
+.dctrls { height: 66px; display: flex; align-items: center; justify-content: space-between; }
+.rb { width: 44px; height: 44px; border-radius: 50%; background: var(--k-fn); display: grid; place-items: center; color: var(--k-ink); }
+.sendb { width: 58px; height: 58px; border-radius: 50%; background: var(--acc); display: grid; place-items: center; color: #fff; box-shadow: 0 0 0 10px color-mix(in srgb, var(--acc) 14%, transparent); }
+
+/* Settings screens */
+.set { flex: 1; overflow: hidden; padding: 30px 0 0; background: var(--s-bg); }
+.set .top { display: flex; align-items: center; gap: 10px; padding: 6px 16px 14px; }
+.set .top b { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.grp { margin: 0 12px 12px; background: var(--s-surface); border-radius: 18px; overflow: hidden; }
+.gl { font-size: 11px; font-weight: 600; color: var(--s-sub); margin: 0 24px 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+.it { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--s-line); }
+.it:first-child { border-top: 0; }
+.it .t { flex: 1; min-width: 0; }
+.it .t b { display: block; font-weight: 500; font-size: 13px; }
+.it .t span { color: var(--s-sub); font-size: 11px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.it .v { color: var(--acc); font-weight: 600; font-size: 12px; }
+.appic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: #fff; font-size: 11px; font-weight: 700; flex: none; }
+.segm { display: flex; background: var(--s-bg); border-radius: 12px; padding: 3px; margin: 10px 14px 12px; }
+.segm span { flex: 1; text-align: center; padding: 7px 0; border-radius: 9px; font-size: 12px; font-weight: 600; color: var(--s-sub); }
+.segm span.on { background: var(--s-surface); color: var(--acc); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.sw2 { width: 34px; height: 20px; border-radius: 10px; background: var(--acc); position: relative; flex: none; }
+.sw2::after { content: ""; position: absolute; right: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
+.sw2.off { background: var(--s-line); }
+.sw2.off::after { right: auto; left: 2px; }
+.tf { margin: 0 14px; padding: 8px 0; border-top: 1px solid var(--s-line); }
+.tf:first-child { border-top: 0; }
+.tf small { display: block; color: var(--s-sub); font-size: 10.5px; font-weight: 600; margin-bottom: 3px; }
+.tf div { font-size: 13px; }
+.tf code { font-family: var(--font-mono); font-size: 12px; background: var(--s-bg); border-radius: 6px; padding: 2px 6px; }
+
+/* Same words, three styles */
+.compare { display: grid; grid-template-columns: 1fr 1.25fr; gap: 22px; background: #0F1217; border: 1px solid var(--line); border-radius: 22px; padding: 22px; }
+@media (max-width: 900px) { .compare { grid-template-columns: 1fr; } }
+.raw { font-family: var(--font-mono); font-size: 13px; color: var(--muted); line-height: 1.6; background: #171A21; border-radius: 14px; padding: 14px; }
+.out { font-size: 17px; line-height: 1.55; min-height: 110px; background: #171A21; border-radius: 14px; padding: 16px; white-space: pre-line; }
+.out .fade { animation: ins 300ms var(--ease-out) both; display: block; }
+.rules { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; color: var(--muted); font-size: 13px; }
+.rules li::before { content: "·"; color: var(--acc); font-weight: 800; margin-right: 8px; }
+.note { font-size: 13px; color: var(--muted); line-height: 1.5; border-top: 1px solid var(--line); padding-top: 14px; }
+.note b { color: var(--ink); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .ins, .out .fade { animation: none; } .caret { animation: none; } }
+</style>
+</head>
+<body class="dark">
+<div class="wrap">
+  <header>
+    <h1>Writing styles and snippets</h1>
+    <p class="lede">Two ideas. Writing styles change how dictation is written depending on the app you're in. Snippets are bits of text you use all the time, like your email or address, ready to drop into any field with one tap or a few spoken words.</p>
+  </header>
+  <div class="ctl">
+    <span class="lbl">Theme</span>
+    <div class="seg" id="theme"><button data-t="light">Light</button><button data-t="dark" aria-pressed="true">Dark</button></div>
+    <div class="sws" id="sws"></div>
+  </div>
+
+  <!-- ============ 1. Writing styles ============ -->
+  <section class="feat">
+    <div class="intro">
+      <div>
+        <h2><span class="k">01</span>Writing styles</h2>
+        <p>Murmur picks a style from the app you're typing in. Messages get Casual, email and docs get Polished, everything else gets Neutral, which is today's cleanup. A small pill in the strip shows the style. Tap it to switch, and Murmur remembers your choice for that app.</p>
+      </div>
+      <ul class="how">
+        <li><span class="n">1</span><span><b>Casual</b>: lowercase starts, no period at the end, slang stays lowercase (lol, idk), emoji welcome.</span></li>
+        <li><span class="n">2</span><span><b>Neutral</b>: proper sentences, your words untouched. What Light cleanup does now.</span></li>
+        <li><span class="n">3</span><span><b>Polished</b>: full punctuation and capitals, "gonna" becomes "going to", no filler. With Claude cleanup on, it also smooths the wording.</span></li>
+      </ul>
+    </div>
+
+    <div class="phones" id="stylePhones"></div>
+
+    <div class="compare">
+      <div>
+        <h3>Same words, three styles</h3>
+        <div class="raw" id="raw">LOL yeah I'm gonna be there um around 7 can you save me a seat heart emoji</div>
+        <div class="ctl" style="margin-top:14px">
+          <div class="seg" id="styleSeg">
+            <button data-s="casual" aria-pressed="true">Casual</button>
+            <button data-s="neutral">Neutral</button>
+            <button data-s="polished">Polished</button>
+          </div>
+        </div>
+        <ul class="rules" id="rules"></ul>
+      </div>
+      <div>
+        <h3 id="outLabel">Types into Messages</h3>
+        <div class="out" id="out"></div>
+        <p class="note" style="margin-top:14px"><b>On-device or Claude:</b> Casual and Neutral are rules on the phone. Polished fixes punctuation on the phone too, and Claude cleanup does the rewording when you have it on. The style goes to Claude as one line in the prompt.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2. Snippets ============ -->
+  <section class="feat">
+    <div class="intro">
+      <div>
+        <h2><span class="k">02</span>Snippets</h2>
+        <p>Save the text you type over and over. Murmur offers the right one when a field asks for it, keeps them all one tap away in a panel, and inserts them when you say their name while dictating.</p>
+      </div>
+      <ul class="how">
+        <li><span class="n">1</span><span><b>Suggested by field</b>: an email field shows your email as the first chip, and phone and address fields work the same way. It sits beside the password-manager chips.</span></li>
+        <li><span class="n">2</span><span><b>Snippets panel</b>: a toolbar button opens all your snippets, like the clipboard panel. Tap one to insert it.</span></li>
+        <li><span class="n">3</span><span><b>By voice</b>: say "insert my email" or "paste my address" while dictating, and the snippet goes in place of the words.</span></li>
+      </ul>
+    </div>
+    <div class="phones" id="snipPhones"></div>
+    <p class="note"><b>Built on what's there:</b> HeliBoard already has pinned clipboard items, so snippets can grow out of those, with a label, a voice phrase and the kind of field to suggest them in. They're stored on the phone and left out of backups, like your API keys. Tap the chips and cards in the mockups to try them.</p>
+  </section>
+</div>
+
+<script>
+const I = {
+  spark: '<svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.9 5.6L19.5 10.5l-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9z"/></svg>',
+  mic: '<svg class="ic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>',
+  smile: '<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 007 0M9 9.5h.01M15 9.5h.01"/></svg>',
+  clip: '<svg class="ic" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4h6v3H9z"/></svg>',
+  snip: '<svg class="ic" viewBox="0 0 24 24"><path d="M5 6h14M5 12h9M5 18h6"/><path d="M17 15l2 2 3-4"/></svg>',
+  mail: '<svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5l8.5 6 8.5-6"/></svg>',
+  phone: '<svg class="ic" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>',
+  pin: '<svg class="ic" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  link: '<svg class="ic" viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg>',
+  chat: '<svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>',
+  pen: '<svg class="ic" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
+  key: '<svg class="ic" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3"/></svg>',
+  x: '<svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  up: '<svg class="ic" viewBox="0 0 24 24" style="stroke-width:2.4"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  back: '<svg class="ic" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
+  chev: '<svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M9 6l6 6-6 6"/></svg>',
+  down: '<svg class="ic" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M6 9l6 6 6-6"/></svg>',
+};
+
+const keys = () => `<div class="rows">
+  <div class="r">${[...'qwertyuiop'].map(k => `<div class="key">${k}</div>`).join('')}</div>
+  <div class="r">${[...'asdfghjkl'].map(k => `<div class="key">${k}</div>`).join('')}</div>
+  <div class="r"><div class="key fn">⇧</div>${[...'zxcvbnm'].map(k => `<div class="key">${k}</div>`).join('')}<div class="key fn">⌫</div></div>
+  <div class="r"><div class="key fn">?123</div><div class="key">,</div><div class="key space"></div><div class="key">.</div><div class="key go">⏎</div></div>
+</div>`;
+const kb = (strip, inner = keys(), extra = '') => `<div class="kb"><div class="strip">${strip}</div>${inner}${extra}<div class="homebar"></div></div>`;
+const pill = s => `<span class="style-pill">${I.pen}${s}${I.down}</span>`;
+const tools = `<span class="tool">${I.mic}</span>`;
+const phone = (inner, cap) => `<figure><div class="phone"><div class="screen">${inner}</div></div><figcaption>${cap}</figcaption></figure>`;
+
+// ---------- Writing styles phones ----------
+document.getElementById('stylePhones').innerHTML = [
+  phone(`<div class="appbar"><div class="avatar">SM</div><div><b>Sam</b><small>Messages</small></div></div>
+    <div class="body thread">
+      <div class="bubble">are you coming tonight?</div>
+      <div class="bubble me">lol yeah i'm gonna be there around 7, can you save me a seat ❤️</div>
+    </div>
+    <div class="composer"><div class="field"><span class="ph">Text message</span><span class="caret"></span></div></div>
+    ${kb(`${pill('Casual')}<span class="sug">yeah</span><span class="sug">see</span>${tools}`)}`,
+    '<b>Messages → Casual.</b> The pill in the strip shows the style for this app.'),
+
+  phone(`<div class="appbar"><div class="avatar">SM</div><div><b>Sam</b><small>Messages</small></div></div>
+    <div class="body thread">
+      <div class="bubble">are you coming tonight?</div>
+    </div>
+    <div class="composer"><div class="field"><span class="ph">Text message</span><span class="caret"></span></div></div>
+    ${kb(`${pill('Casual')}<span class="sug">yeah</span><span class="sug">see</span>${tools}`, keys(), `
+      <div class="pop">
+        <div class="o sel"><b>Casual</b><span>lowercase, no end period</span></div>
+        <div class="o"><b>Neutral</b><span>proper sentences, as spoken</span></div>
+        <div class="o"><b>Polished</b><span>email-ready</span></div>
+        <div class="foot">Remembered for Messages</div>
+      </div>`)}`,
+    '<b>Tap the pill</b> to switch. The choice sticks to this app.'),
+
+  phone(`<div class="appbar"><span style="color:var(--s-sub)">${I.x}</span><b style="flex:1">Compose</b><span style="color:var(--acc)">${I.up}</span></div>
+    <div class="body mail">
+      <div class="row">To <span>Sam Morgan</span></div>
+      <div class="row">Subject <span>Thursday</span></div>
+      <div class="text">Hi Sam,
+
+Yes, I'm going to be there around 7. Could you save me a seat?
+
+Thanks,</div>
+    </div>
+    ${kb(`${pill('Polished')}<span class="sug">Thanks</span><span class="sug">Best</span>${tools}`)}`,
+    '<b>Gmail → Polished.</b> The same words, written for email.'),
+
+  phone(`<div class="set">
+      <div class="top"><span style="color:var(--s-sub)">${I.back}</span><b>Writing style</b></div>
+      <div class="gl">Default</div>
+      <div class="grp"><div class="segm"><span>Casual</span><span class="on">Neutral</span><span>Polished</span></div></div>
+      <div class="gl">By app</div>
+      <div class="grp">
+        <div class="it"><div class="appic" style="background:#1A73E8">M</div><div class="t"><b>Messages</b><span>Picked for chat apps</span></div><span class="v">Casual</span></div>
+        <div class="it"><div class="appic" style="background:#25D366">W</div><div class="t"><b>WhatsApp</b><span>Picked for chat apps</span></div><span class="v">Casual</span></div>
+        <div class="it"><div class="appic" style="background:#611F69">S</div><div class="t"><b>Slack</b><span>You changed this</span></div><span class="v">Neutral</span></div>
+        <div class="it"><div class="appic" style="background:#EA4335">G</div><div class="t"><b>Gmail</b><span>Picked for email apps</span></div><span class="v">Polished</span></div>
+        <div class="it"><div class="appic" style="background:#4285F4">D</div><div class="t"><b>Docs</b><span>Picked for writing apps</span></div><span class="v">Polished</span></div>
+      </div>
+      <div class="gl">Casual</div>
+      <div class="grp">
+        <div class="it"><div class="t"><b>Lowercase start</b><span>"yeah i'm down" instead of "Yeah I'm down"</span></div><span class="sw2"></span></div>
+        <div class="it"><div class="t"><b>Drop the last period</b><span>Questions keep their "?"</span></div><span class="sw2"></span></div>
+      </div>
+    </div>`,
+    '<b>Settings → Writing style.</b> Apps are sorted into chat, email and writing automatically.'),
+].join('');
+
+// ---------- Compare ----------
+const STYLES = {
+  casual: { label: 'Types into Messages', out: 'lol yeah i\'m gonna be there around 7, can you save me a seat ❤️',
+    rules: ['Fillers removed ("um")', 'Lowercase start and slang', 'No period at the end', 'Your words kept as spoken ("gonna")'] },
+  neutral: { label: 'Types into Slack, or any app without a style', out: 'lol yeah, I\'m gonna be there around 7. Can you save me a seat? ❤️',
+    rules: ['Fillers removed', 'Sentences capitalized and punctuated', 'Your words kept as spoken', 'Today\'s Light cleanup'] },
+  polished: { label: 'Types into Gmail', out: 'Yes, I\'m going to be there around 7. Could you save me a seat? ❤️',
+    rules: ['Fillers and slang like "lol" dropped', '"gonna" becomes "going to"', 'Full punctuation and capitals', 'With Claude: "can you" becomes "could you" and similar smoothing'] },
+};
+function showStyle(s) {
+  const st = STYLES[s];
+  document.getElementById('out').innerHTML = `<span class="fade">${st.out}</span>`;
+  document.getElementById('outLabel').textContent = st.label;
+  document.getElementById('rules').innerHTML = st.rules.map(r => `<li>${r}</li>`).join('');
+}
+showStyle('casual');
+
+// ---------- Snippets phones ----------
+const EMAIL = 'alex@example.com';
+document.getElementById('snipPhones').innerHTML = [
+  phone(`<div class="appbar"><span style="color:var(--s-sub)">${I.back}</span><div><b>Create account</b><small>Example Store</small></div></div>
+    <div class="body form">
+      <div><label>Full name</label><div class="input">Alex Rivera</div></div>
+      <div><label>Email</label><div class="input on" id="emailField"><span class="ph">name@email.com</span><span class="caret"></span></div></div>
+      <div><label>Password</label><div class="input"></div></div>
+    </div>
+    ${kb(`<button class="chipk acc" id="emailChip">${I.mail}${EMAIL}</button><button class="chipk">${I.key}1Password</button>`)}`,
+    '<b>Email field → your email</b>, first in the strip. Tap the chip.'),
+
+  phone(`<div class="appbar"><div class="avatar">JD</div><div><b>Jordan</b><small>Messages</small></div></div>
+    <div class="body thread">
+      <div class="bubble">what's the address again?</div>
+      <div class="bubble me" id="snipOut" style="display:none"></div>
+    </div>
+    <div class="composer"><div class="field"><span class="ph">Text message</span><span class="caret"></span></div></div>
+    ${kb(`<span class="tool">${I.smile}</span><span class="tool">${I.clip}</span><span class="tool on">${I.snip}</span><span style="flex:1"></span>${tools}`,
+      `<div class="kpanel">
+        <div class="hd"><span>Snippets</span><span style="color:var(--acc)">Edit</span></div>
+        <div class="grid" id="snipGrid">
+          <div class="snip"><b>${I.mail}Email</b><span>${EMAIL}</span></div>
+          <div class="snip"><b>${I.phone}Phone</b><span>(555) 010-2477</span></div>
+          <div class="snip"><b>${I.pin}Home</b><span>1428 Elm St, Apt 3, Springfield</span></div>
+          <div class="snip"><b>${I.link}Zoom</b><span>zoom.us/j/555 0102 477</span></div>
+          <div class="snip"><b>${I.chat}Late</b><span>Running about 10 min late, sorry!</span></div>
+          <div class="snip new">+ New snippet</div>
+        </div>
+      </div>`)}`,
+    '<b>Snippets panel</b> from the toolbar, next to emoji and clipboard. Tap a card.'),
+
+  phone(`<div class="appbar"><div class="avatar">PK</div><div><b>Priya</b><small>Messages</small></div></div>
+    <div class="body thread">
+      <div class="bubble">send me where to ship it</div>
+    </div>
+    <div class="composer"><div class="field"><span class="ph">Text message</span><span class="caret"></span></div></div>
+    ${kb(`<span style="flex:1;text-align:center;font-weight:600;color:var(--acc);font-size:12.5px">Listening…</span>`,
+      `<div class="dpanel">
+        <div class="dhead"><span class="dot"></span><span class="st">0:04</span><span class="cchip">ElevenLabs</span></div>
+        <div class="tele"><div>Sure, ship it to <span class="cmd">paste my address</span></div></div>
+        <div class="dctrls"><span class="rb">${I.x}</span><span class="sendb">${I.up}</span><span class="rb" style="color:var(--acc)">${I.spark}</span></div>
+      </div>`)}`,
+    '<b>By voice:</b> "paste my address" turns into the snippet when it\'s typed.'),
+
+  phone(`<div class="set">
+      <div class="top"><span style="color:var(--s-sub)">${I.back}</span><b>Home address</b></div>
+      <div class="grp">
+        <div class="tf"><small>Text</small><div>1428 Elm St, Apt 3<br>Springfield, IL 62704</div></div>
+        <div class="tf"><small>Label</small><div>Home</div></div>
+      </div>
+      <div class="gl">Use it</div>
+      <div class="grp">
+        <div class="it"><div class="t"><b>Say</b><span>"paste my address", "insert my address"</span></div>${I.chev}</div>
+        <div class="it"><div class="t"><b>Suggest in</b><span>Address fields</span></div>${I.chev}</div>
+        <div class="it"><div class="t"><b>Shortcut</b><span>Type <code style="font-family:var(--font-mono)">;home</code> to get it as a suggestion</span></div>${I.chev}</div>
+      </div>
+      <div class="gl">Privacy</div>
+      <div class="grp">
+        <div class="it"><div class="t"><b>Hide in password fields</b><span>Never offered where text is hidden</span></div><span class="sw2"></span></div>
+      </div>
+    </div>`,
+    '<b>Editing a snippet:</b> what to say, which fields suggest it, and a typed shortcut.'),
+].join('');
+
+// Tap interactions
+document.getElementById('emailChip').addEventListener('click', () => {
+  const f = document.getElementById('emailField');
+  f.innerHTML = `<span class="ins">${EMAIL}</span><span class="caret"></span>`;
+  setTimeout(() => { f.innerHTML = '<span class="ph">name@email.com</span><span class="caret"></span>'; }, 2600);
+});
+document.getElementById('snipGrid').addEventListener('click', e => {
+  const c = e.target.closest('.snip'); if (!c || c.classList.contains('new')) return;
+  const out = document.getElementById('snipOut');
+  out.style.display = '';
+  out.innerHTML = `<span class="ins">${c.querySelector('span').textContent}</span>`;
+});
+
+// Controls
+function seg(id, fn) {
+  const g = document.getElementById(id);
+  g.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    g.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    fn(b);
+  });
+}
+seg('theme', b => document.body.classList.toggle('dark', b.dataset.t === 'dark'));
+seg('styleSeg', b => showStyle(b.dataset.s));
+const sws = document.getElementById('sws');
+['#2F4BE0', '#E8590C', '#0F9D76', '#9C36B5'].forEach((c, i) => {
+  const b = document.createElement('button');
+  b.className = 'sw'; b.style.background = c; b.setAttribute('aria-label', 'Accent ' + c); b.setAttribute('aria-pressed', i === 0);
+  b.onclick = () => { document.documentElement.style.setProperty('--acc', c); sws.querySelectorAll('.sw').forEach(x => x.setAttribute('aria-pressed', x === b)); };
+  sws.appendChild(b);
+});
+</script>
+</body>
+</html>

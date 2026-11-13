@@ -95,7 +95,28 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 .msheet { --k-bg: #1E2129; --k-key: #2A2E37; --k-fn: #2A2E37; --k-ink: #ECEEF3; --k-sub: #9AA1B0; --k-rec: var(--rec);
   position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 3; border-radius: 28px; background: #1E2129; color: #ECEEF3; padding: 12px 18px 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -10px 40px rgba(0,0,0,0.3); opacity: 0; }
 .msheet .grab { width: 36px; height: 4px; border-radius: 2px; background: #9AA1B0; opacity: 0.4; align-self: center; }
-.msheet .mtop { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+.msheet .mtop { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; font-size: 13px; min-height: 30px; }
+/* Top row (app: design/dictation-layout.html): timer centered, writing-style dropdown on the right */
+.mtop .live { grid-column: 2; color: #ECEEF3; }
+.mtop .stylechip { grid-column: 3; justify-self: end; }
+.stylechip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 9px 0 10px; border-radius: 15px; font-size: 12.5px; font-weight: 500; white-space: nowrap;
+  background: color-mix(in srgb, var(--acc) 22%, #2A2E37); color: color-mix(in srgb, var(--acc) 50%, #fff); }
+.stylechip .car { width: 12px; height: 12px; margin-left: -2px; }
+.strip.listen { position: relative; }
+.strip.listen .live { position: absolute; left: 50%; transform: translateX(-50%); color: var(--k-ink); font-size: 14px; }
+.strip.listen .stylechip { margin: 0 6px 0 auto; background: color-mix(in srgb, var(--k-acc) 18%, var(--k-fn)); color: var(--k-acc); }
+/* Live edits in the teleprompter: fillers get struck, then fold away; "lemon emoji" becomes the emoji */
+.tp s.x { text-decoration: none; position: relative; color: var(--tp-draft, #7F8696); }
+.tp s.x::after { content: ""; position: absolute; left: -2px; right: -2px; top: 54%; height: 2px; border-radius: 1px; background: var(--acc); transform-origin: left; animation: strike 220ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.tp .emo { display: inline-block; animation: pop 320ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.tp .emo.still { animation: none; }
+@keyframes strike { from { transform: scaleX(0); } }
+@keyframes pop { from { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .tp s.x::after, .tp .emo { animation: none; } }
+/* Writing style demo */
+.l-style .txt.said { color: var(--muted); font-size: clamp(17px, 1.9vw, 21px); }
+.l-style .out { transition: opacity 160ms ease; }
+.l-style .l-tags span .icon { margin-right: 6px; color: var(--acc); }
 .msheet .mtarget { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #9AA1B0; }
 .msheet .mtarget b { color: #ECEEF3; font-weight: 600; }
 .msheet canvas { width: 100%; height: 108px; display: block; margin: 8px 0 6px; }
@@ -173,7 +194,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 
 /* Waveform picker */
 .l-wavecard { background: #1E2129; border-radius: 32px; padding: 22px 24px 26px; box-shadow: 0 40px 80px -40px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.05); display: grid; gap: 14px; }
-.l-wavecard .mtop { display: flex; justify-content: space-between; align-items: center; font-size: 13.5px; }
+.l-wavecard .mtop { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; font-size: 13.5px; }
 .l-wavecard canvas { width: 100%; height: 150px; display: block; }
 .l-seg { display: inline-grid; grid-auto-flow: column; gap: 4px; padding: 4px; border-radius: 26px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); }
 .l-seg button { font: inherit; font-size: 14.5px; font-weight: 600; color: var(--muted); background: transparent; border: 0; height: 42px; padding: 0 18px; border-radius: 21px; cursor: pointer; transition: background 160ms ease, color 160ms ease, transform 160ms var(--ease-out); }
@@ -481,6 +502,8 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
     <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.6 0-.9-.6-1.3-.6-2.1 0-.9.7-1.6 1.6-1.6H17a4 4 0 0 0 4-4C21 6.9 17 3 12 3z"/><path d="M7.5 11h.01M10 7.5h.01M14.5 7.5h.01"/></symbol>
     <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5zM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></symbol>
     <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-chev-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
     <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
     <symbol id="i-split" viewBox="0 0 24 24"><rect x="2" y="7" width="8" height="10" rx="1.5"/><rect x="14" y="7" width="8" height="10" rx="1.5"/></symbol>
@@ -562,7 +585,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
           <div class="capsule" id="h-capsule"></div>
           <div class="msheet" id="h-sheet">
             <span class="grab"></span>
-            <div class="mtop"><span class="live" id="h-time">0:00</span><span class="chip"><svg class="icon xs"><use href="#i-shield"/></svg>On device</span></div>
+            <div class="mtop"><span class="live" id="h-time">0:00</span><span class="stylechip"><svg class="icon xs"><use href="#i-pen"/></svg>Polished<svg class="icon xs car"><use href="#i-chev-down"/></svg></span></div>
             <div class="mtarget"><svg class="icon xs"><use href="#i-cursor"/></svg>Typing into <b>Notes</b></div>
             <div class="tele" id="h-tele"><canvas id="h-wave"></canvas><div class="tp" id="h-tp" aria-hidden="true"></div></div>
             <div class="mctrls">
@@ -669,6 +692,32 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
         </div>
       </div>
     </div>
+    <div class="l-split" style="margin-top: 72px">
+      <div>
+        <p class="l-kicker rv">Writing style</p>
+        <h2 class="rv" style="font-size: clamp(30px, 3.6vw, 44px)">Casual in texts. Polished in email.</h2>
+        <p class="l-intro rv">Murmur picks a style for each app: lowercase with no end period in chat apps, email-ready in Gmail and Docs, and as spoken everywhere else. Tap the style at the top of the panel to change it, and Murmur remembers your pick for that app. Say “heart emoji” to get ❤️, or “paste my address” to drop in a snippet you saved.</p>
+      </div>
+      <div class="l-diff l-style rv d1">
+        <div class="row">
+          <span class="lab"><svg class="icon xs"><use href="#i-wave"/></svg>What you said</span>
+          <div class="txt said">yeah I'm gonna be there around 7 lol, heart emoji</div>
+        </div>
+        <div class="l-seg" role="group" aria-label="Writing style" id="st-seg">
+          <button type="button" data-k="casual" aria-pressed="true">Casual</button>
+          <button type="button" data-k="neutral" aria-pressed="false">Neutral</button>
+          <button type="button" data-k="polished" aria-pressed="false">Polished</button>
+        </div>
+        <div class="row">
+          <span class="lab" id="st-lab">What Messages gets</span>
+          <div class="txt out" id="st-out">yeah I'm gonna be there around 7 lol ❤️</div>
+        </div>
+        <div class="row">
+          <span class="lab">Snippets, by voice or one tap</span>
+          <div class="l-tags"><span>“paste my email”</span><span>“insert my address”</span><span>“type my phone number”</span></div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -689,7 +738,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
       </div>
     </div>
     <div class="l-wavecard rv d1">
-      <div class="mtop"><span class="live" style="color: var(--rec-hi)" id="wv-time">0:04</span><span class="chip" style="background: #2A2E37; color: #ECEEF3"><svg class="icon xs"><use href="#i-shield"/></svg>On device</span></div>
+      <div class="mtop"><span class="live" id="wv-time">0:04</span><span class="stylechip"><svg class="icon xs"><use href="#i-pen"/></svg>Casual<svg class="icon xs car"><use href="#i-chev-down"/></svg></span></div>
       <canvas id="wv-canvas" aria-label="Live waveform preview" role="img"></canvas>
       <div class="mctrls">
         <span class="round" style="justify-self: start"><svg class="icon"><use href="#i-x"/></svg></span>
@@ -956,6 +1005,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
       <li class="rv"><svg class="icon sm"><use href="#i-key"/></svg><span><b>Password manager, one tap away.</b> 1Password suggestions show as chips in the strip, with a button to open the app.</span></li>
       <li class="rv"><svg class="icon sm"><use href="#i-wave"/></svg><span><b>ElevenLabs speech, if you choose it.</b> With your key, recordings go to ElevenLabs for faster, live transcription. Offline or out of hours, the on-phone model takes over.</span></li>
       <li class="rv d1"><svg class="icon sm"><use href="#i-spark"/></svg><span><b>Claude cleanup, if you choose it.</b> With your key, the finished text (never audio) goes to Claude to fix misheard words and follow "scratch that".</span></li>
+      <li class="rv d1"><svg class="icon sm"><use href="#i-pen"/></svg><span><b>Snippets stay on this phone.</b> Never offered in password fields, and left out of backups.</span></li>
       <li class="rv"><svg class="icon sm"><use href="#i-github"/></svg><span><b>Open source.</b> GPL-3.0, built on HeliBoard and sherpa-onnx. Read every line.</span></li>
     </ul>
   </div>
@@ -1016,11 +1066,11 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
     typing2: function () { return strip(sugs('I', 'See', 'It’s')) + letters() + bar; },
     swipe: function () { return strip(sugs('there', 'then', 'the')) + letters({ lit: 'then' }) + bar; },
     listen: function () {
-      return strip('<div class="sugs" style="grid-template-columns: 1fr"><span class="mid" style="color: var(--k-sub); font-weight: 500">Listening…</span></div>',
-          '<span class="sbtn">' + I('kbd', 'sm') + '</span>', '<span class="mic" style="background: var(--k-rec); color: #fff">' + I('wave', 'sm') + '</span>') +
-        '<div class="dict"><div class="dict-top"><span class="live" data-timer>0:07</span><span class="chip">' + I('shield', 'xs') + 'On device</span></div>' +
-        '<div class="tele on"><canvas class="kwave" style="width: 100%; height: 92px; display: block"></canvas>' +
-        '<div class="tp" aria-hidden="true">and send Maya the deck <span class="d">by Friday</span></div></div>' +
+      return strip('<span class="live" data-timer>0:07</span>', '<span class="sbtn">' + I('kbd', 'sm') + '</span>',
+          '<span class="stylechip">' + I('pen', 'xs') + 'Casual<svg class="icon xs car"><use href="#i-chev-down"/></svg></span>').replace('class="strip"', 'class="strip listen"') +
+        '<div class="dict">' +
+        '<div class="tele on" style="flex: 1"><canvas class="kwave" style="width: 100%; height: 128px; display: block"></canvas>' +
+        '<div class="tp" aria-hidden="true">send Maya the deck <s class="x">um</s> by Friday <span class="emo still">👍</span></div></div>' +
         '<div class="dict-ctrls"><span class="round" style="justify-self: start" aria-label="Cancel">' + I('x') + '</span>' +
         '<span class="msend" style="width: 64px; height: 64px">' + I('up') + '</span>' +
         '<span class="round" style="justify-self: end; background: color-mix(in srgb, var(--k-acc) 16%, var(--k-fn)); color: var(--k-acc)" aria-label="Cleanup on">' + I('spark') + '</span></div></div>' + bar;
@@ -1153,6 +1203,20 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
   // Pre-fill histories so nothing starts blank
   [wvVoice, kbVoice].forEach(function (v) { for (var i = 0; i < 400; i++) v.step(0.016); });
 
+  // Writing style demo (app: WritingStyle)
+  var ST = {
+    casual: ['What Messages gets', "yeah I'm gonna be there around 7 lol ❤️"],
+    neutral: ['What Notes gets', "Yeah, I'm gonna be there around 7, lol ❤️"],
+    polished: ['What Gmail gets', "Yes, I'm going to be there around 7. ❤️"]
+  };
+  var stSeg = document.getElementById('st-seg'), stOut = document.getElementById('st-out'), stLab = document.getElementById('st-lab');
+  stSeg.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    stSeg.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
+    stOut.style.opacity = 0;
+    setTimeout(function () { stLab.textContent = ST[b.dataset.k][0]; stOut.textContent = ST[b.dataset.k][1]; stOut.style.opacity = 1; }, 160);
+  });
+
   var capsuleBars = [];
   var cap = document.getElementById('h-capsule');
   for (var i = 0; i < 14; i++) { var b = document.createElement('i'); cap.appendChild(b); capsuleBars.push(b); }
@@ -1188,15 +1252,24 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
     added: document.getElementById('h-added'), said: document.getElementById('h-said'), saidText: document.getElementById('h-said-text')
   };
   H.content = Array.prototype.slice.call(H.sheet.children);
-  var SAID = ['Also', 'grab', 'coffee', 'beans', 'and,', 'um,', 'some', 'lemons.'];
-  var TYPED = ' Also grab coffee beans and some lemons.';
+  var SAID = ['Also', 'grab', 'coffee', 'beans', 'and,', 'um,', 'some', 'lemons.', 'Lemon', 'emoji.'];
+  var TYPED = ' Also grab coffee beans and some lemons. 🍋';
   H.saidText.innerHTML = SAID.map(function (w) { return '<span class="w' + (w.indexOf('um') === 0 ? ' um' : '') + '">' + w + '</span>'; }).join(' ');
   var words = H.saidText.querySelectorAll('.w');
   H.tele = document.getElementById('h-tele'); H.tp = document.getElementById('h-tp');
   // Teleprompter: settled words in ink, the newest two still grey (drafts), the last few words only
+  // Live edits (app: LiveMarks): "um" is struck, then folds away; "lemon emoji" is struck while 🍋 pops in
   function tele(n) {
-    var shown = SAID.slice(0, n), cut = Math.max(0, shown.length - 6), fin = shown.length - 2;
-    H.tp.innerHTML = shown.map(function (w, i) { return i >= fin ? '<span class="d">' + w + '</span>' : w; }).slice(cut).join(' ');
+    var out = [];
+    for (var i = 0; i < n; i++) {
+      var w = SAID[i], draft = i >= n - 2;
+      if (i === 5) { if (n === 6) out.push('<span class="d">' + w + '</span>'); else if (n === 7) out.push('<s class="x">' + w + '</s>'); continue; }
+      if (i === 8) continue;
+      if (i === 9) { out.push('<s class="x">lemon emoji</s> <span class="emo">🍋</span>'); continue; }
+      out.push(draft ? '<span class="d">' + w + '</span>' : w);
+    }
+    if (n === 9) out[out.length - 1] = '<span class="d">Lemon</span>';
+    H.tp.innerHTML = out.slice(-6).join(' ');
     H.tele.classList.toggle('on', n > 0);
   }
   var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
@@ -1240,9 +1313,9 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
   }
   async function speak(id) {
     H.said.classList.add('on'); heroVoice.on = true;
-    for (var i = 0; i < words.length; i++) { if (id !== run) return; words[i].classList.add('on'); tele(i + 1); await wait(i === 4 ? 520 : 330); }
+    for (var i = 0; i < words.length; i++) { if (id !== run) return; words[i].classList.add('on'); tele(i + 1); await wait(i === 4 ? 520 : i === 5 || i === 6 ? 460 : i === 9 ? 900 : 330); }
     heroVoice.on = false;
-    H.tp.innerHTML = SAID.slice(-6).join(' '); // everything settles
+    H.tp.innerHTML = 'coffee beans and some lemons. <span class="emo still">🍋</span>'; // everything settles
   }
   async function deliver(id) {
     H.time.textContent = 'Transcribing…'; clearInterval(clock);

@@ -134,6 +134,15 @@ figcaption span { display: block; color: var(--muted); font-size: 14px; line-hei
 /* Dictation panel: replaces the key area, same height so nothing jumps */
 .dict { height: 246px; display: flex; flex-direction: column; padding: 4px 10px 6px; gap: 8px; }
 .dict-top { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+/* Top row (design/dictation-layout.html): timer centered, writing-style dropdown on the right */
+.dict-top.mid3 { display: grid; grid-template-columns: 1fr auto 1fr; }
+.dict-top.mid3 .live { grid-column: 2; color: var(--k-ink); }
+.stylechip { grid-column: 3; justify-self: end; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 9px 0 10px; border-radius: 15px; font-size: 12.5px; font-weight: 500; white-space: nowrap;
+  background: color-mix(in srgb, var(--k-acc) 18%, var(--k-fn)); color: var(--k-acc); }
+.stylechip .car { width: 12px; height: 12px; margin-left: -2px; }
+.strip.listen { position: relative; }
+.strip.listen .live { position: absolute; left: 50%; transform: translateX(-50%); color: var(--k-ink); font-size: 14px; }
+.strip.listen .stylechip { margin: 0 6px 0 auto; }
 .live { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--k-rec); font-variant-numeric: tabular-nums; }
 .live::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--k-rec); }
 .chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 14px; background: var(--k-fn); color: var(--k-ink); font-size: 12px; font-weight: 500; white-space: nowrap; }
@@ -353,6 +362,8 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
     <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.6 0-.9-.6-1.3-.6-2.1 0-.9.7-1.6 1.6-1.6H17a4 4 0 0 0 4-4C21 6.9 17 3 12 3z"/><path d="M7.5 11h.01M10 7.5h.01M14.5 7.5h.01"/></symbol>
     <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5zM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></symbol>
     <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-chev-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
     <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
     <symbol id="i-split" viewBox="0 0 24 24"><rect x="2" y="7" width="8" height="10" rx="1.5"/><rect x="14" y="7" width="8" height="10" rx="1.5"/></symbol>
@@ -652,7 +663,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
             <div class="scrim"></div>
             <div class="sheet">
               <span class="grab"></span>
-              <div class="dict-top"><span class="live">0:04</span><span class="chip"><svg class="icon xs"><use href="#i-shield"/></svg>On device</span></div>
+              <div class="dict-top mid3"><span class="live">0:04</span><span class="stylechip"><svg class="icon xs"><use href="#i-pen"/></svg>Polished<svg class="icon xs car"><use href="#i-chev-down"/></svg></span></div>
               <div class="target"><svg class="icon xs"><use href="#i-cursor"/></svg>Typing into <b>Notes</b></div>
               <div class="transcript">Also <span class="partial">grab coffee beans and um some lemons</span></div>
               <div class="wave anim" data-bars="34" style="height: 56px"></div>
@@ -1007,8 +1018,8 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
     typing: function () { return strip(sugs('market', 'market.', 'markets')) + letters() + bar; },
     swipe: function () { return strip(sugs('there', 'then', 'the')) + letters({ lit: 'then' }) + bar; },
     listen: function () {
-      return strip('<div class="sugs" style="grid-template-columns: 1fr"><span class="mid" style="color: var(--k-sub); font-weight: 500">Listening…</span></div>', '<span class="sbtn">' + I('kbd', 'sm') + '</span>').replace(mic, '<span class="mic" style="background: var(--k-rec); color: #fff">' + I('mic', 'sm') + '</span>') +
-        '<div class="dict"><div class="dict-top"><span class="live">0:07</span><span class="chip">' + I('shield', 'xs') + 'On device · Parakeet v3</span></div>' + wave(38, false, true) +
+      return strip('<span class="live">0:07</span>', '<span class="sbtn">' + I('kbd', 'sm') + '</span>').replace(mic, '<span class="stylechip">' + I('pen', 'xs') + 'Casual<svg class="icon xs car"><use href="#i-chev-down"/></svg></span>').replace('class="strip"', 'class="strip listen"') +
+        '<div class="dict">' + wave(38, false, true) +
         '<div class="dict-ctrls"><span class="round" style="justify-self: start" aria-label="Cancel">' + I('x') + '</span><span class="stop" aria-label="Stop"><span class="sq"></span></span><span class="round" style="justify-self: end; background: color-mix(in srgb, var(--k-acc) 16%, var(--k-fn)); color: var(--k-acc)" aria-label="Cleanup on">' + I('spark') + '</span></div>' + '</div>' + bar;
     },
     review: function () {

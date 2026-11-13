@@ -161,12 +161,12 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
     /** Stops recording, transcribes, and types the result. */
     private fun finish() {
         state = State.TRANSCRIBING
-        panel?.showMessage(ime.getString(R.string.murmur_dictation_transcribing))
+        panel?.showSending()
         strip(ime.getString(R.string.murmur_dictation_transcribing))
         val live = stream.also { stream = null }
         recorder.stop { samples ->
             SharedEngine.finish(ime, live, samples) { result ->
-                Cleanup.processAsync(ime, result?.text.orEmpty()) { cleaned ->
+                Cleanup.processAsync(ime, result?.text.orEmpty(), ime.currentInputEditorInfo?.packageName) { cleaned ->
                 main.post {
                     if (state != State.TRANSCRIBING) return@post // cancelled meanwhile
                     if (result == null) return@post showFailure(ime.getString(R.string.murmur_dictation_model_missing))
@@ -235,6 +235,7 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
                 Cleanup.toggle(ime)
             },
             cleanupOn = Cleanup.level(ime) != Cleanup.Level.OFF,
+            stylePkg = { ime.currentInputEditorInfo?.packageName },
         ).also { panel = it }
         // Exactly the keyboard's height: MATCH_PARENT would let the wrapper grow to fill the screen.
         val params = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, keyboardView.height)
@@ -253,7 +254,7 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
 
     /** Murmur: the strip shows the dictation state; the keyboard button there cancels back to the keys. */
     private fun strip(status: String?) =
-        KeyboardSwitcher.getInstance().murmurStrip?.setMurmurListening(status) { cancel() }
+        KeyboardSwitcher.getInstance().murmurStrip?.setMurmurListening(status, { cancel() }, panel?.headerCenter, panel?.headerEnd)
 
     private fun closePanel() {
         strip(null)

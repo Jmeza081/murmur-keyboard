@@ -182,7 +182,12 @@ public class InlineAutofillUtils {
         HorizontalScrollView inlineSuggestionView = new HorizontalScrollView(context);
         inlineSuggestionView.setHorizontalScrollBarEnabled(false);
         inlineSuggestionView.setOverScrollMode(View.OVER_SCROLL_NEVER);
-        inlineSuggestionView.addView(container);
+        // Murmur: your snippets for this field come first, then the password manager's chips
+        final LinearLayout row = dev.murmur.snippets.SnippetChips.chipRow(context);
+        if (row != null) {
+            row.addView(container);
+            inlineSuggestionView.addView(row);
+        } else inlineSuggestionView.addView(container);
 
         InlineContentClipView scrollableSuggestionsClip = new InlineContentClipView(context);
         scrollableSuggestionsClip.addView(inlineSuggestionView);

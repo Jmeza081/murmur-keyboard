@@ -54,6 +54,8 @@ class ModelActivity : ComponentActivity() {
                             Screen.EMOJI -> dev.murmur.settings.ui.EmojiScreen(onBack = { screen = Screen.HOME })
                             Screen.TABLET -> dev.murmur.settings.ui.TabletScreen(onBack = { screen = Screen.HOME })
                             Screen.DICTIONARY -> dev.murmur.settings.ui.DictionaryScreen(onBack = { screen = Screen.HOME })
+                            Screen.SNIPPETS -> dev.murmur.settings.ui.SnippetsScreen(onBack = { screen = Screen.HOME })
+                            Screen.STYLE -> dev.murmur.settings.ui.WritingStyleScreen(onBack = { screen = Screen.HOME })
                             Screen.SETUP -> SetupScreen(onDone = { dev.murmur.settings.SetupState.setSkipped(this@ModelActivity); screen = Screen.HOME })
                         }
                     }

@@ -28,10 +28,13 @@ object Cleanup {
     }
 
     /** Cleans raw dictation at the chosen level. Instant, so it can run on any thread. */
-    fun process(context: Context, raw: String): String = when (level(context)) {
+    fun process(context: Context, raw: String, pkg: String? = null): String = when (level(context)) {
         Level.OFF -> raw.trim()
         Level.LIGHT, Level.CLAUDE -> TextCleanup.clean(removeExtraFillers(raw, extraFillers(context)))
+            .let { WritingStyle.apply(context, it, WritingStyle.forApp(context, pkg)) } // Murmur: the app's writing style
     }.let { dev.murmur.dictionary.MurmurDictionary.applyReplacements(context, it) } // your replacements apply at every level
+        .let(SpokenEmoji::apply) // "heart emoji" becomes the emoji at every level
+        .let { dev.murmur.snippets.Snippets.applySpoken(context, it) } // "paste my address" becomes the snippet
 
     private val polisher = java.util.concurrent.Executors.newSingleThreadExecutor { Thread(it, "murmur-claude") }
 
@@ -39,19 +42,23 @@ object Cleanup {
      * Like [process], but at the Claude level sends the text to Claude first, falling back to the Light rules
      * when that fails. [onDone] runs on a background thread.
      */
-    fun processAsync(context: Context, raw: String, onDone: (String) -> Unit) {
+    fun processAsync(context: Context, raw: String, pkg: String?, onDone: (String) -> Unit) {
         val app = context.applicationContext
         if (level(app) != Level.CLAUDE || !ClaudeCleanup.active(app) || raw.isBlank()) {
             android.util.Log.i("MurmurClaude", "Skipped: level ${level(app)}, key ${ClaudeCleanup.active(app)}")
-            return onDone(process(app, raw))
+            return onDone(process(app, raw, pkg))
         }
         polisher.execute {
             val out = try {
                 val vocabulary = runCatching { dev.murmur.dictionary.MurmurDictionary.words(app) }.getOrDefault(emptyList())
-                ClaudeCleanup.polish(app, raw, vocabulary, extraFillers(app))
+                val style = WritingStyle.forApp(app, pkg)
+                ClaudeCleanup.polish(app, raw, vocabulary, extraFillers(app), WritingStyle.promptLine(style))
+                    .let { WritingStyle.apply(app, it, style) }
                     .let { dev.murmur.dictionary.MurmurDictionary.applyReplacements(app, it) }
+                    .let(SpokenEmoji::apply)
+                    .let { dev.murmur.snippets.Snippets.applySpoken(app, it) }
             } catch (e: Exception) {
-                process(app, raw)
+                process(app, raw, pkg)
             }
             onDone(out)
         }
