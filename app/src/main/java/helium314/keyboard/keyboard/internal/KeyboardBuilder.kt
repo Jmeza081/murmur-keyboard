@@ -103,7 +103,7 @@ open class KeyboardBuilder<KP : KeyboardParams>(protected val mContext: Context,
     open fun build(): Keyboard {
         if (mParams.mId.isSplitLayout
                 && mParams.mId.element in KeyboardElement.ALPHABET..KeyboardElement.SYMBOLS_SHIFTED) {
-            addSplit()
+            dev.murmur.keyboard.SplitGeometry.apply(mParams, keysInRows, mContext.resources.displayMetrics.density, Settings.getValues().mSplitSpacerScale) // Murmur: replaces addSplit()
         }
         addKeysToParams()
         return Keyboard(mParams)

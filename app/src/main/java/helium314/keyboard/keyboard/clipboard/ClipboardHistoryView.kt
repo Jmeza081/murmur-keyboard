@@ -53,8 +53,9 @@ class ClipboardHistoryView @JvmOverloads constructor(
     private val keyBackgroundId: Int
 
     private lateinit var clipboardRecyclerView: ClipboardHistoryRecyclerView
-    private lateinit var placeholderView: TextView
+    private lateinit var placeholderView: LinearLayout
     private val toolbarKeys = mutableListOf<ImageButton>()
+    private var clearButton: TextView? = null
     private lateinit var clipboardAdapter: ClipboardAdapter
 
     lateinit var keyboardActionListener: KeyboardActionListener
@@ -85,7 +86,9 @@ class ClipboardHistoryView @JvmOverloads constructor(
     private fun initialize() { // needs to be delayed for access to ClipboardStrip, which is not a child of this view
         if (this::clipboardAdapter.isInitialized) return
         val colors = Settings.getValues().mColors
-        clipboardAdapter = ClipboardAdapter(clipboardLayoutParams, this).apply {
+        clipboardAdapter = ClipboardAdapter(clipboardLayoutParams, this, { v, e ->
+            dev.murmur.clipboard.ClipPanel.showMenu(v, e, clipboardHistoryManager) { onListChanged() }
+        }).apply {
             itemBackgroundId = keyBackgroundId
             pinnedIconResId = pinIconId
         }
@@ -99,49 +102,53 @@ class ClipboardHistoryView @JvmOverloads constructor(
             placeholderView = this@ClipboardHistoryView.placeholderView
         }
         val clipboardStrip = KeyboardSwitcher.getInstance().clipboardStrip!!
-        // Murmur: the mockup's strip: [ABC] [Clipboard] ... [Clear], replacing HeliBoard's editing toolbar
-        clipboardStrip.addView(stripChip("ABC", filled = false).apply {
+        // Murmur (design: "why the empty clipboard feels busy", A): [< ABC] Clipboard ... [Clear]. Only the
+        // two buttons look tappable; the title is plain text and Clear dims when there's nothing to clear.
+        clipboardStrip.addView(stripButton("ABC", R.drawable.ic_murmur_chev_left, colors.get(ColorType.KEY_TEXT)).apply {
             tag = ToolbarKey.CLOSE_HISTORY
+            contentDescription = "Back to keys"
             setOnClickListener(this@ClipboardHistoryView)
         })
-        clipboardStrip.addView(stripChip(context.getString(R.string.murmur_clip_title), filled = true))
+        clipboardStrip.addView(TextView(context).apply {
+            text = context.getString(R.string.murmur_clip_title)
+            textSize = 16f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setTextColor(colors.get(ColorType.KEY_TEXT))
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            isFocusable = false
+        }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT).apply { marginStart = (4 * resources.displayMetrics.density).toInt() })
         clipboardStrip.addView(View(context), LinearLayout.LayoutParams(0, 1, 1f))
-        listOf(ToolbarKey.CLEAR_CLIPBOARD).forEach {
-            val key = createToolbarKey(context, it)
-            clipboardStrip.addView(key)
-            key.setOnClickListener(this@ClipboardHistoryView)
-            key.setOnLongClickListener(this@ClipboardHistoryView)
-            colors.setColor(key, ColorType.TOOL_BAR_KEY)
-            colors.setBackground(key, ColorType.STRIP_BACKGROUND)
-            toolbarKeys.add(key)
+        clearButton = stripButton("Clear", R.drawable.ic_murmur_trash, colors.get(ColorType.KEY_HINT_TEXT)).apply {
+            tag = ToolbarKey.CLEAR_CLIPBOARD
+            contentDescription = "Clear unpinned clips"
+            setOnClickListener(this@ClipboardHistoryView)
+            (layoutParams as LinearLayout.LayoutParams).marginEnd = (4 * resources.displayMetrics.density).toInt()
         }
+        clipboardStrip.addView(clearButton)
         // Murmur: no ABC / space / backspace row; ABC lives in the strip and the list takes the space
         findViewById<View>(R.id.bottom_row_keyboard).visibility = View.GONE
-        placeholderView.setText(R.string.murmur_clip_empty)
-        placeholderView.setTextColor(colors.get(ColorType.KEY_HINT_TEXT))
-        placeholderView.gravity = android.view.Gravity.CENTER
     }
 
-    /** Murmur: a rounded text chip for the clipboard strip. */
-    private fun stripChip(text: String, filled: Boolean) = TextView(context).apply {
-        val colors = Settings.getValues().mColors
+    /** Murmur: an unfilled strip button, icon then word, 40 dp tall with a 48 dp row around it. */
+    private fun stripButton(label: String, icon: Int, color: Int) = TextView(context).apply {
         val density = resources.displayMetrics.density
-        this.text = text
-        textSize = 13f
-        typeface = android.graphics.Typeface.DEFAULT_BOLD
+        text = label
+        textSize = 14f
+        typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+        setTextColor(color)
         gravity = android.view.Gravity.CENTER
-        setPadding((12 * density).toInt(), 0, (12 * density).toInt(), 0)
-        minWidth = (44 * density).toInt()
-        val ink = colors.get(ColorType.KEY_TEXT)
-        val onInk = if (androidx.core.graphics.ColorUtils.calculateLuminance(ink) > 0.5) 0xFF121419.toInt() else 0xFFFFFFFF.toInt()
-        setTextColor(if (filled) onInk else ink)
-        background = android.graphics.drawable.GradientDrawable().apply {
-            cornerRadius = 16 * density
-            setColor(if (filled) ink else colors.get(ColorType.FUNCTIONAL_KEY_BACKGROUND))
+        minWidth = (56 * density).toInt()
+        setPadding((10 * density).toInt(), 0, (14 * density).toInt(), 0)
+        compoundDrawablePadding = (4 * density).toInt()
+        val dr = androidx.core.content.ContextCompat.getDrawable(context, icon)?.mutate()?.apply {
+            setBounds(0, 0, (18 * density).toInt(), (18 * density).toInt()); setTint(color)
         }
-        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, (32 * density).toInt()).apply {
+        setCompoundDrawablesRelative(dr, null, null, null)
+        background = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(androidx.core.graphics.ColorUtils.setAlphaComponent(color, 40)), null,
+            android.graphics.drawable.GradientDrawable().apply { cornerRadius = 20 * density; setColor(0xFFFFFFFF.toInt()) })
+        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, (40 * density).toInt()).apply {
             gravity = android.view.Gravity.CENTER_VERTICAL
-            marginStart = (6 * density).toInt()
+            marginStart = (4 * density).toInt()
         }
     }
 
@@ -156,8 +163,13 @@ class ClipboardHistoryView @JvmOverloads constructor(
 
     private fun setupToolbarKeys() {
         // set layout params
-        val toolbarKeyLayoutParams = LayoutParams(resources.getDimensionPixelSize(R.dimen.config_suggestions_strip_edge_key_width), LayoutParams.MATCH_PARENT)
-        toolbarKeys.forEach { it.layoutParams = toolbarKeyLayoutParams }
+        // Murmur: Clear is a 56 dp target with its icon 16 dp in from the edge, matching ABC on the left
+        val d = resources.displayMetrics.density
+        toolbarKeys.forEach {
+            it.layoutParams = LayoutParams((56 * d).toInt(), LayoutParams.MATCH_PARENT)
+            it.scaleType = android.widget.ImageView.ScaleType.CENTER
+            it.setPadding(0, 0, 0, 0)
+        }
     }
 
     private fun setupBottomRowKeyboard(editorInfo: EditorInfo, listener: KeyboardActionListener) {
@@ -188,6 +200,7 @@ class ClipboardHistoryView @JvmOverloads constructor(
         historyManager.prepareClipboardHistory()
         historyManager.setHistoryChangeListener(this)
         clipboardAdapter.clipboardHistoryManager = historyManager
+        onListChanged()
 
         val params = KeyDrawParams()
         params.updateParams(clipboardLayoutParams.bottomRowKeyboardHeight, keyVisualAttr)
@@ -196,11 +209,9 @@ class ClipboardHistoryView @JvmOverloads constructor(
         setupClipKey(params)
         setupBottomRowKeyboard(editorInfo, keyboardActionListener)
 
-        placeholderView.apply {
-            KeyboardTypeface.applyToTextView(this)
-            setTextColor(params.mTextColor)
-            setTextSize(TypedValue.COMPLEX_UNIT_PX, params.mLabelSize.toFloat() * 2)
-        }
+        // Murmur: the empty state (design/clipboard-themes.html); snippets stay out of password fields
+        dev.murmur.clipboard.ClipPanel.fillEmpty(placeholderView,
+            helium314.keyboard.latin.utils.InputTypeUtils.isPasswordInputType(editorInfo.inputType)) { keyboardActionListener.onTextInput(it) }
         clipboardRecyclerView.apply {
             adapter = clipboardAdapter
             val keyboardWidth = ResourceUtils.getKeyboardWidth(context, settings.current)
@@ -225,8 +236,15 @@ class ClipboardHistoryView @JvmOverloads constructor(
         toolbarKeys.forEach { it.isEnabled = false; it.isEnabled = true }
     }
 
+    /** Murmur: rebuild the sections, and dim Clear when there's nothing it would clear. */
+    private fun onListChanged() {
+        clipboardAdapter.refresh()
+        clearButton?.apply { val on = clipboardAdapter.hasUnpinned(); alpha = if (on) 1f else 0.4f; isEnabled = on }
+    }
+
     fun stopClipboardHistory() {
         if (!this::clipboardAdapter.isInitialized) return
+        dev.murmur.clipboard.ClipPanel.dismissMenu()
         clipboardRecyclerView.adapter = null
         clipboardHistoryManager.setHistoryChangeListener(null)
         clipboardAdapter.clipboardHistoryManager = null
@@ -264,18 +282,16 @@ class ClipboardHistoryView @JvmOverloads constructor(
     }
 
     override fun onClipInserted(position: Int) {
-        clipboardAdapter.notifyItemInserted(position)
-        clipboardRecyclerView.smoothScrollToPosition(position)
+        onListChanged()
+        clipboardRecyclerView.scrollToPosition(0)
     }
 
     override fun onClipsRemoved(position: Int, count: Int) {
-        clipboardAdapter.notifyItemRangeRemoved(position, count)
+        onListChanged()
     }
 
     override fun onClipMoved(oldPosition: Int, newPosition: Int) {
-        clipboardAdapter.notifyItemMoved(oldPosition, newPosition)
-        clipboardAdapter.notifyItemChanged(newPosition)
-        if (newPosition < oldPosition) clipboardRecyclerView.smoothScrollToPosition(newPosition)
+        onListChanged()
     }
 
     override fun onSharedPreferenceChanged(prefs: SharedPreferences?, key: String?) {

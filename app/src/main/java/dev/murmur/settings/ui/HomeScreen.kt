@@ -102,6 +102,7 @@ private fun themeValue(ctx: Context): String {
     val mode = when {
         prefs.getBoolean(Settings.PREF_THEME_DAY_NIGHT, Defaults.PREF_THEME_DAY_NIGHT) -> "Follows system"
         prefs.getString(Settings.PREF_THEME_COLORS, Defaults.PREF_THEME_COLORS) == helium314.keyboard.keyboard.KeyboardTheme.THEME_MURMUR_DARK -> "Dark"
+        prefs.getString(Settings.PREF_THEME_COLORS, Defaults.PREF_THEME_COLORS) == helium314.keyboard.keyboard.KeyboardTheme.THEME_MURMUR_BLACK -> "Black"
         else -> "Light"
     }
     return "$accent · $mode"
@@ -114,9 +115,13 @@ private fun emojiValue(ctx: Context) = when (ctx.prefs().getString(Settings.PREF
 
 private fun tabletValue(ctx: Context): String {
     val p = ctx.prefs()
-    val land = p.getBoolean(Settings.PREF_ENABLE_SPLIT_KEYBOARD_LANDSCAPE, Defaults.PREF_ENABLE_SPLIT_KEYBOARD)
-    val port = p.getBoolean(Settings.PREF_ENABLE_SPLIT_KEYBOARD, Defaults.PREF_ENABLE_SPLIT_KEYBOARD)
-    return when { land && port -> "Split always"; land -> "Split in landscape"; port -> "Split in portrait"; else -> "Not split" }
+    val split = p.getBoolean(Settings.PREF_ENABLE_SPLIT_KEYBOARD_LANDSCAPE, Defaults.PREF_ENABLE_SPLIT_KEYBOARD)
+            || p.getBoolean(Settings.PREF_ENABLE_SPLIT_KEYBOARD, Defaults.PREF_ENABLE_SPLIT_KEYBOARD)
+    return when {
+        p.getBoolean(dev.murmur.keyboard.PaneMode.PREF, false) -> "Half screen"
+        split -> "Split"
+        else -> "Full width"
+    }
 }
 
 private fun dictionaryValue(ctx: Context): String {
@@ -132,32 +137,35 @@ enum class Screen { HOME, DICTATION, POWER, SETUP, THEME, TYPING, CLIPBOARD, EMO
 private fun TryIt() {
     var text by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     Group {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             PlayField(text, { text = it }, "Type or dictate here")
             PlayField(password, { password = it }, "Password", password = true)
+            PlayField(phone, { phone = it }, "Phone number", phone = true)
             Hint("Nothing typed here is saved. In the password field, Murmur shows no suggestions and learns nothing.")
         }
     }
 }
 
 @Composable
-private fun PlayField(value: String, onChange: (String) -> Unit, placeholder: String, password: Boolean = false) {
+private fun PlayField(value: String, onChange: (String) -> Unit, placeholder: String, password: Boolean = false, phone: Boolean = false) {
     val c = LocalSettingsColors.current
     var focused by remember { mutableStateOf(false) }
     androidx.compose.foundation.text.BasicTextField(
         value = value, onValueChange = onChange,
-        singleLine = password,
+        singleLine = password || phone,
         textStyle = androidx.compose.ui.text.TextStyle(fontFamily = RobotoFlex, fontSize = 16.sp, color = c.ink),
         cursorBrush = androidx.compose.ui.graphics.SolidColor(c.accent),
         visualTransformation = if (password) androidx.compose.ui.text.input.PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
         keyboardOptions = if (password) androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password, autoCorrectEnabled = false)
+            else if (phone) androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone)
             else androidx.compose.foundation.text.KeyboardOptions(capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Sentences),
         // The text box isn't a login field: tell autofill so 1Password doesn't offer itself there.
         // The password box says it's a password, so it gets the 1Password chips.
         modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused }.semantics {
             if (password) contentType = androidx.compose.ui.autofill.ContentType.Password
-            else contentDataType = androidx.compose.ui.autofill.ContentDataType.None
+            else if (!phone) contentDataType = androidx.compose.ui.autofill.ContentDataType.None
         },
         decorationBox = { inner ->
             Box(Modifier.fillMaxWidth().heightIn(min = 48.dp)

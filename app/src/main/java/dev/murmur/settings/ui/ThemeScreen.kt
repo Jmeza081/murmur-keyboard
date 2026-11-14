@@ -47,11 +47,12 @@ import helium314.keyboard.latin.settings.Defaults
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.prefs
 
-enum class ThemeMode(val label: String) { LIGHT("Light"), DARK("Dark"), SYSTEM("System") }
+enum class ThemeMode(val label: String) { LIGHT("Light"), DARK("Dark"), BLACK("Black"), SYSTEM("System") }
 
 private val HEIGHTS = dev.murmur.settings.KeyHeight.STEPS
 
 /** Theme (mockup "Theme"): a live keyboard preview, light/dark/system, accent, key borders and height. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun ThemeScreen(onBack: () -> Unit) {
     val ctx = LocalContext.current
@@ -59,29 +60,31 @@ fun ThemeScreen(onBack: () -> Unit) {
     var mode by remember { mutableStateOf(readMode(prefs)) }
     var accent by remember { mutableIntStateOf(MurmurTokens.accent(prefs)) }
     var borders by remember { mutableStateOf(prefs.getBoolean(Settings.PREF_THEME_KEY_BORDERS, Defaults.PREF_THEME_KEY_BORDERS)) }
-    var heightIndex by remember { mutableFloatStateOf(dev.murmur.settings.KeyHeight.readIndex(prefs).toFloat()) }
+    var heightIndex by remember { mutableFloatStateOf(dev.murmur.settings.KeyHeight.readIndex(prefs, ctx.resources).toFloat()) }
     val reload = { KeyboardSwitcher.getInstance().setThemeNeedsReload() }
     val systemDark = isSystemInDarkTheme()
-    val previewDark = mode == ThemeMode.DARK || (mode == ThemeMode.SYSTEM && systemDark)
+    val previewMode = if (mode == ThemeMode.SYSTEM) (if (systemDark) ThemeMode.DARK else ThemeMode.LIGHT) else mode
 
     Column(Modifier.verticalScroll(rememberScrollState())) {
         TopBar("Theme", onBack)
         Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            KeyboardPreview(previewDark, Color(accent), borders, HEIGHTS[heightIndex.toInt()].first)
+            KeyboardPreview(previewMode, accent, borders, HEIGHTS[heightIndex.toInt()].first)
             Group {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Segmented(ThemeMode.entries, mode, { it.label }) { mode = it; writeMode(prefs, it); reload() }
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text("Accent", fontFamily = RobotoFlex, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = LocalSettingsColors.current.ink)
-                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        // nine accents: the original five, then the four added with Black (design/clipboard-themes.html)
+                        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             MurmurTokens.ACCENTS.forEach { (name, color) ->
                                 Swatch(Color(color), name, selected = color == accent) {
                                     accent = color; prefs.edit { putInt(MurmurTokens.PREF_ACCENT, color) }; reload()
                                 }
                             }
                         }
-                        Hint(MurmurTokens.ACCENTS.first { it.second == accent }.first +
-                            ". Every accent keeps the white Enter and mic icons readable on light and dark keys.")
+                        Hint((MurmurTokens.ACCENTS.firstOrNull { it.second == accent }?.first ?: "Custom") +
+                            ". Every accent keeps the white Enter and mic icons readable on light, dark and black keys.")
                     }
                 }
             }
@@ -90,10 +93,10 @@ fun ThemeScreen(onBack: () -> Unit) {
                     MurmurSwitch(borders) { borders = it; prefs.edit { putBoolean(Settings.PREF_THEME_KEY_BORDERS, it) }; reload() }
                 })
                 GroupDivider()
-                Item("Key height", HEIGHTS[heightIndex.toInt()].second, below = {
+                Item("Key height", HEIGHTS[heightIndex.toInt()].second + (dev.murmur.settings.KeyHeight.screenName(ctx.resources)?.let { " on the $it" } ?: ""), below = {
                     MurmurSlider(heightIndex, 0f..(HEIGHTS.size - 1).toFloat(), steps = HEIGHTS.size - 2,
                         onChange = { heightIndex = it },
-                        onDone = { dev.murmur.settings.KeyHeight.write(prefs, heightIndex.toInt()); reload() })
+                        onDone = { dev.murmur.settings.KeyHeight.write(prefs, ctx.resources, heightIndex.toInt()); reload() })
                 })
             }
         }
@@ -111,12 +114,15 @@ private fun Swatch(color: Color, name: String, selected: Boolean, onClick: () ->
 
 /** A small keyboard drawn with Murmur's colors, so changes show before you open a text field. */
 @Composable
-private fun KeyboardPreview(dark: Boolean, accent: Color, borders: Boolean, heightScale: Float) {
-    val bg = Color(if (dark) MurmurTokens.Dark.BACKGROUND else MurmurTokens.Light.BACKGROUND)
-    val key = Color(if (dark) MurmurTokens.Dark.KEY else MurmurTokens.Light.KEY)
-    val fn = Color(if (dark) MurmurTokens.Dark.FUNCTION_KEY else MurmurTokens.Light.FUNCTION_KEY)
-    val ink = Color(if (dark) MurmurTokens.Dark.TEXT else MurmurTokens.Light.TEXT)
-    val sub = Color(if (dark) MurmurTokens.Dark.SUBTLE else MurmurTokens.Light.SUBTLE)
+private fun KeyboardPreview(mode: ThemeMode, accentInt: Int, borders: Boolean, heightScale: Float) {
+    val accent = Color(accentInt)
+    val dark = mode == ThemeMode.DARK
+    val black = mode == ThemeMode.BLACK
+    val bg = Color(if (black) MurmurTokens.Black.background(accentInt) else if (dark) MurmurTokens.Dark.BACKGROUND else MurmurTokens.Light.BACKGROUND)
+    val key = Color(if (black) MurmurTokens.Black.key(accentInt) else if (dark) MurmurTokens.Dark.KEY else MurmurTokens.Light.KEY)
+    val fn = Color(if (black) MurmurTokens.Black.functionKey(accentInt) else if (dark) MurmurTokens.Dark.FUNCTION_KEY else MurmurTokens.Light.FUNCTION_KEY)
+    val ink = Color(if (black) MurmurTokens.Black.text(accentInt) else if (dark) MurmurTokens.Dark.TEXT else MurmurTokens.Light.TEXT)
+    val sub = Color(if (black) MurmurTokens.Black.subtle(accentInt) else if (dark) MurmurTokens.Dark.SUBTLE else MurmurTokens.Light.SUBTLE)
     val onAccent = if (accent.luminance() > 0.3f) Color(0xFF0D1336) else Color.White
     val rowH = (44 * heightScale).dp
     val keyBg = if (borders) key else Color.Transparent
@@ -168,12 +174,17 @@ private fun androidx.compose.foundation.layout.RowScope.PreviewKey(label: String
 private fun readMode(prefs: android.content.SharedPreferences): ThemeMode = when {
     prefs.getBoolean(Settings.PREF_THEME_DAY_NIGHT, Defaults.PREF_THEME_DAY_NIGHT) -> ThemeMode.SYSTEM
     prefs.getString(Settings.PREF_THEME_COLORS, Defaults.PREF_THEME_COLORS) == KeyboardTheme.THEME_MURMUR_DARK -> ThemeMode.DARK
+    prefs.getString(Settings.PREF_THEME_COLORS, Defaults.PREF_THEME_COLORS) == KeyboardTheme.THEME_MURMUR_BLACK -> ThemeMode.BLACK
     else -> ThemeMode.LIGHT
 }
 
-/** System follows the phone (light theme by day, dark at night); Light and Dark pin one Murmur theme. */
+/** System follows the phone (light theme by day, dark at night); Light, Dark and Black pin one Murmur theme. */
 private fun writeMode(prefs: android.content.SharedPreferences, mode: ThemeMode) = prefs.edit {
     putBoolean(Settings.PREF_THEME_DAY_NIGHT, mode == ThemeMode.SYSTEM)
-    putString(Settings.PREF_THEME_COLORS, if (mode == ThemeMode.DARK) KeyboardTheme.THEME_MURMUR_DARK else KeyboardTheme.THEME_MURMUR_LIGHT)
+    putString(Settings.PREF_THEME_COLORS, when (mode) {
+        ThemeMode.DARK -> KeyboardTheme.THEME_MURMUR_DARK
+        ThemeMode.BLACK -> KeyboardTheme.THEME_MURMUR_BLACK
+        else -> KeyboardTheme.THEME_MURMUR_LIGHT
+    })
     putString(Settings.PREF_THEME_COLORS_NIGHT, KeyboardTheme.THEME_MURMUR_DARK)
 }

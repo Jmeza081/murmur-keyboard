@@ -54,7 +54,7 @@ private fun setToolbarButtonActivatedState(button: ImageButton) {
     button.isActivated = when (button.tag) {
         INCOGNITO -> button.context.prefs().getBoolean(Settings.PREF_ALWAYS_INCOGNITO_MODE, Defaults.PREF_ALWAYS_INCOGNITO_MODE)
         ONE_HANDED -> Settings.getValues().mOneHandedModeEnabled
-        SPLIT -> Settings.getValues().mIsSplitKeyboardEnabled
+        SPLIT -> Settings.getValues().mIsSplitKeyboardEnabled || Settings.getValues().mIsPaneKeyboard
         AUTOCORRECT -> Settings.getValues().mAutoCorrectionEnabledPerUserSettings
         BACKGROUND_GATHERING -> useBackgroundGathering
         else -> true
@@ -131,7 +131,7 @@ enum class ToolbarMode {
 val toolbarKeyStrings = entries.associateWithTo(EnumMap(ToolbarKey::class.java)) { it.toString().lowercase(Locale.US) }
 
 val defaultToolbarPref by lazy {
-    val default = listOf(SETTINGS, VOICE, CLIPBOARD, UNDO, REDO, SELECT_WORD, COPY, PASTE, LEFT, RIGHT)
+    val default = listOf(SETTINGS, VOICE, CLIPBOARD, SPLIT, UNDO, REDO, SELECT_WORD, COPY, PASTE, LEFT, RIGHT)
     val others = entries.filterNot { it in default || it == CLOSE_HISTORY }
     default.joinToString(Separators.ENTRY) { it.name + Separators.KV + true } + Separators.ENTRY +
             others.joinToString(Separators.ENTRY) { it.name + Separators.KV + false }
@@ -279,3 +279,19 @@ private fun repeatToolbarKey(view: View, onClick: (view: View) -> Unit) {
 }
 
 private var customToolbarKeyCodes: EnumMap<ToolbarKey, Pair<Int?, Int?>>? = null
+
+/** Murmur: turn on the layout key (Full / Split / Half screen) once, for toolbars saved before it was a default. */
+fun murmurEnableSplitToolbarKey(prefs: SharedPreferences) {
+    val done = "murmur_split_toolbar_key_added"
+    if (prefs.getBoolean(done, false)) return
+    prefs.getString(Settings.PREF_TOOLBAR_KEYS, null)?.let { saved ->
+        upgradeToolbarPref(prefs, Settings.PREF_TOOLBAR_KEYS, defaultToolbarPref)
+        val list = prefs.getString(Settings.PREF_TOOLBAR_KEYS, saved)!!.split(Separators.ENTRY).toMutableList()
+        val key = SPLIT.name + Separators.KV
+        list.removeAll { it.startsWith(key) }
+        val at = list.indexOfFirst { it.startsWith(CLIPBOARD.name + Separators.KV) }.let { if (it < 0) 0 else it + 1 }
+        list.add(at, key + true)
+        prefs.edit { putString(Settings.PREF_TOOLBAR_KEYS, list.joinToString(Separators.ENTRY)) }
+    }
+    prefs.edit { putBoolean(done, true) }
+}

@@ -145,6 +145,8 @@ public class SettingsValues {
     public final boolean mEmojiKeyFit;
     public final PunctuationSuggestions mPunctuationSuggestions;
     public final boolean mIsFloatingKeyboard;
+    public final boolean mIsPaneKeyboard; // Murmur: half-screen keyboard on the inner screen
+    public final float mSplitSpacerScale; // Murmur: SplitGeometry reads the gap setting
     public final int mFloatingWidth;
     public final int mFloatingHeight;
     public final int mKeypressVibrationDuration;
@@ -242,8 +244,11 @@ public class SettingsValues {
         mHasHardwareKeyboard = Settings.readHasHardwareKeyboard(res.getConfiguration());
         boolean isLandscape = mDisplayOrientation == Configuration.ORIENTATION_LANDSCAPE;
         float displayWidthDp = TypedValueCompat.pxToDp(res.getDisplayMetrics().widthPixels, res.getDisplayMetrics());
-        boolean isFolded = FoldableUtils.INSTANCE.isFolded();
-        mIsSplitKeyboardEnabled = Settings.readSplitKeyboardEnabled(prefs, isLandscape, isFolded);
+        // Murmur: "folded" means the narrow cover screen; decided by screen width so it's always in step with the layout
+        boolean isFolded = FoldableUtils.INSTANCE.isFoldable() && res.getConfiguration().smallestScreenWidthDp < 600;
+        mIsPaneKeyboard = !mIsLocked && dev.murmur.keyboard.PaneMode.INSTANCE.enabled(context, prefs);
+        mIsSplitKeyboardEnabled = !mIsPaneKeyboard && Settings.readSplitKeyboardEnabled(prefs, isLandscape, isFolded);
+        mSplitSpacerScale = Settings.readSplitSpacerScale(prefs, isLandscape, isFolded);
         // determine spacerWidth from display width and scale setting
         mSplitKeyboardSpacerRelativeWidth = mIsSplitKeyboardEnabled
                 ? Math.min(Math.max((displayWidthDp - 600) / 600f + 0.15f, 0.15f), 0.35f) * Settings.readSplitSpacerScale(prefs, isLandscape, isFolded)
@@ -289,10 +294,12 @@ public class SettingsValues {
         mClipboardHistoryRetentionTime = prefs.getInt(Settings.PREF_CLIPBOARD_HISTORY_RETENTION_TIME, Defaults.PREF_CLIPBOARD_HISTORY_RETENTION_TIME);
         mClipboardHistoryPinnedFirst = prefs.getBoolean(Settings.PREF_CLIPBOARD_HISTORY_PINNED_FIRST, Defaults.PREF_CLIPBOARD_HISTORY_PINNED_FIRST);
 
-        mIsFloatingKeyboard = !mIsLocked && SettingsKt.isFloatingKeyboardEnabled(context);
-        mFloatingWidth = SettingsKt.readFloatingWidth(context);
-        mFloatingHeight = mIsFloatingKeyboard ? SettingsKt.readFloatingHeight(context) : 0;
-        mKeyboardHeightScale = mIsFloatingKeyboard ? 1f : Settings.readHeightScale(prefs, isLandscape, isFolded);
+        mIsFloatingKeyboard = !mIsLocked && (mIsPaneKeyboard || SettingsKt.isFloatingKeyboardEnabled(context));
+        mFloatingWidth = mIsPaneKeyboard ? dev.murmur.keyboard.PaneMode.INSTANCE.width(context) : SettingsKt.readFloatingWidth(context);
+        mFloatingHeight = mIsPaneKeyboard ? dev.murmur.keyboard.PaneMode.INSTANCE.height(res, prefs, isLandscape, isFolded, mShowsNumberRow)
+                : mIsFloatingKeyboard ? SettingsKt.readFloatingHeight(context) : 0;
+        mKeyboardHeightScale = mIsFloatingKeyboard ? 1f : Settings.readHeightScale(prefs, isLandscape, isFolded)
+                * dev.murmur.settings.KeyHeight.INSTANCE.screenFactor(res); // Murmur: the inner screen's steps are smaller
         mOneHandedModeEnabled = !mIsFloatingKeyboard && Settings.readOneHandedModeEnabled(prefs, isLandscape, mIsSplitKeyboardEnabled, isFolded);
         mOneHandedModeGravity = Settings.readOneHandedModeGravity(prefs, isLandscape, mIsSplitKeyboardEnabled, isFolded);
         if (mOneHandedModeEnabled) {

@@ -90,7 +90,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
             visibility = View.GONE // shown once there's text
         }
         bars = LevelBarsView(c, recording, subtle)
-        live = dev.murmur.dictation.TeleprompterView(c, 22f, ink, subtle, recording).apply { visibility = View.GONE }
+        live = dev.murmur.dictation.TeleprompterView(c, 22f, ink, subtle, recording, lines = 3).apply { visibility = View.GONE }
         glow = StopGlowView(c, recording, 34f)
         ring = dev.murmur.dictation.SendRingView(c, recording)
         sending = dev.murmur.dictation.SendingIndicator(ring, glow) { status.text = c.getString(R.string.murmur_dictation_slow) }
@@ -144,19 +144,22 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
                     addView(dot, LinearLayout.LayoutParams(dp(8), dp(8)).apply { marginEnd = dp(7) })
                     addView(status)
                 }, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER))
-                styleChip = dev.murmur.cleanup.StyleChip(c, recording, chipColor) { styleTarget }
+                styleChip = dev.murmur.cleanup.StyleChip(c, recording, chipColor, { styleTarget }, allowDefault = true)
                 addView(styleChip, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.END or Gravity.CENTER_VERTICAL))
             }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
             addView(target, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) })
             addView(transcript, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) })
             // The waveform takes whatever height the card's minimum leaves, so the card scales with the screen
             // The waveform grows on tall screens so the card is ~40% of the screen (the rest of the card is ~250 dp)
-            val barsHeight = maxOf(dp(84), (c.resources.displayMetrics.heightPixels * 0.40f).toInt() - dp(286))
+            val barsHeight = maxOf(dp(136), (c.resources.displayMetrics.heightPixels * 0.40f).toInt() - dp(286)) // room for three teleprompter lines
+            addView(reviewBox(c), LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) })
             addView(android.widget.FrameLayout(c).apply {
+                wave = this
                 addView(bars, android.widget.FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
                 addView(live, android.widget.FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, android.view.Gravity.CENTER))
             }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, barsHeight).apply { topMargin = dp(20); bottomMargin = dp(24) })
             addView(FrameLayout(c).apply {
+                controls = this
                 clipChildren = false
                 addView(glow, FrameLayout.LayoutParams(dp(132), dp(132), Gravity.CENTER))
                 addView(ring, FrameLayout.LayoutParams(dp(84), dp(84), Gravity.CENTER))
@@ -193,16 +196,17 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
             scrim = android.graphics.drawable.ColorDrawable(Color.argb(110, 8, 10, 16)).also { it.alpha = 0 }
             background = scrim // tapping it cancels
             setOnClickListener { dismiss() }
-            val lp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM)
+            // Full width on a phone screen; on the open inner screen, capped and centered so it reads like a card, not a banner
+            val cardWidth = (c.resources.displayMetrics.widthPixels - dp(16)).let { if (it > dp(560)) dp(520) else ViewGroup.LayoutParams.MATCH_PARENT }
+            val lp = FrameLayout.LayoutParams(cardWidth, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
                 .apply { setMargins(dp(8), 0, dp(8), dp(8)) }
             addView(sheet, lp)
             val capLp = FrameLayout.LayoutParams(dp(CAPSULE_W_DP), dp(CAPSULE_H_DP), Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
                 .apply { bottomMargin = dp(8) + dp(4) }
             addView(capsule, capLp)
             // Keep the card above the gesture bar / nav buttons
-            setOnApplyWindowInsetsListener { _, insets ->
-                val nav = androidx.core.view.WindowInsetsCompat.toWindowInsetsCompat(insets)
-                    .getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars()).bottom
+            setOnApplyWindowInsetsListener { v, insets ->
+                val nav = dev.murmur.design.SafeArea.bottom(v, insets)
                 lp.bottomMargin = dp(8) + nav
                 sheet.layoutParams = lp
                 capLp.bottomMargin = dp(8) + nav + dp(4)
@@ -216,6 +220,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
         super.onShow(args, showFlags)
         transcript.text = ""
         transcript.visibility = View.GONE
+        closeReview()
         dot.visibility = View.VISIBLE
         bars.clear()
         live.clear(); live.visibility = View.GONE
@@ -291,8 +296,13 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
      */
     private fun deliver(text: String) {
         sending.reset()
-        transcript.text = text
-        transcript.visibility = View.VISIBLE
+        if (dev.murmur.settings.DictationPrefs.needsReview(context, text)) return showReview(text)
+        insert(text)
+    }
+
+    private fun insert(text: String) {
+        // When the teleprompter showed the words, a second copy of the finished text isn't needed
+        if (live.visibility != View.VISIBLE) { transcript.text = text; transcript.visibility = View.VISIBLE }
         // 1. Murmur's keyboard, if it's the active keyboard and a field had focus.
         val keyboard = DictationController.active
         val keyboardTarget = keyboard?.focusedFieldPackage()
@@ -307,6 +317,210 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
         }
         // 3. The clipboard.
         copyToClipboard(text, toast = false)
+    }
+
+    // --- Review before inserting (design: "Murmur review before inserting") ---
+
+    private lateinit var wave: FrameLayout
+    private lateinit var controls: FrameLayout
+    private lateinit var review: LinearLayout
+    private lateinit var reviewText: TextView
+    private lateinit var alts: LinearLayout
+    private lateinit var rewrites: LinearLayout
+    private val worker = java.util.concurrent.Executors.newSingleThreadExecutor()
+    /** The text as cleanup left it, plus your word fixes: what rewrites start from. */
+    private var base = ""
+    private var current = ""
+    private var rewrite: dev.murmur.cleanup.ClaudeCleanup.Rewrite? = null
+    private val rewritten = HashMap<dev.murmur.cleanup.ClaudeCleanup.Rewrite, String>()
+    private var loading: dev.murmur.cleanup.ClaudeCleanup.Rewrite? = null
+    private var picked: IntRange? = null
+    private var reviewToken = 0
+
+    private fun chip(c: Context, label: String, on: Boolean = false, onClick: () -> Unit) = TextView(c).apply {
+        text = label
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+        setTextColor(if (on) Color.WHITE else ink)
+        gravity = Gravity.CENTER
+        setPadding(dp(14), 0, dp(14), 0)
+        minHeight = dp(36)
+        background = GradientDrawable().apply { cornerRadius = dp(18f); setColor(if (on) MurmurTokens.ACCENT else chipColor) }
+        setOnClickListener { onClick() }
+    }
+
+    private fun scrollRow(c: Context, row: LinearLayout) = android.widget.HorizontalScrollView(c).apply {
+        isHorizontalScrollBarEnabled = false
+        row.orientation = LinearLayout.HORIZONTAL
+        addView(row)
+    }
+
+    private fun reviewBox(c: Context): View {
+        reviewText = TextView(c).apply {
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 19f)
+            setTextColor(ink)
+            setLineSpacing(0f, 1.15f)
+            movementMethod = android.text.method.LinkMovementMethod.getInstance()
+            highlightColor = Color.TRANSPARENT
+        }
+        alts = LinearLayout(c)
+        rewrites = LinearLayout(c)
+        val insertButton = TextView(c).apply {
+            text = "Insert"
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            background = GradientDrawable().apply { cornerRadius = dp(28f); setColor(MurmurTokens.ACCENT) }
+            setOnClickListener { if (loading == null) { val t = current; closeReview(keepText = true); insert(t) } }
+        }
+        val discard = ImageButton(c).apply {
+            setImageResource(R.drawable.ic_murmur_close)
+            setColorFilter(ink)
+            contentDescription = c.getString(R.string.murmur_dictation_cancel)
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(chipColor) }
+            setOnClickListener { dismiss() }
+        }
+        review = LinearLayout(c).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = View.GONE
+            addView(reviewText, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            addView(scrollRow(c, alts).apply { visibility = View.GONE; tag = "alts" },
+                LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12) })
+            addView(scrollRow(c, rewrites).apply { tag = "rewrites" },
+                LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(14) })
+            addView(LinearLayout(c).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                addView(discard, LinearLayout.LayoutParams(dp(56), dp(56)))
+                addView(insertButton, LinearLayout.LayoutParams(0, dp(56), 1f).apply { marginStart = dp(12) })
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(18) })
+        }
+        return review
+    }
+
+    private fun showReview(text: String) {
+        state = State.DONE
+        reviewToken++
+        base = text; current = text; rewrite = null; rewritten.clear(); loading = null; picked = null
+        dot.visibility = View.GONE
+        styleChip.dismissMenu(); styleChip.visibility = View.GONE
+        status.setTextColor(ink)
+        status.text = "Ready to insert"
+        transcript.visibility = View.GONE
+        wave.visibility = View.GONE
+        controls.visibility = View.GONE
+        hint.text = if (dev.murmur.cleanup.ClaudeCleanup.active(context)) "Tap a word to fix it · Tap outside to discard" else "Tap outside to discard"
+        review.visibility = View.VISIBLE
+        renderText(); renderAlts(null); renderRewrites()
+    }
+
+    private fun closeReview(keepText: Boolean = false) {
+        if (!::review.isInitialized) return
+        reviewToken++
+        review.visibility = View.GONE
+        wave.visibility = View.VISIBLE
+        controls.visibility = View.VISIBLE
+        hint.text = context.getString(R.string.murmur_assistant_hint)
+        styleChip.visibility = View.VISIBLE
+        if (!keepText) { base = ""; current = "" }
+    }
+
+    /** Each word is tappable; the picked one is highlighted. */
+    private fun renderText() {
+        val sp = android.text.SpannableString(current)
+        Regex("\\S+").findAll(current).forEach { m ->
+            val range = m.range
+            sp.setSpan(object : android.text.style.ClickableSpan() {
+                override fun onClick(widget: View) { onWordTap(range) }
+                override fun updateDrawState(ds: android.text.TextPaint) { ds.color = ink; ds.isUnderlineText = false }
+            }, range.first, range.last + 1, 0)
+            if (range == picked) sp.setSpan(android.text.style.BackgroundColorSpan(androidx.core.graphics.ColorUtils.setAlphaComponent(MurmurTokens.ACCENT, 110)),
+                range.first, range.last + 1, 0)
+        }
+        reviewText.text = sp
+        reviewText.alpha = if (loading != null) 0.45f else 1f
+    }
+
+    /** The letters of a token without the punctuation around it, and where they sit in the text. */
+    private fun core(range: IntRange): IntRange? {
+        val token = current.substring(range)
+        val start = token.indexOfFirst { it.isLetterOrDigit() }
+        val end = token.indexOfLast { it.isLetterOrDigit() }
+        if (start < 0) return null
+        return (range.first + start)..(range.first + end)
+    }
+
+    private fun onWordTap(range: IntRange) {
+        if (loading != null) return
+        val word = core(range) ?: return
+        picked = if (picked == range) null else range
+        renderText()
+        if (picked == null) return renderAlts(null)
+        val token = ++reviewToken
+        renderAlts(emptyList(), searching = dev.murmur.cleanup.ClaudeCleanup.active(context))
+        if (!dev.murmur.cleanup.ClaudeCleanup.active(context)) return
+        val text = current; val w = current.substring(word)
+        worker.execute {
+            val found = runCatching { dev.murmur.cleanup.ClaudeCleanup.alternatives(context, text, w) }.getOrDefault(emptyList())
+            main.post { if (token == reviewToken && picked == range) renderAlts(found) }
+        }
+    }
+
+    private fun renderAlts(options: List<String>?, searching: Boolean = false) {
+        val row = review.findViewWithTag<View>("alts")
+        alts.removeAllViews()
+        if (options == null) { row.visibility = View.GONE; return }
+        row.visibility = View.VISIBLE
+        val gap = { v: View -> alts.addView(v, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(36)).apply { marginEnd = dp(8) }) }
+        if (searching) gap(chip(context, "Finding other words…") {})
+        options.forEach { alt -> gap(chip(context, alt) { replacePicked(alt) }) }
+        gap(chip(context, "Remove word") { replacePicked("") })
+    }
+
+    /** Swaps the picked word, keeping its punctuation. A fixed name or brand goes into your dictionary. */
+    private fun replacePicked(with: String) {
+        val range = picked ?: return
+        val word = core(range) ?: return
+        current = if (with.isEmpty()) {
+            (current.substring(0, range.first).trimEnd() + " " + current.substring(range.last + 1).trimStart()).trim()
+        } else current.replaceRange(word, with)
+        if (with.any { it.isUpperCase() }) runCatching { dev.murmur.dictionary.MurmurDictionary.addWord(context, with) }
+        if (rewrite == null) { base = current; rewritten.clear() } else rewritten[rewrite!!] = current
+        picked = null
+        renderText(); renderAlts(null)
+    }
+
+    private fun renderRewrites() {
+        val row = review.findViewWithTag<View>("rewrites")
+        rewrites.removeAllViews()
+        if (!dev.murmur.cleanup.ClaudeCleanup.active(context)) { row.visibility = View.GONE; return }
+        row.visibility = View.VISIBLE
+        val add = { v: View -> rewrites.addView(v, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(36)).apply { marginEnd = dp(8) }) }
+        add(chip(context, "Original", on = rewrite == null) { pickRewrite(null) })
+        dev.murmur.cleanup.ClaudeCleanup.Rewrite.entries.forEach { r ->
+            add(chip(context, if (loading == r) r.label + "…" else r.label, on = rewrite == r || loading == r) { pickRewrite(r) })
+        }
+    }
+
+    private fun pickRewrite(r: dev.murmur.cleanup.ClaudeCleanup.Rewrite?) {
+        if (loading != null || r == rewrite) return
+        picked = null; renderAlts(null)
+        if (r == null) { rewrite = null; current = base; renderText(); renderRewrites(); return }
+        rewritten[r]?.let { rewrite = r; current = it; renderText(); renderRewrites(); return }
+        loading = r
+        renderText(); renderRewrites()
+        val token = ++reviewToken
+        val from = base
+        worker.execute {
+            val out = runCatching { dev.murmur.cleanup.ClaudeCleanup.rewrite(context, from, r) }
+            main.post {
+                if (token != reviewToken) return@post
+                loading = null
+                out.onSuccess { rewritten[r] = it; rewrite = r; current = it }
+                    .onFailure { status.text = "Couldn't rewrite: " + ((it as? dev.murmur.cleanup.ClaudeCleanup.Failure)?.reason ?: "error") }
+                renderText(); renderRewrites()
+            }
+        }
     }
 
     /** The field only gets focus back once this sheet closes, so confirm, close, then type. */
@@ -328,7 +542,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
     private fun targetLine(): CharSequence {
         a11yTargetAtStart = MurmurAccessibilityService.instance?.focusedFieldPackage()
         val target = DictationController.active?.focusedFieldPackage() ?: a11yTargetAtStart
-        styleTarget = target
+        styleTarget = target ?: MurmurAccessibilityService.instance?.activeAppPackage()
         if (target == null) return context.getString(R.string.murmur_assistant_target_clipboard)
         val app = appLabel(target)
         val line = context.getString(R.string.murmur_assistant_target, app)

@@ -39,6 +39,7 @@ object LayoutParser {
             return mutableListOf(mutableListOf()) // no functional keys
         val layoutName = if (layoutType == LayoutType.MAIN) params.mId.subtype.mainLayoutName
             else params.mId.subtype.layouts[layoutType] ?: Settings.readDefaultLayoutName(layoutType, context.prefs())
+                .let { if (layoutType == LayoutType.FUNCTIONAL && it == "functional_keys_tablet" && (params.mId.isSplitLayout || Settings.getValues().mIsPaneKeyboard)) "functional_keys" else it }
         return layoutCache.getOrPut(layoutType.name + layoutName) {
             createCacheLambda(layoutType, layoutName, context)
         }(params).apply {

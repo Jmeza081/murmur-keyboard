@@ -152,6 +152,12 @@ class ClipboardHistoryManager(
 
     fun canRemove(index: Int) = clipboardDao?.isPinned(index) == false
 
+    /** Murmur: Delete in the clip menu, pinned or not. */
+    fun deleteClip(id: Long) {
+        val i = clipboardDao?.getAll()?.indexOfFirst { it.id == id } ?: return
+        if (i >= 0) clipboardDao?.deleteClipAt(i)
+    }
+
     fun removeEntry(index: Int) {
         if (canRemove(index))
             clipboardDao?.deleteClipAt(index)

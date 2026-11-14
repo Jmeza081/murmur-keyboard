@@ -23,13 +23,18 @@ class ClipboardHistoryRecyclerView @JvmOverloads constructor(
     private val touchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
         override fun onMove(recyclerView: RecyclerView, viewHolder: ViewHolder, target: ViewHolder) = false
         override fun getSwipeDirs(recyclerView: RecyclerView, viewHolder: ViewHolder): Int {
-            if (historyManager?.canRemove(viewHolder.absoluteAdapterPosition) == false)
-                return 0 // block swipe for pinned items
+            // Murmur: only recent clips swipe away; headers, the pinned row and pinned clips stay
+            val entry = (adapter as? ClipboardAdapter)?.entryAt(viewHolder.absoluteAdapterPosition)
+            if (entry == null || entry.isPinned) return 0
             return super.getSwipeDirs(recyclerView, viewHolder)
         }
         override fun onSwiped(viewHolder: ViewHolder, dir: Int) {
-            historyManager?.removeEntry(viewHolder.absoluteAdapterPosition)
-            adapter?.notifyItemRemoved(viewHolder.absoluteAdapterPosition)
+            val a = adapter as? ClipboardAdapter ?: return
+            val entry = a.entryAt(viewHolder.absoluteAdapterPosition) ?: return
+            val m = historyManager ?: return
+            val index = (0 until m.getHistorySize()).firstOrNull { m.getHistoryEntry(it)?.id == entry.id } ?: return
+            m.removeEntry(index)
+            a.refresh()
         }
     }).attachToRecyclerView(this)
 

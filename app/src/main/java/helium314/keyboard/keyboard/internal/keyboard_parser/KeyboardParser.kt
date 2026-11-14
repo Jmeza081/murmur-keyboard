@@ -74,6 +74,7 @@ class KeyboardParser(private val params: KeyboardParams, private val context: Co
         } else {
             // rescale height if we have anything but the usual 4 rows
             heightRescale = if (keysInRows.size != 4) 4f / keysInRows.size else 1f
+            dev.murmur.keyboard.NumberPad.applyHeight(params) // Murmur
         }
         if (heightRescale != 1f) {
             keysInRows.forEach { row -> row.forEach { it.mHeight *= heightRescale } }
@@ -93,12 +94,7 @@ class KeyboardParser(private val params: KeyboardParams, private val context: Co
     private fun createRows(baseKeys: MutableList<MutableList<KeyData>>): ArrayList<ArrayList<KeyParams>> {
         // add padding for number layouts in landscape mode (maybe do it some other way later)
         val element = params.mId.element
-        if (element.isNumberLayout && element != KeyboardElement.NUMPAD
-                && context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            params.mLeftPadding = (params.mOccupiedWidth * 0.1f).toInt()
-            params.mRightPadding = (params.mOccupiedWidth * 0.1f).toInt()
-            params.mBaseWidth = params.mOccupiedWidth - params.mLeftPadding - params.mRightPadding
-        }
+        dev.murmur.keyboard.NumberPad.applyWidth(params, context) // Murmur: replaces the 10% landscape padding
 
         val numberRow = getNumberRow()
         addNumberRowOrPopupKeys(baseKeys, numberRow)

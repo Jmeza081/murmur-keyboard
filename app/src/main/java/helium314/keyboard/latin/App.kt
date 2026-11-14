@@ -40,6 +40,7 @@ class App : Application() {
             scope.launch { Settings.init(ctx) },
             // upgrade toolbar on every debug apk start because we may work on adding a new toolbar key
             scope.launch { if (BuildConfig.DEBUG) upgradeToolbarPrefs(prefs()) },
+            scope.launch { helium314.keyboard.latin.utils.murmurEnableSplitToolbarKey(prefs()) },
             scope.launch { transferOldPinnedClips(ctx) }, // todo: remove in a few months, maybe end 2026
             scope.launch { Defaults.initDynamicDefaults(ctx) }
         )

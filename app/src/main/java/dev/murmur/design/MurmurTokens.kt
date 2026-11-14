@@ -17,7 +17,12 @@ object MurmurTokens {
     val ACCENTS = listOf(
         "Cobalt" to Color.parseColor("#2F4BE0"), "Teal" to Color.parseColor("#0B7A75"),
         "Ember" to Color.parseColor("#C2410C"), "Violet" to Color.parseColor("#7C3AED"), "Slate" to Color.parseColor("#4B5563"),
+        // design/clipboard-themes.html: added alongside the first five
+        "Rose" to Color.parseColor("#BE185D"), "Forest" to Color.parseColor("#2F7D4E"),
+        "Plum" to Color.parseColor("#86198F"), "Gold" to Color.parseColor("#A16207"),
     )
+    /** The accents added in the second set, marked "new" on the Theme screen. */
+    val NEW_ACCENTS = setOf("Rose", "Forest", "Plum", "Gold")
     const val PREF_ACCENT = "murmur_accent"
 
     /** The accent picked on the Theme screen, cobalt by default. */
@@ -39,6 +44,19 @@ object MurmurTokens {
         val SHEET = Color.parseColor("#F1F3F7")
         val CHIP = Color.parseColor("#DDE2EA")
         val SECONDARY_TEXT = Color.parseColor("#5B6272")
+    }
+
+    /**
+     * Black (design/clipboard-themes.html): near-black keys and background, each tinted with the accent
+     * (background 6%, keys 13%, function keys 9%). A third mode next to Light and Dark.
+     */
+    object Black {
+        private fun tint(base: Int, accent: Int, t: Float) = androidx.core.graphics.ColorUtils.blendARGB(base, accent, t)
+        fun background(accent: Int) = tint(Color.BLACK, accent, 0.06f)
+        fun key(accent: Int) = tint(Color.parseColor("#0A0A0A"), accent, 0.13f)
+        fun functionKey(accent: Int) = tint(Color.parseColor("#050505"), accent, 0.09f)
+        fun text(accent: Int) = tint(Color.parseColor("#F2F3F6"), accent, 0.06f)
+        fun subtle(accent: Int) = tint(Color.parseColor("#8C92A0"), accent, 0.18f)
     }
 
     object Dark {

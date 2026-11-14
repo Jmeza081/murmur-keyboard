@@ -276,6 +276,7 @@ public class KeyboardParams {
             keyAttr.recycle();
             keyboardAttr.recycle();
         }
-        setTabletExtraKeys = Settings.getInstance().isTablet() && !mId.getSubtype().isCustom();
+        // Murmur: the split keyboard uses the phone layout (no ! ? keys, backspace and enter at the thumb)
+        setTabletExtraKeys = Settings.getInstance().isTablet() && !mId.getSubtype().isCustom() && !mId.isSplitLayout() && !Settings.getValues().mIsPaneKeyboard;
     }
 }

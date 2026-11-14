@@ -28,6 +28,9 @@ class MurmurAccessibilityService : AccessibilityService() {
     /** The app with a focused, editable, non-password field right now, or null. */
     fun focusedFieldPackage(): String? = focusedField()?.packageName?.toString()
 
+    /** The app in front, for its writing style when no field is focused; never Murmur's own sheet. */
+    fun activeAppPackage(): String? = rootInActiveWindow?.packageName?.toString()?.takeIf { it != packageName }
+
     /**
      * Types [text] into the focused field once Murmur's sheet has closed and focus is back in the
      * app. Tries for up to 2 s, then calls [onTimeout].

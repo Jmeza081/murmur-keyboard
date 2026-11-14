@@ -127,7 +127,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private var direction = 1 // 1 if LTR, -1 if RTL
 
     private val toolbarKeyLayoutParams = LinearLayout.LayoutParams(
-        resources.getDimensionPixelSize(R.dimen.config_suggestions_strip_edge_key_width),
+        (48 * resources.displayMetrics.density).toInt(), // Murmur: one 48 dp slot per tool on every screen
         LinearLayout.LayoutParams.MATCH_PARENT
     )
 
@@ -178,7 +178,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         toolbarContainer.doOnNextLayout {
             // set min with of the toolbar so the weight of the toolbar keys actually does something
             // todo: results in requestLayout() improperly called by android.widget.LinearLayout during layout: running second layout pass
-            toolbar.minimumWidth = toolbarContainer.width
+            // Murmur: no minimum width, so the tools stay packed at the start
         }
 
         updateKeys()
@@ -360,6 +360,11 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
 
     override fun onClick(view: View) {
         val tag = view.tag
+        if (tag == ToolbarKey.SPLIT && dev.murmur.keyboard.PaneMode.available(context)) { // Murmur: a menu, not a cycle
+            AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, this, HapticEvent.KEY_PRESS)
+            dev.murmur.keyboard.LayoutMenu.show(view)
+            return
+        }
         if (tag is ToolbarKey) {
             onClickToolbarKey(view) { listener.onCodeInput(it, Constants.SUGGESTION_STRIP_COORDINATE, Constants.SUGGESTION_STRIP_COORDINATE, false) }
             return
@@ -686,7 +691,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         button.setImageResource(R.drawable.ic_murmur_key)
         button.scaleType = android.widget.ImageView.ScaleType.CENTER
         button.contentDescription = context.getString(R.string.murmur_open_1password)
-        button.layoutParams = LinearLayout.LayoutParams(toolbarKeyLayoutParams).apply { weight = 1f }
+        button.layoutParams = LinearLayout.LayoutParams(toolbarKeyLayoutParams)
         colors.setColor(button, ColorType.TOOL_BAR_KEY)
         colors.setBackground(button, ColorType.STRIP_BACKGROUND)
         button.setOnClickListener {
@@ -702,7 +707,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         button.setImageResource(R.drawable.ic_murmur_snippet)
         button.scaleType = android.widget.ImageView.ScaleType.CENTER
         button.contentDescription = "Snippets"
-        button.layoutParams = LinearLayout.LayoutParams(toolbarKeyLayoutParams).apply { weight = 1f }
+        button.layoutParams = LinearLayout.LayoutParams(toolbarKeyLayoutParams)
         colors.setColor(button, ColorType.TOOL_BAR_KEY)
         colors.setBackground(button, ColorType.STRIP_BACKGROUND)
         button.setOnClickListener {
@@ -718,7 +723,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         button.setImageResource(R.drawable.ic_murmur_height)
         button.scaleType = android.widget.ImageView.ScaleType.CENTER
         button.contentDescription = context.getString(R.string.murmur_key_height)
-        button.layoutParams = LinearLayout.LayoutParams(toolbarKeyLayoutParams).apply { weight = 1f }
+        button.layoutParams = LinearLayout.LayoutParams(toolbarKeyLayoutParams)
         colors.setColor(button, ColorType.TOOL_BAR_KEY)
         colors.setBackground(button, ColorType.STRIP_BACKGROUND)
         button.setOnClickListener {
@@ -749,7 +754,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         val density = resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
         val prefs = context.prefs()
-        var index = dev.murmur.settings.KeyHeight.nearest(Settings.getValues().mKeyboardHeightScale)
+        var index = dev.murmur.settings.KeyHeight.readIndex(prefs, resources)
         val ink = colors.get(ColorType.KEY_TEXT)
         val sub = colors.get(ColorType.KEY_HINT_TEXT)
         val fn = colors.get(ColorType.FUNCTIONAL_KEY_BACKGROUND)
@@ -802,7 +807,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             if (next == index) return
             index = next
             AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, this, HapticEvent.KEY_PRESS)
-            dev.murmur.settings.KeyHeight.write(prefs, index) // the settings listener reloads values
+            dev.murmur.settings.KeyHeight.write(prefs, resources, index) // the settings listener reloads values
             render()
             post { KeyboardSwitcher.getInstance().reloadKeyboard() }
         }
@@ -829,7 +834,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private fun setupKey(view: ImageButton, colors: Colors) {
         view.setOnClickListener(this)
         view.setOnLongClickListener(this)
-        (view.layoutParams as LinearLayout.LayoutParams).weight = 1f
+        (view.layoutParams as LinearLayout.LayoutParams).weight = 0f // Murmur: fixed slots packed to the start, not spread
         colors.setColor(view, ColorType.TOOL_BAR_KEY)
         colors.setBackground(view, ColorType.STRIP_BACKGROUND)
     }

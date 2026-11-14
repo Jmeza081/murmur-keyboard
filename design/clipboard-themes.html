@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Murmur: clipboard states and new themes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600;8..144,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --board: #EDEFF3; --panel: #FFFFFF; --ink: #15171D; --muted: #565D6D; --line: #D3D8E1; --accent: #2F4BE0;
+  --font-display: "Bricolage Grotesque", "Roboto Flex", system-ui, sans-serif;
+  --font-body: "Roboto Flex", Roboto, system-ui, sans-serif;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (prefers-color-scheme: dark) {
+  :root { --board: #0E1014; --panel: #171A20; --ink: #E9EBF0; --muted: #A2A9B8; --line: #2A2F38; --accent: #8EA0FF; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--board); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 48px 32px 96px; display: grid; gap: 72px; }
+h1 { font-family: var(--font-display); font-size: 48px; line-height: 1.02; letter-spacing: -0.02em; margin: 0 0 12px; }
+h2 { font-family: var(--font-display); font-size: 30px; letter-spacing: -0.015em; margin: 0; line-height: 1.1; }
+.lede { color: var(--muted); max-width: 64ch; margin: 0; font-size: 17px; }
+section { display: grid; gap: 28px; }
+.sec-head { border-top: 1px solid var(--line); padding-top: 20px; display: grid; gap: 8px; }
+.sec-head p { margin: 0; color: var(--muted); max-width: 70ch; }
+.row { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+figure { margin: 0; display: grid; gap: 12px; width: 340px; }
+figcaption b { display: block; font-size: 15px; }
+figcaption span { color: var(--muted); font-size: 13.5px; }
+.tag { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 8px; border-radius: 6px; background: var(--line); color: var(--muted); margin-bottom: 4px; }
+.tag.new { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+
+/* Keyboard frame */
+.kb { --k-bg: #E8EBF1; --k-key: #FFFFFF; --k-fn: #CFD5E0; --k-ink: #191B21; --k-sub: #6B7282; --k-acc: #2F4BE0; --k-shadow: 0 1px 0 rgba(0,0,0,0.12);
+  background: var(--k-bg); color: var(--k-ink); border-radius: 22px; overflow: hidden; width: 340px; box-shadow: 0 10px 30px rgba(10,14,30,0.14), 0 0 0 1px rgba(0,0,0,0.04); font-size: 14px; }
+.kb.dark { --k-bg: #121419; --k-key: #2A2E37; --k-fn: #1E2129; --k-ink: #ECEEF3; --k-sub: #9AA1B0; --k-shadow: none; }
+.strip { height: 48px; display: flex; align-items: center; gap: 6px; padding: 0 8px; }
+.chip { height: 32px; padding: 0 12px; border-radius: 16px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; background: var(--k-fn); color: var(--k-ink); white-space: nowrap; }
+.chip.on { background: var(--k-ink); color: var(--k-bg); }
+.chip.ghost { background: transparent; color: var(--k-sub); font-weight: 600; }
+.chip.dim { opacity: 0.4; }
+.sp { flex: 1; }
+.panel { height: 262px; padding: 2px 8px 10px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+.bar { height: 16px; display: grid; place-items: center; }
+.bar::before { content: ""; width: 100px; height: 4px; border-radius: 2px; background: var(--k-ink); opacity: 0.3; }
+svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+svg.i.xs { width: 13px; height: 13px; }
+svg.i.sm { width: 15px; height: 15px; }
+
+/* Current empty state */
+.old-empty { flex: 1; display: grid; place-items: center; text-align: center; color: var(--k-sub); font-size: 13.5px; padding: 0 24px; }
+
+/* New empty state */
+.empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; padding: 0 18px; }
+.art { position: relative; width: 84px; height: 64px; margin-bottom: 6px; }
+.art .card { position: absolute; width: 56px; height: 40px; border-radius: 9px; background: var(--k-key); box-shadow: var(--k-shadow); }
+.art .c1 { left: 6px; top: 16px; transform: rotate(-8deg); opacity: 0.55; }
+.art .c2 { left: 22px; top: 8px; transform: rotate(5deg); display: grid; align-content: center; gap: 5px; padding: 0 9px; border: 1.5px solid color-mix(in srgb, var(--k-acc) 55%, transparent); }
+.art .c2 i { display: block; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--k-acc) 45%, var(--k-fn)); }
+.art .c2 i:nth-child(2) { width: 60%; }
+.art .dot { position: absolute; right: 2px; top: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--k-acc); color: #fff; display: grid; place-items: center; }
+.empty b { font-size: 16px; }
+.empty .sub { color: var(--k-sub); font-size: 13px; line-height: 1.4; max-width: 30ch; }
+.tips { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; justify-content: center; }
+.tip { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 13px; background: var(--k-fn); color: var(--k-sub); font-size: 11.5px; font-weight: 500; }
+.tip svg { color: var(--k-acc); }
+.snips { width: 100%; border-top: 1px solid color-mix(in srgb, var(--k-ink) 10%, transparent); padding-top: 8px; display: grid; gap: 6px; }
+.lbl { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--k-sub); font-weight: 600; display: flex; align-items: center; gap: 6px; padding: 0 2px; }
+.lbl .n { font-weight: 500; letter-spacing: 0; text-transform: none; opacity: 0.8; }
+.lbl .end { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--k-acc); }
+.snip-row { display: flex; gap: 6px; overflow: hidden; }
+.snip { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 17px; background: var(--k-key); box-shadow: var(--k-shadow); font-size: 12.5px; font-weight: 500; white-space: nowrap; }
+.snip svg { color: var(--k-acc); }
+
+/* With clips */
+.list { flex: 1; overflow: hidden; display: grid; gap: 8px; align-content: start; }
+.pins { display: flex; gap: 6px; overflow: hidden; }
+.pinc { flex: none; max-width: 150px; height: 40px; padding: 0 12px 0 10px; border-radius: 12px; background: color-mix(in srgb, var(--k-acc) 14%, var(--k-key)); display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 500; }
+.pinc span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pinc svg { color: var(--k-acc); }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.clip { position: relative; background: var(--k-key); border-radius: 12px; box-shadow: var(--k-shadow); padding: 9px 10px 8px; display: flex; flex-direction: column; gap: 6px; min-height: 74px; font-size: 12.5px; line-height: 1.35; }
+.clip .t { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+.clip .m { margin-top: auto; display: flex; align-items: center; gap: 5px; font-size: 10.5px; color: var(--k-sub); }
+.clip .k { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 6px; background: color-mix(in srgb, var(--k-acc) 16%, transparent); color: var(--k-acc); }
+.clip.fresh { outline: 1.5px solid var(--k-acc); outline-offset: -1.5px; }
+.clip.fresh .new { position: absolute; top: 7px; right: 8px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em; color: var(--k-acc); text-transform: uppercase; }
+.clip.code .t { font-family: ui-monospace, Menlo, monospace; font-size: 15px; letter-spacing: 0.12em; font-weight: 600; }
+.clip.img { padding: 0; overflow: hidden; }
+.clip.img .ph { flex: 1; min-height: 46px; background: linear-gradient(135deg, #F5B48A, #C2410C 55%, #5B2A86); }
+.clip.img .m { padding: 0 10px 7px; }
+.ring { width: 11px; height: 11px; border-radius: 50%; background: conic-gradient(var(--k-sub) var(--p), color-mix(in srgb, var(--k-sub) 25%, transparent) 0); }
+
+/* Long-press actions */
+.acts { position: absolute; right: 6px; top: 96px; display: flex; gap: 2px; padding: 4px; border-radius: 16px; background: var(--k-ink); color: var(--k-bg); box-shadow: 0 10px 24px rgba(0,0,0,0.25); z-index: 2; }
+.acts span { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 10px; font-size: 10.5px; font-weight: 600; border-radius: 12px; }
+.acts span:first-child { background: color-mix(in srgb, var(--k-bg) 16%, transparent); }
+.scrim { position: relative; }
+.scrim .grid .clip:not(.held) { opacity: 0.35; }
+.held { transform: scale(1.03); box-shadow: 0 0 0 2px var(--k-acc), 0 8px 18px rgba(0,0,0,0.18); }
+
+/* Keyboard for theme previews */
+.keys { padding: 4px 4px 2px; display: grid; gap: 7px; }
+.r { display: flex; gap: 5px; justify-content: center; }
+.key { flex: 1; height: 40px; border-radius: 8px; background: var(--k-key); box-shadow: var(--k-shadow); display: grid; place-items: center; font-size: 17px; }
+.key.fn { background: var(--k-fn); font-size: 13px; flex: 1.5; }
+.key.sp { flex: 5; font-size: 12px; color: var(--k-sub); }
+.key.go { background: var(--k-acc); color: #fff; flex: 1.5; }
+.r.half { padding: 0 5%; }
+.mic { margin-left: auto; width: 52px; height: 36px; border-radius: 18px; background: var(--k-acc); color: #fff; display: grid; place-items: center; }
+.sug { flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; font-size: 14px; }
+.sug .mid { font-weight: 700; }
+.kb.mini { width: 300px; }
+.kb.mini .key { height: 34px; font-size: 15px; }
+
+.themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 36px 28px; }
+.theme h3 { font-family: var(--font-display); font-size: 22px; margin: 0; display: flex; align-items: center; gap: 10px; }
+.theme h3 i { width: 18px; height: 18px; border-radius: 50%; display: inline-block; }
+.theme .hex { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--muted); }
+.theme .stack { display: grid; gap: 14px; margin-top: 12px; }
+.mode { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 6px; }
+.blk { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 28px; }
+.sw { display: grid; grid-template-columns: repeat(9, 1fr); gap: 10px; }
+.sw div { display: grid; gap: 6px; font-size: 12px; color: var(--muted); text-align: center; }
+.sw .chips { height: 72px; border-radius: 14px; display: grid; grid-template-rows: 1fr 1fr; padding: 8px; gap: 6px; }
+.sw .chips i { border-radius: 6px; display: block; }
+.sw .chips i.go { border-radius: 6px; }
+@media (max-width: 760px) { .sw { grid-template-columns: repeat(3, 1fr); } }
+
+/* Theme picker */
+.picker { background: var(--panel); border: 1px solid var(--line); border-radius: 22px; width: 340px; padding: 18px; display: grid; gap: 14px; }
+.picker .h { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--board); border-radius: 14px; padding: 4px; gap: 4px; }
+.seg span { height: 38px; border-radius: 10px; display: grid; place-items: center; font-size: 13.5px; font-weight: 600; color: var(--muted); }
+.seg span.on { background: var(--panel); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.dots { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px 8px; }
+.dots div { display: grid; justify-items: center; gap: 4px; font-size: 11.5px; color: var(--muted); }
+.dots b { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 400; }
+.dots .sel b { box-shadow: 0 0 0 3px var(--panel), 0 0 0 5px currentColor; }
+.dots .nw { font-weight: 600; color: var(--ink); }
+.note { font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="clip" viewBox="0 0 24 24"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></symbol>
+  <symbol id="pin" viewBox="0 0 24 24"><path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></symbol>
+  <symbol id="clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+  <symbol id="link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1"/><path d="M14 10a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1"/></symbol>
+  <symbol id="map" viewBox="0 0 24 24"><path d="M12 21s7-6 7-12a7 7 0 0 0-14 0c0 6 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></symbol>
+  <symbol id="key" viewBox="0 0 24 24"><path d="M4 12h3M10 12h.01M14 12h.01M18 12h2"/><rect x="2" y="7" width="20" height="10" rx="3"/></symbol>
+  <symbol id="text" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h9"/></symbol>
+  <symbol id="img" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></symbol>
+  <symbol id="at" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></symbol>
+  <symbol id="phone" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></symbol>
+  <symbol id="copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+  <symbol id="enter" viewBox="0 0 24 24"><path d="M20 5v7a3 3 0 0 1-3 3H5M9 11l-4 4 4 4"/></symbol>
+  <symbol id="shift" viewBox="0 0 24 24"><path d="M12 4l8 8h-5v7H9v-7H4z"/></symbol>
+  <symbol id="grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></symbol>
+  <symbol id="save" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header>
+    <h1>Clipboard states and new themes</h1>
+    <p class="lede">The clipboard gets a real empty state that points to your snippets, and smarter cards once you've copied things. Four new accents join the five you have, and every accent gets a third mode, Black, where the keys and background stay near-black but take on a hint of the accent.</p>
+  </header>
+
+  <!-- CLIPBOARD -->
+  <section>
+    <div class="sec-head">
+      <h2>Clipboard</h2>
+      <p>Today the empty panel is two lines of grey text. The new one explains itself in one glance and fills the space with your snippets, so the panel is useful even before you copy anything.</p>
+    </div>
+    <div class="row" id="clipRow"></div>
+  </section>
+
+  <!-- THEMES -->
+  <section>
+    <div class="sec-head">
+      <h2>Four new accents</h2>
+      <p>Each one keeps at least 4.5:1 contrast with the white Enter and mic icons, like the current five. Shown in Light, Dark and the new Black mode.</p>
+    </div>
+    <div class="themes" id="themeGrid"></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Black mode, every accent</h2>
+      <p>Black is a third mode next to Light and Dark, so it works with all nine accents. The background is about 6% accent over pure black, keys about 13%, and function keys about 9%. It stays dark enough for the Fold's OLED to save power, and each accent still reads at a glance.</p>
+    </div>
+    <div class="sw" id="swatches"></div>
+    <div class="blk" id="blackRow"></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Theme screen</h2>
+      <p>The mode picker gains Black. The accent row grows to nine, with the new ones marked until you've opened the screen once.</p>
+    </div>
+    <div class="row" id="pickRow"></div>
+  </section>
+</div>
+
+<script>
+var I = function (id, c) { return '<svg class="i ' + (c || '') + '"><use href="#' + id + '"/></svg>'; };
+var COBALT = '#2F4BE0';
+
+function mix(a, b, t) {
+  var p = function (h) { h = h.replace('#', ''); return [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16); }); };
+  var x = p(a), y = p(b);
+  return '#' + x.map(function (v, i) { return Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0'); }).join('');
+}
+function vars(mode, acc) {
+  if (mode === 'light') return '--k-acc:' + acc;
+  if (mode === 'dark') return '--k-acc:' + acc;
+  // Black: near-black tinted with the accent
+  return '--k-acc:' + mix(acc, '#FFFFFF', 0.12) + ';--k-bg:' + mix('#000000', acc, 0.06) + ';--k-key:' + mix('#0A0A0A', acc, 0.13) +
+    ';--k-fn:' + mix('#050505', acc, 0.09) + ';--k-ink:' + mix('#F2F3F6', acc, 0.06) + ';--k-sub:' + mix('#8C92A0', acc, 0.18) + ';--k-shadow:none';
+}
+function frame(mode, acc, inner, extra) {
+  return '<div class="kb ' + (mode !== 'light' ? 'dark ' : '') + (extra || '') + '" style="' + vars(mode, acc) + '">' + inner + '</div>';
+}
+
+/* ---------- Clipboard ---------- */
+function clipStrip(dimClear) {
+  return '<div class="strip"><span class="chip">ABC</span><span class="chip on">' + I('clip', 'sm') + 'Clipboard</span><span class="sp"></span><span class="chip ghost' + (dimClear ? ' dim' : '') + '">' + I('trash', 'sm') + 'Clear</span></div>';
+}
+var snippets = '<div class="snips"><div class="lbl">' + I('save', 'xs') + 'Your snippets<span class="end">Edit</span></div><div class="snip-row">' +
+  '<span class="snip">' + I('at', 'sm') + 'Work email</span><span class="snip">' + I('map', 'sm') + 'Home</span><span class="snip">' + I('phone', 'sm') + 'Phone</span></div></div>';
+var emptyNew = clipStrip(true) + '<div class="panel"><div class="empty">' +
+  '<div class="art"><span class="card c1"></span><span class="card c2"><i></i><i></i></span><span class="dot">' + I('copy', 'xs') + '</span></div>' +
+  '<b>Nothing copied yet</b><span class="sub">Copy text or an image in any app and it lands here.</span>' +
+  '<div class="tips"><span class="tip">' + I('pin', 'xs') + 'Hold to pin</span><span class="tip">' + I('clock', 'xs') + 'Others clear in 1 hour</span></div>' +
+  '</div>' + snippets + '</div><div class="bar"></div>';
+var emptyNoSnips = clipStrip(true) + '<div class="panel"><div class="empty">' +
+  '<div class="art"><span class="card c1"></span><span class="card c2"><i></i><i></i></span><span class="dot">' + I('copy', 'xs') + '</span></div>' +
+  '<b>Nothing copied yet</b><span class="sub">Copy text or an image in any app and it lands here.</span>' +
+  '<div class="tips"><span class="tip">' + I('pin', 'xs') + 'Hold to pin</span><span class="tip">' + I('clock', 'xs') + 'Others clear in 1 hour</span></div>' +
+  '<div class="tips" style="margin-top: 14px"><span class="snip">' + I('plus', 'sm') + 'Add a snippet</span></div>' +
+  '</div></div><div class="bar"></div>';
+var emptyOld = '<div class="strip"><span class="chip">ABC</span><span class="chip on">Clipboard</span><span class="sp"></span><span class="chip ghost">' + I('trash', 'sm') + '</span></div>' +
+  '<div class="panel"><div class="old-empty">Copied text shows up here.<br>Long-press a clip to pin it. Others clear after 1 hour.</div></div><div class="bar"></div>';
+
+function ring(p) { return '<span class="ring" style="--p:' + p + '%"></span>'; }
+var pins = '<div class="lbl">' + I('pin', 'xs') + 'Pinned <span class="n">2</span></div><div class="pins">' +
+  '<span class="pinc">' + I('map', 'sm') + '<span>1450 Valencia St, Apt 4B</span></span><span class="pinc">' + I('key', 'sm') + '<span>Greenhouse_5G</span></span></div>';
+var recent = '<div class="lbl">' + I('clock', 'xs') + 'Recent <span class="n">4</span></div><div class="grid">' +
+  '<div class="clip fresh code"><span class="new">Just now</span><span class="t">482 913</span><span class="m"><span class="k">' + I('key', 'xs') + '</span>Code · tap to paste</span></div>' +
+  '<div class="clip"><span class="t">github.com/k2-fsa/sherpa-onnx</span><span class="m"><span class="k">' + I('link', 'xs') + '</span>Link · 2 min' + '<span class="sp"></span>' + ring(97) + '</span></div>' +
+  '<div class="clip img"><span class="ph"></span><span class="m"><span class="k">' + I('img', 'xs') + '</span>Image · 12 min<span class="sp"></span>' + ring(80) + '</span></div>' +
+  '<div class="clip"><span class="t">Sounds good, I’ll bring the lemons and coffee beans tomorrow.</span><span class="m"><span class="k">' + I('text', 'xs') + '</span>Text · 41 min<span class="sp"></span>' + ring(32) + '</span></div>' +
+  '</div>';
+var withClips = clipStrip(false) + '<div class="panel"><div class="list">' + pins + recent + '</div></div><div class="bar"></div>';
+var held = clipStrip(false) + '<div class="panel scrim"><div class="list">' + pins.replace('class="pins"', 'class="pins" style="opacity:.35"') +
+  recent.replace('class="clip"><span class="t">github', 'class="clip held"><span class="t">github') + '</div>' +
+  '<div class="acts"><span>' + I('pin', 'sm') + 'Pin</span><span>' + I('copy', 'sm') + 'Copy</span><span>' + I('save', 'sm') + 'Snippet</span><span>' + I('trash', 'sm') + 'Delete</span></div></div><div class="bar"></div>';
+
+var clipFigs = [
+  ['Current', 'Empty, today', 'Grey text only. Says what to do, but the panel feels broken at a glance.', emptyOld, 'light'],
+  ['New', 'Empty, with snippets', 'A small illustration, one headline, two tips as chips. Snippets sit below, so one tap still types something useful.', emptyNew, 'light'],
+  ['New', 'Empty, no snippets yet', 'The snippet row becomes one "Add a snippet" button that opens the snippet editor.', emptyNoSnips, 'dark'],
+  ['New', 'With clips', 'Pinned clips shrink to one scrolling row of chips. Recent clips show their type (code, link, image, text), and the newest one is outlined. A small ring counts down to the 1-hour clear.', withClips, 'light'],
+  ['New', 'With clips, dark', 'Same layout in Dark. Codes use a wide monospace so 6 digits read at a glance.', withClips, 'dark'],
+  ['New', 'Hold a clip', 'Holding a clip lifts it and shows Pin, Copy, Save as snippet and Delete. Today holding only toggles the pin.', held, 'light'],
+];
+document.getElementById('clipRow').innerHTML = clipFigs.map(function (f) {
+  return '<figure>' + frame(f[4], COBALT, f[3]) + '<figcaption><span class="tag' + (f[0] === 'New' ? ' new' : '') + '">' + f[0] + '</span><b>' + f[1] + '</b><span>' + f[2] + '</span></figcaption></figure>';
+}).join('');
+
+/* ---------- Themes ---------- */
+function keyboard(mini) {
+  var row = function (s) { return '<div class="r">' + s.split('').map(function (c) { return '<span class="key">' + c + '</span>'; }).join('') + '</div>'; };
+  return '<div class="strip"><span class="chip ghost" style="padding:0 6px">' + I('grid', 'sm') + '</span><div class="sug"><span>the</span><span class="mid">and</span><span>for</span></div><span class="mic">' + I('mic', 'sm') + '</span></div>' +
+    '<div class="keys">' + row('qwertyuiop') + row('asdfghjkl').replace('class="r"', 'class="r half"') +
+    '<div class="r"><span class="key fn">' + I('shift', 'sm') + '</span>' + 'zxcvbnm'.split('').map(function (c) { return '<span class="key">' + c + '</span>'; }).join('') + '<span class="key fn">⌫</span></div>' +
+    '<div class="r"><span class="key fn">?123</span><span class="key">,</span><span class="key sp">space</span><span class="key">.</span><span class="key go">' + I('enter', 'sm') + '</span></div></div><div class="bar"></div>';
+}
+var NEW = [
+  ['Rose', '#BE185D', 'Warm pink-red. 6.0:1 on white.'],
+  ['Forest', '#2F7D4E', 'Deep green, calmer than Teal. 5.1:1.'],
+  ['Plum', '#86198F', 'Purple with more red than Violet. 8.2:1.'],
+  ['Gold', '#A16207', 'Amber that still holds white text. 4.9:1.'],
+];
+document.getElementById('themeGrid').innerHTML = NEW.map(function (t) {
+  return '<div class="theme"><h3><i style="background:' + t[1] + '"></i>' + t[0] + ' <span class="hex">' + t[1] + '</span></h3><span class="note">' + t[2] + '</span><div class="stack">' +
+    ['light', 'dark', 'black'].map(function (m) {
+      return '<div><div class="mode">' + m + '</div>' + frame(m, t[1], keyboard(true), 'mini') + '</div>';
+    }).join('') + '</div></div>';
+}).join('');
+
+var ALL = [['Cobalt', '#2F4BE0'], ['Teal', '#0B7A75'], ['Ember', '#C2410C'], ['Violet', '#7C3AED'], ['Slate', '#4B5563']].concat(NEW.map(function (t) { return [t[0], t[1], 1]; }));
+document.getElementById('swatches').innerHTML = ALL.map(function (a) {
+  return '<div><span class="chips" style="background:' + mix('#000000', a[1], 0.06) + '"><i style="background:' + mix('#0A0A0A', a[1], 0.13) + '"></i><i style="background:' + mix('#FFFFFF', a[1], 0.88) + '"></i></span>' + a[0] + (a[2] ? ' •' : '') + '</div>';
+}).join('');
+document.getElementById('blackRow').innerHTML = [['Cobalt', '#2F4BE0'], ['Rose', '#BE185D'], ['Forest', '#2F7D4E']].map(function (a) {
+  return '<figure>' + frame('black', a[1], withClips) + '<figcaption><b>Black · ' + a[0] + ', clipboard</b><span>The new clipboard in Black mode.</span></figcaption></figure>';
+}).join('');
+
+var dots = ALL.map(function (a, i) {
+  return '<div class="' + (a[0] === 'Rose' ? 'sel' : '') + '" style="color:' + a[1] + '"><b style="background:' + a[1] + '">' + (a[0] === 'Rose' ? '✓' : '') + '</b><span class="' + (a[2] ? 'nw' : '') + '">' + a[0] + '</span></div>';
+}).join('');
+document.getElementById('pickRow').innerHTML =
+  '<div class="picker"><div class="h">Theme</div><div class="seg"><span>Light</span><span>Dark</span><span class="on">Black</span></div>' +
+  '<div class="note">Accent</div><div class="dots">' + dots + '</div></div>' +
+  '<figure>' + frame('black', '#BE185D', keyboard()) + '<figcaption><b>Black · Rose</b><span>What the picker on the left gives you.</span></figcaption></figure>' +
+  '<figure>' + frame('black', '#A16207', keyboard()) + '<figcaption><b>Black · Gold</b><span>Gold is the warmest of the set; on black it reads like brass.</span></figcaption></figure>';
+</script>
+</body>
+</html>

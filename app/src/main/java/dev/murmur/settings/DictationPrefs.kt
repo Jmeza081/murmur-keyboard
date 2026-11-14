@@ -14,6 +14,18 @@ object DictationPrefs {
 
     private const val TELEPROMPTER = "live_words_teleprompter"
     /** Live words (ElevenLabs only) shown as two big lines over a dimmed waveform; off shows the waveform alone. */
+    // Power button: stop after cleanup so you can read, fix a word or rewrite before it's inserted
+    private const val REVIEW = "review_before_insert"
+    const val REVIEW_LONG_WORDS = 15
+    enum class Review(val label: String) { NEVER("Never"), LONG("Long messages"), ALWAYS("Always") }
+    fun review(context: Context) = runCatching { Review.valueOf(prefs(context).getString(REVIEW, Review.NEVER.name)!!) }.getOrDefault(Review.NEVER)
+    fun setReview(context: Context, r: Review) = prefs(context).edit().putString(REVIEW, r.name).apply()
+    fun needsReview(context: Context, text: String) = when (review(context)) {
+        Review.NEVER -> false
+        Review.ALWAYS -> true
+        Review.LONG -> text.trim().split(Regex("\\s+")).size > REVIEW_LONG_WORDS
+    }
+
     fun teleprompter(context: Context) = prefs(context).getBoolean(TELEPROMPTER, true)
     fun setTeleprompter(context: Context, on: Boolean) = prefs(context).edit().putBoolean(TELEPROMPTER, on).apply()
 

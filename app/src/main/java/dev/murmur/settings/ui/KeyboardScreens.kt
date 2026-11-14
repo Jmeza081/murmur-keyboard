@@ -235,20 +235,38 @@ fun EmojiScreen(onBack: () -> Unit) {
 
 // ---------------------------------------------------------------- Tablet layout
 
+private val INNER = listOf("full" to "Full", "split" to "Split", "half" to "Half screen")
 private val GAPS = listOf(0.6f to "Narrow", 1.0f to "Medium", 1.6f to "Wide")
 
 @Composable
 fun TabletScreen(onBack: () -> Unit) {
     val prefs = LocalContext.current.prefs()
     val gapKey = { i: Int -> createPrefKeyForBooleanSettings(Settings.PREF_SPLIT_SPACER_SCALE_PREFIX, i, 2) }
+    var inner by remember { mutableStateOf(INNER.first { it.first == when {
+        prefs.getBoolean(dev.murmur.keyboard.PaneMode.PREF, false) -> "half"
+        prefs.getBoolean(Settings.PREF_ENABLE_SPLIT_KEYBOARD_LANDSCAPE, Defaults.PREF_ENABLE_SPLIT_KEYBOARD)
+            || prefs.getBoolean(Settings.PREF_ENABLE_SPLIT_KEYBOARD, Defaults.PREF_ENABLE_SPLIT_KEYBOARD) -> "split"
+        else -> "full" } }) }
     var gap by remember { mutableStateOf(GAPS.minBy { kotlin.math.abs(it.first - prefs.getFloat(gapKey(1), 1f)) }) }
     ScreenFrame("Tablet layout", onBack) {
+        GroupLabel("Open inner screen")
         Group {
-            PrefSwitch(prefs, Settings.PREF_ENABLE_SPLIT_KEYBOARD_LANDSCAPE, Defaults.PREF_ENABLE_SPLIT_KEYBOARD, "Split in landscape",
-                "Two thumb zones when the phone is sideways", reload = true)
-            GroupDivider()
-            PrefSwitch(prefs, Settings.PREF_ENABLE_SPLIT_KEYBOARD, Defaults.PREF_ENABLE_SPLIT_KEYBOARD, "Split in portrait",
-                "Useful on the open inner screen", reload = true)
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Segmented(INNER, inner, { it.second }) { o ->
+                    inner = o
+                    prefs.edit {
+                        putBoolean(Settings.PREF_ENABLE_SPLIT_KEYBOARD, o.first == "split")
+                        putBoolean(Settings.PREF_ENABLE_SPLIT_KEYBOARD_LANDSCAPE, o.first == "split")
+                        putBoolean(dev.murmur.keyboard.PaneMode.PREF, o.first == "half")
+                    }
+                    KeyboardSwitcher.getInstance().setThemeNeedsReload()
+                }
+                Hint(when (inner.first) {
+                    "split" -> "Two halves under your thumbs, with G and V on both sides."
+                    "half" -> "A full keyboard on one side of the fold; the other side stays clear. It moves under the field you type in, or drag the grip below it."
+                    else -> "One keyboard across the whole screen."
+                })
+            }
         }
         GroupLabel("Gap between halves")
         Group {

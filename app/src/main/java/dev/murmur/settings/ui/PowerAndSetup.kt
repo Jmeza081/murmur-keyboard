@@ -23,6 +23,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,6 +65,19 @@ fun PowerScreen(onBack: () -> Unit) {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                     Hint("Hold the power button to open the sheet, then speak. It finishes when you pause for $silence seconds, " +
                         "or when you tap Send. Android doesn't tell apps when the button is let go, so it can't stop on release.")
+                }
+            }
+            GroupLabel("Before it's inserted")
+            Group {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    var review by remember { mutableStateOf(DictationPrefs.review(ctx)) }
+                    Text("Review before inserting", fontFamily = RobotoFlex, fontSize = 16.sp, color = LocalSettingsColors.current.ink)
+                    Segmented(DictationPrefs.Review.entries, review, { it.label }) { r -> review = r; DictationPrefs.setReview(ctx, r) }
+                    Hint(when (review) {
+                        DictationPrefs.Review.NEVER -> "Murmur types the text in as soon as cleanup is done."
+                        DictationPrefs.Review.LONG -> "Stops for dictations over ${DictationPrefs.REVIEW_LONG_WORDS} words so you can fix a word or rewrite it. Quick replies go straight in."
+                        DictationPrefs.Review.ALWAYS -> "Stops every time so you can fix a word or rewrite it before inserting."
+                    } + if (!dev.murmur.cleanup.ClaudeCleanup.active(ctx)) " Fixing words and rewrites need your Claude key." else "")
                 }
             }
             GroupLabel("Where text goes")

@@ -30,10 +30,9 @@ object FloatingKeyboardUtils {
         val lp = view?.layoutParams as? ViewGroup.MarginLayoutParams ?: return
         view.getWindowVisibleDisplayFrame(windowFrame)
         // On Android 15+ (edge-to-edge) getWindowVisibleDisplayFrame includes the area behind the navbar, so we remove it here
+        // Murmur: also clear the keyboard's own switch / hide buttons, which aren't always reported as nav bar insets
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            val navBarBottom = ViewCompat.getRootWindowInsets(view)
-                ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0
-            windowFrame.bottom -= navBarBottom
+            windowFrame.bottom -= dev.murmur.design.SafeArea.bottom(view)
         }
         extraHeight = getSuggestionStripHeight(view.resources) + getFloatingHandleHeight(view.resources)
         val (x, y) = readPosition(
@@ -44,6 +43,8 @@ object FloatingKeyboardUtils {
         if (DebugFlags.DEBUG_ENABLED)
             Log.d(TAG, "place floating view at $x, $y, width ${Settings.getValues().mFloatingWidth}, height $actualFloatingHeight")
         ViewLayoutUtils.placeViewAt(view, x, y, Settings.getValues().mFloatingWidth, ViewGroup.LayoutParams.WRAP_CONTENT)
+        if (Settings.getValues().mIsPaneKeyboard) { dev.murmur.keyboard.PaneMode.setupHandle(view); return } // Murmur
+        dev.murmur.keyboard.PaneMode.hideButtons(view)
         if (view.findViewById<View>(R.id.float_handle_container)?.isVisible == true)
             return
         view.findViewById<View>(R.id.float_handle_container)?.isVisible = true
@@ -62,6 +63,7 @@ object FloatingKeyboardUtils {
         lp.leftMargin = 0
         lp.topMargin = 0
         view.findViewById<View>(R.id.float_handle_container)?.isGone = true
+        dev.murmur.keyboard.PaneMode.hideButtons(view)
     }
 
     @JvmStatic
@@ -69,6 +71,7 @@ object FloatingKeyboardUtils {
 
     @JvmStatic
     fun readPosition(context: Context, maxX: Int, maxY: Int): Pair<Int, Int> {
+        if (Settings.getValues().mIsPaneKeyboard) return dev.murmur.keyboard.PaneMode.position(context, maxX, maxY) // Murmur
         // got a crash report where max was < 0 -> probably some crap like visibleDisplayFrame size 0
         val maxX = maxX.coerceAtLeast(0)
         val maxY = maxY.coerceAtLeast(0)

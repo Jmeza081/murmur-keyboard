@@ -19,7 +19,11 @@ import helium314.keyboard.latin.R
  * (design/dictation-layout.html). Shows the style for the app you're dictating into; tap for a menu of
  * Casual, Neutral and Polished. The pick is remembered for that app.
  */
-class StyleChip(context: Context, private val accent: Int, private val surface: Int, private val target: () -> String?) : TextView(context) {
+class StyleChip(
+    context: Context, private val accent: Int, private val surface: Int, private val target: () -> String?,
+    /** With no app to write into (the power-button sheet over a home screen), show and change the default style. */
+    private val allowDefault: Boolean = false,
+) : TextView(context) {
     private val d = resources.displayMetrics.density
     private val light = ColorUtils.calculateLuminance(surface) > 0.5
     private val ink = if (light) 0xFF191B21.toInt() else 0xFFECEEF3.toInt()
@@ -46,9 +50,9 @@ class StyleChip(context: Context, private val accent: Int, private val surface: 
     fun refresh() {
         val pkg = target()
         val on = Cleanup.level(context) != Cleanup.Level.OFF
-        visibility = if (pkg != null && on) VISIBLE else GONE
-        if (pkg == null) return
-        val s = WritingStyle.forApp(context, pkg)
+        visibility = if ((pkg != null || allowDefault) && on) VISIBLE else GONE
+        if (pkg == null && !allowDefault) return
+        val s = if (pkg != null) WritingStyle.forApp(context, pkg) else WritingStyle.default(context)
         text = s.label
         contentDescription = "Writing style ${s.label}. Opens a menu to change it for this app."
     }
@@ -56,10 +60,11 @@ class StyleChip(context: Context, private val accent: Int, private val surface: 
     fun dismissMenu() { popup?.dismiss() }
 
     private fun open() {
-        val pkg = target() ?: return
-        val current = WritingStyle.forApp(context, pkg)
-        val auto = WritingStyle.automatic(context, pkg)
-        val app = runCatching { context.packageManager.run { getApplicationLabel(getApplicationInfo(pkg, 0)).toString() } }.getOrDefault("this app")
+        val pkg = target()
+        if (pkg == null && !allowDefault) return
+        val current = if (pkg != null) WritingStyle.forApp(context, pkg) else WritingStyle.default(context)
+        val auto = if (pkg != null) WritingStyle.automatic(context, pkg) else null
+        val app = pkg?.let { p -> runCatching { context.packageManager.run { getApplicationLabel(getApplicationInfo(p, 0)).toString() } }.getOrDefault("this app") }
         val pop = if (light) 0xFFFFFFFF.toInt() else ColorUtils.blendARGB(surface, 0xFFFFFFFF.toInt(), 0.06f)
 
         val list = LinearLayout(context).apply {
@@ -68,7 +73,7 @@ class StyleChip(context: Context, private val accent: Int, private val surface: 
             background = GradientDrawable().apply {
                 cornerRadius = 18 * d; setColor(pop); setStroke(px(1), ColorUtils.setAlphaComponent(ink, 18))
             }
-            addView(text("Writing style in $app", 11.5f, sub).apply { setPadding(px(10), px(6), px(10), px(6)) })
+            addView(text(if (app != null) "Writing style in $app" else "Writing style for other apps", 11.5f, sub).apply { setPadding(px(10), px(6), px(10), px(6)) })
         }
         lateinit var window: PopupWindow
         WritingStyle.Style.entries.forEach { s ->
@@ -98,7 +103,7 @@ class StyleChip(context: Context, private val accent: Int, private val surface: 
                 }, LinearLayout.LayoutParams(px(18), px(18)))
                 contentDescription = s.label + (if (s == auto) ", automatic" else "") + (if (chosen) ", selected" else "")
                 setOnClickListener {
-                    WritingStyle.setForApp(context, pkg, s)
+                    if (pkg != null) WritingStyle.setForApp(context, pkg, s) else WritingStyle.setDefault(context, s)
                     refresh()
                     window.dismiss()
                 }
@@ -106,7 +111,7 @@ class StyleChip(context: Context, private val accent: Int, private val surface: 
         }
         list.addView(View(context).apply { setBackgroundColor(ColorUtils.setAlphaComponent(ink, 20)) },
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, px(1)).apply { setMargins(px(4), px(4), px(4), 0) })
-        list.addView(text("Remembered for this app.", 11.5f, sub).apply { setPadding(px(10), px(8), px(10), px(4)) })
+        list.addView(text(if (pkg != null) "Remembered for this app." else "Used in apps without their own style.", 11.5f, sub).apply { setPadding(px(10), px(8), px(10), px(4)) })
 
         window = PopupWindow(list, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
             elevation = 16 * d

@@ -70,8 +70,10 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         // Murmur: colors from design/mockups.html
         const val THEME_MURMUR_LIGHT = "murmur_light"
         const val THEME_MURMUR_DARK = "murmur_dark"
+        /** Murmur: near-black, tinted with the accent (design/clipboard-themes.html). */
+        const val THEME_MURMUR_BLACK = "murmur_black"
         fun getAvailableDefaultColors(prefs: SharedPreferences, isNight: Boolean) = listOfNotNull(
-            if (!isNight) THEME_MURMUR_LIGHT else null, THEME_MURMUR_DARK,
+            if (!isNight) THEME_MURMUR_LIGHT else null, THEME_MURMUR_DARK, THEME_MURMUR_BLACK,
             if (!isNight) THEME_LIGHT else null, THEME_DARK,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) THEME_DYNAMIC else null,
             if (prefs.getString(Settings.PREF_THEME_STYLE, Defaults.PREF_THEME_STYLE) == STYLE_HOLO) THEME_HOLO_WHITE else null,
@@ -184,6 +186,20 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                     keyHintText = MurmurTokens.Dark.SUBTLE,
                     keyboardBackground = backgroundImage
                 )
+                THEME_MURMUR_BLACK -> MurmurTokens.accent(prefs).let { accent ->
+                    DefaultColors(
+                        themeStyle,
+                        hasBorders,
+                        accent = accent,
+                        background = MurmurTokens.Black.background(accent),
+                        keyBackground = MurmurTokens.Black.key(accent),
+                        functionalKey = MurmurTokens.Black.functionKey(accent),
+                        spaceBar = MurmurTokens.Black.key(accent),
+                        keyText = MurmurTokens.Black.text(accent),
+                        keyHintText = MurmurTokens.Black.subtle(accent),
+                        keyboardBackground = backgroundImage
+                    )
+                }
                 THEME_LIGHT -> DefaultColors(
                     themeStyle,
                     hasBorders,

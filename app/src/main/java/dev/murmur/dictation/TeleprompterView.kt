@@ -32,7 +32,8 @@ import kotlin.math.exp
  * - Live edits ([LiveMarks]): fillers and "scratch that" get a strike line, dim, then fold away; "heart emoji"
  *   is struck out while ❤️ pops in; "paste my address" becomes a snippet pill.
  */
-class TeleprompterView(context: Context, sizeSp: Float, private val ink: Int, private val sub: Int, private val accent: Int = ink) : View(context) {
+class TeleprompterView(context: Context, sizeSp: Float, private val ink: Int, private val sub: Int, private val accent: Int = ink,
+                       /** Lines shown at rest: 2 in the keyboard, 3 in the power-button sheet. */ private val lines: Int = 2) : View(context) {
     private class Word(var text: String, var born: Long, var draft: Boolean, var finalAt: Long = 0L, var struckAt: Long = 0L)
     /** Emoji or snippet pills shown after a word, keyed "index|text", with when they appeared. */
     private val insertBorn = HashMap<String, Long>()
@@ -48,6 +49,7 @@ class TeleprompterView(context: Context, sizeSp: Float, private val ink: Int, pr
     private var first = 0 // index of the first word still laid out (older lines are dropped)
     private var layout: StaticLayout? = null
     private var lineH = 0f
+    private var twoLines = 0f
     private val fadeTop get() = lineH * 0.6f // room for the outgoing line to fade through
 
     // Smoothed block position (x offset, y offset) and their targets
@@ -60,7 +62,8 @@ class TeleprompterView(context: Context, sizeSp: Float, private val ink: Int, pr
 
     init {
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
-        lineH = build("Ag", 1000).height.toFloat()
+        lineH = build("Ag\nAg", 1000).getLineTop(1).toFloat() // one line's advance, spacing included
+        twoLines = build(List(lines) { "Ag" }.joinToString("\n"), 1000).height.toFloat()
     }
 
     fun clear() {
@@ -108,8 +111,8 @@ class TeleprompterView(context: Context, sizeSp: Float, private val ink: Int, pr
         if (w <= 0) { layout = null; return }
         var l = layoutFrom(first, w)
         // Keep at most three lines laid out: drop whole lines from the top so the remaining breaks don't change
-        if (l.lineCount > 3) {
-            val dropLine = l.lineCount - 3
+        if (l.lineCount > lines + 1) {
+            val dropLine = l.lineCount - (lines + 1)
             val dropChar = l.getLineStart(dropLine)
             val removed = l.getLineTop(dropLine)
             first = starts.firstOrNull { it.first >= dropChar }?.second ?: words.size
@@ -119,10 +122,10 @@ class TeleprompterView(context: Context, sizeSp: Float, private val ink: Int, pr
         layout = l
         val n = l.lineCount
         var widest = 0f
-        for (i in maxOf(0, n - 2) until n) widest = maxOf(widest, l.getLineWidth(i))
+        for (i in maxOf(0, n - lines) until n) widest = maxOf(widest, l.getLineWidth(i))
         txTarget = (w - widest) / 2f
         // At rest the last two lines fill the box; a single line sits in the middle of it
-        tyTarget = fadeTop - l.getLineTop(maxOf(0, n - 2)) + if (n == 1) lineH / 2f else 0f
+        tyTarget = fadeTop - l.getLineTop(maxOf(0, n - lines)) + (lines - minOf(n, lines)) * lineH / 2f
         if (ty.isNaN()) { ty = tyTarget; tx = txTarget }
         invalidate()
     }
@@ -264,7 +267,8 @@ class TeleprompterView(context: Context, sizeSp: Float, private val ink: Int, pr
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val h = (fadeTop + lineH * 2 + paddingTop + paddingBottom).toInt() + 1
+        // Two lines as laid out, plus slack: the 1.1 spacing, rising words and emoji reach below the font's descent
+        val h = (fadeTop + twoLines + lineH * 0.25f + paddingTop + paddingBottom).toInt() + 1
         setMeasuredDimension(getDefaultSize(suggestedMinimumWidth, widthMeasureSpec), resolveSize(h, heightMeasureSpec))
     }
 

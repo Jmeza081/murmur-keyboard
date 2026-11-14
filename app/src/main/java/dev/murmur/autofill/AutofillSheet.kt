@@ -95,16 +95,14 @@ object AutofillSheet {
             addView(card, cardLp)
             // Keep the card above the gesture bar / nav buttons, like the power-button sheet
             setOnApplyWindowInsetsListener { _, insets ->
-                val nav = androidx.core.view.WindowInsetsCompat.toWindowInsetsCompat(insets)
-                    .getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars()).bottom
-                // Android draws its keyboard-switch and hide buttons ~48 dp tall over the keyboard's bottom edge
-                cardLp.bottomMargin = dp(8f) + maxOf(nav, dp(48f))
+                cardLp.bottomMargin = dp(8f) + dev.murmur.design.SafeArea.bottom(this, insets)
                 card.layoutParams = cardLp
                 insets
             }
         }
         host.addView(root, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         sheet = root
+        hideChips(host, root)
         switcher.murmurOverlay = true
         root.requestApplyInsets()
         host.requestLayout() // recomputes the touchable area
@@ -116,11 +114,26 @@ object AutofillSheet {
         fill(list, context.resources.displayMetrics.widthPixels - dp(16f) - dp(32f))
     }
 
+    // Password-manager chips are surfaces drawn above the whole keyboard window, so they would cover the sheet
+    // whatever its elevation. Hide the ones in the strip while the sheet is open.
+    private val hidden = mutableListOf<View>()
+
+    private fun hideChips(view: View, sheetRoot: View) {
+        if (view === sheetRoot) return
+        if (android.os.Build.VERSION.SDK_INT >= 30 && view is android.widget.inline.InlineContentView) {
+            if (view.visibility == View.VISIBLE) { view.visibility = View.INVISIBLE; hidden += view }
+            return
+        }
+        if (view is ViewGroup) for (i in 0 until view.childCount) hideChips(view.getChildAt(i), sheetRoot)
+    }
+
     fun dismiss() {
         val s = sheet ?: return
         sheet = null
         val host = s.parent as? ViewGroup
         host?.removeView(s)
+        hidden.forEach { it.visibility = View.VISIBLE }
+        hidden.clear()
         // let go of the login views, so the next "+N" can show them again
         (s.findViewWithTag<View>(LIST) as? ViewGroup)?.removeAllViews()
         KeyboardSwitcher.getInstance().murmurOverlay = false

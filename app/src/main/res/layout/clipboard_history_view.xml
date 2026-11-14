@@ -17,14 +17,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <TextView
+        <!-- Murmur: filled by dev.murmur.clipboard.ClipPanel.fillEmpty -->
+        <LinearLayout
             android:id="@+id/clipboard_empty_view"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:visibility="invisible"
-            android:text="¯\\_(ツ)_/¯"
-            tools:ignore="HardcodedText" />
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="invisible" />
 
         <helium314.keyboard.keyboard.clipboard.ClipboardHistoryRecyclerView
             android:id="@+id/clipboard_list"

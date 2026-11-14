@@ -215,6 +215,19 @@ class KeyboardSwitcher private constructor() {
         return false
     }
 
+    /** Murmur pane mode: place the keyboard again after it docked to the other panel. */
+    /** Murmur: after the layout menu changes Full / Split / Half or the side. */
+    fun murmurApplyLayout() {
+        setOneHandedModeEnabled(Settings.getInstance().current.mOneHandedModeEnabled, true)
+        reloadKeyboard()
+    }
+
+    fun murmurPlacePane() {
+        val root = inputView?.root ?: return
+        FloatingKeyboardUtils.setFloating(root)
+        root.requestLayout()
+    }
+
     fun updateInsets(outInsets: InputMethodService.Insets) {
         // This method may be called before onCreateInputView.
         val inputView = inputView ?: return
@@ -242,6 +255,7 @@ class KeyboardSwitcher private constructor() {
 
         // Need to set expanded touchable region only if a keyboard view is being shown.
         // When using a floating keyboard and the showToolbarOnly setting, the wrapper view may be hidden but we still have a view
+        var paneTop = -1
         if (visibleKeyboardView.isShown || (Settings.getValues().mIsFloatingKeyboard && inputView.root.isShown)) {
             var touchLeft = 0
             var touchTop = if (isShowingPopupKeysPanel || murmurOverlay) 0 else visibleTopY
@@ -253,12 +267,16 @@ class KeyboardSwitcher private constructor() {
                 touchTop = xy.second
                 touchRight = touchLeft + Settings.getValues().mFloatingWidth
                 touchBottom = touchTop + inputHeight
+                // Murmur pane mode: push the app up only when the cursor would end up under the keyboard
+                if (Settings.getValues().mIsPaneKeyboard && dev.murmur.keyboard.PaneMode.pushesApp(themeContext))
+                    paneTop = xy.second
             }
             outInsets.touchableInsets = InputMethodService.Insets.TOUCHABLE_INSETS_REGION
             outInsets.touchableRegion.set(touchLeft, touchTop, touchRight, touchBottom)
         }
 
 
+        if (paneTop >= 0) visibleTopY = paneTop
         // Has to be subtracted after calculating touchableRegion
         visibleTopY -= latinIME.emojiSearchActivityHeight
 
@@ -372,6 +390,14 @@ class KeyboardSwitcher private constructor() {
 
     fun toggleSplitKeyboardMode() {
         val settings = Settings.getInstance()
+        // Murmur: on the open inner screen the layout key cycles full -> split -> half screen
+        if (dev.murmur.keyboard.PaneMode.available(themeContext)) {
+            val next = dev.murmur.keyboard.PaneMode.cycle(themeContext)
+            android.widget.Toast.makeText(themeContext, next, android.widget.Toast.LENGTH_SHORT).show()
+            setOneHandedModeEnabled(settings.current.mOneHandedModeEnabled, true)
+            reloadKeyboard()
+            return
+        }
         settings.writeSplitKeyboardEnabled(
             !settings.current.mIsSplitKeyboardEnabled,
             currentOrientation == Configuration.ORIENTATION_LANDSCAPE,
@@ -592,7 +618,7 @@ class KeyboardSwitcher private constructor() {
             inputView.emojiTabStrip.isGone = true
             inputView.suggestionStripView.isGone = true
             inputView.stripContainer.isVisible = Settings.getValues().isSecondaryStripVisible
-            inputView.clipboardStripScrollView.post { inputView.clipboardStripScrollView.fullScroll(HorizontalScrollView.FOCUS_RIGHT) }
+            inputView.clipboardStripScrollView.scrollTo(0, 0) // Murmur: the strip fills the width now
             inputView.clipboardStripScrollView.isGone = false
             emojiPalettes?.isGone = true
             inputView.clipboardHistoryView.startClipboardHistory(
@@ -641,6 +667,9 @@ class KeyboardSwitcher private constructor() {
         }
 
         override fun setFloatingKeyboardEnabled(enabled: Boolean) {
+            if (!enabled && Settings.getValues().mIsPaneKeyboard) { // Murmur: the floating toggle leaves pane mode
+                dev.murmur.keyboard.PaneMode.setEnabled(themeContext, false)
+            }
             val inputView = inputView ?: return
             if (enabled != Settings.getValues().mIsFloatingKeyboard)
                 // mIsFloatingKeyboard is always disabled when device is locked, and we shouldn't mess up the setting
