@@ -475,10 +475,35 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
 .split .key.w5 { grid-column: span 5; }
 .split .key.w6 { grid-column: span 6; }
 .scroll-x { max-width: 100%; overflow-x: auto; padding-bottom: 8px; }
-.mid-col { display: grid; place-items: center; gap: 10px; align-self: stretch; padding: 8px 0; }
-.mid-col .mic { height: 56px; width: 56px; min-width: 0; padding: 0; border-radius: 50%; }
-.mid-col small { font-size: 11px; color: var(--k-sub); text-align: center; }
-.grip { width: 6px; height: 40px; border-radius: 3px; background: var(--k-fn); }
+/* Split (app: SplitGeometry): halves the size of the cover keyboard, G and V on both sides, one space bar across the middle */
+.split .key.dup { opacity: 0.55; }
+.split .sbot { grid-column: 1 / -1; display: flex; gap: 6px; margin-top: 9px; }
+.split .sbot .key { height: 46px; flex: none; width: 62px; }
+.split .sbot .key.wide { width: 96px; }
+.split .sbot .key.space { flex: 1; }
+.tablet .strip .sbtn.on, .l-fold .strip .sbtn.on { color: var(--k-acc); }
+/* Half (app: PaneMode): one panel of the fold, pinned above Android's row; the other panel stays clear */
+.tablet .kb.half { position: absolute; bottom: 0; width: 50%; right: 0; border-radius: 20px 20px 0 0; box-shadow: 0 -12px 40px rgba(0,0,0,0.45); padding: 0 10px 14px; }
+.tablet .kb.half.left { right: auto; left: 0; }
+.tablet .kb.full .keys { grid-auto-rows: 44px; }
+.l-foldctl { display: grid; justify-items: center; gap: 14px; margin-top: 36px; }
+.l-foldctl p { margin: 0; color: var(--muted); font-size: 15.5px; max-width: 44em; text-align: center; min-height: 4.8em; text-wrap: pretty; }
+/* Review before inserting (app: MurmurSession review box) */
+.l-review .txt { font-size: clamp(18px, 2vw, 22px); line-height: 1.55; }
+.l-review .w { font: inherit; color: inherit; background: none; border: 0; padding: 0 2px; margin: 0 -2px; border-radius: 6px; cursor: pointer; transition: background 160ms ease; }
+@media (hover: hover) and (pointer: fine) { .l-review .w:hover { background: var(--panel-2); } }
+.l-review .w.sus { text-decoration: underline dotted var(--acc); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.l-review .w.sel { background: color-mix(in srgb, var(--acc) 28%, transparent); }
+.l-review .chip { font: inherit; font-size: 14px; height: 34px; padding: 0 14px; border-radius: 17px; border: 0; cursor: pointer; background: var(--panel-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); transition: transform 160ms var(--ease-out); }
+.l-review .chip:active { transform: scale(0.97); }
+.l-review .chip.rm { color: var(--muted); }
+.l-review .chip.hint { cursor: default; color: var(--muted); box-shadow: none; background: none; padding: 0; }
+.l-review .l-seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.l-review .l-seg button { padding: 0 6px; }
+.rv-acts { display: flex; justify-content: space-between; align-items: center; }
+.rv-x { width: 48px; height: 48px; border-radius: 50%; border: 0; display: grid; place-items: center; background: var(--panel-2); color: var(--ink); cursor: pointer; }
+.rv-ins { height: 48px; padding: 0 28px; border-radius: 24px; border: 0; font: inherit; font-weight: 600; background: var(--rec); color: #fff; cursor: pointer; transition: transform 160ms var(--ease-out); }
+.rv-x:active, .rv-ins:active { transform: scale(0.97); }
 </style>
 </head>
 <body>
@@ -718,6 +743,30 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
         </div>
       </div>
     </div>
+    <div class="l-split" style="margin-top: 72px">
+      <div>
+        <p class="l-kicker rv">Review before inserting</p>
+        <h2 class="rv" style="font-size: clamp(30px, 3.6vw, 44px)">Fix a word, or the whole tone, before it's sent.</h2>
+        <p class="l-intro rv">Turn on review for every message, or only long ones, and the power-button sheet holds your text before typing it in. Tap a word to see what Claude thinks you meant, or remove it. One tap makes the whole message shorter, more polished, or warmer, and Original brings yours back. Names you fix are added to your dictionary. Try it here.</p>
+      </div>
+      <div class="l-diff l-review rv d1">
+        <div class="row">
+          <span class="lab" id="rv-lab">Tap a word to fix it</span>
+          <div class="txt" id="rv-text" aria-live="polite"></div>
+        </div>
+        <div class="l-tags" id="rv-alts"><span class="chip hint">Murmur heard “kaitlyn”. Tap it.</span></div>
+        <div class="l-seg" role="group" aria-label="Rewrite" id="rv-seg">
+          <button type="button" data-k="original" aria-pressed="true">Original</button>
+          <button type="button" data-k="shorter" aria-pressed="false">Shorter</button>
+          <button type="button" data-k="polished" aria-pressed="false">Polished</button>
+          <button type="button" data-k="warmer" aria-pressed="false">Warmer</button>
+        </div>
+        <div class="rv-acts">
+          <button type="button" class="rv-x" id="rv-x" aria-label="Start over"><svg class="icon"><use href="#i-x"/></svg></button>
+          <button type="button" class="rv-ins" id="rv-ins">Insert</button>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -754,7 +803,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
   <div class="l-wrap">
     <p class="l-kicker rv">The keyboard</p>
     <h2 class="rv">A full keyboard, not just a mic.</h2>
-    <p class="l-intro rv">Built on HeliBoard, the open-source Android keyboard: swipe typing, smart suggestions, English and Spanish together, emoji, a clipboard you can pin, and a one-tap 1Password button.</p>
+    <p class="l-intro rv">Built on HeliBoard, the open-source Android keyboard: swipe typing, suggestions in every field except passwords, English and Spanish together, emoji, a clipboard you can pin, a number pad sized like the letters, and a one-tap 1Password button.</p>
   </div>
   <div class="l-bleed">
     <div class="l-gallery">
@@ -788,7 +837,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
             <div class="kb" data-kb="typing"></div>
           </div>
         </div>
-        <figcaption><b>Suggestions</b><span>Three at a time, likeliest in the middle. Autocorrect is tuned to catch real typos.</span></figcaption>
+        <figcaption><b>Suggestions</b><span>Three at a time, likeliest in the middle, even in fields that ask for none. Never in password fields.</span></figcaption>
       </figure>
       <figure class="rv d2">
         <div class="phone dark">
@@ -876,10 +925,18 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
 <section class="l-sec" id="fold">
   <div class="l-wrap">
     <p class="l-kicker rv">Made for the Fold</p>
-    <h2 class="rv">Open it up, and the keys split for your thumbs.</h2>
-    <p class="l-intro rv">On the inner screen in landscape, the keyboard splits into two thumb zones with the mic in the middle, where either thumb reaches it.</p>
+    <h2 class="rv">Open it up, and the keyboard fits how you hold it.</h2>
+    <p class="l-intro rv">On the inner screen, the layout key in the toolbar switches between three keyboards. The mic stays at the right of the toolbar in all of them. Try each one.</p>
+    <div class="l-foldctl rv">
+      <div class="l-seg" role="group" aria-label="Inner-screen layout" id="fold-seg">
+        <button type="button" data-k="full" aria-pressed="false">Full</button>
+        <button type="button" data-k="split" aria-pressed="true">Split</button>
+        <button type="button" data-k="half" aria-pressed="false">Half</button>
+      </div>
+      <p id="fold-desc" aria-live="polite"></p>
+    </div>
   </div>
-  <div class="l-fold rv" id="fold-box">
+  <div class="l-fold rv" id="fold-box" style="margin-top: 32px">
     <div class="l-fold-frame" id="fold-frame">
       <div class="tablet">
         <div class="screen">
@@ -888,7 +945,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
             <p>Day one: land at 7:40, train to Cais do Sodré, drop bags at the hotel. Lunch near Time Out Market, then walk up to Miradouro de Santa Catarina for sunset.</p>
             <p>Day two: tram 28 early before the crowds, Alfama in the morning, Belém in the afternoon for pastéis<span class="caret"></span></p>
           </div>
-          <div class="kb" data-kb="split"></div>
+          <div class="kb" data-kb="split" id="fold-kb"></div>
         </div>
       </div>
     </div>
@@ -935,7 +992,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
               <div class="sbody">
                 <div class="group">
                   <div class="item"><span class="ic"><svg class="icon sm"><use href="#i-wave"/></svg></span><div class="tx"><b>Dictation</b><span>Parakeet v3 · Light cleanup</span></div><svg class="icon sm chev"><use href="#i-chev"/></svg></div>
-                  <div class="item"><span class="ic"><svg class="icon sm"><use href="#i-power"/></svg></span><div class="tx"><b>Power button</b><span>On · Stops when you pause</span></div><svg class="icon sm chev"><use href="#i-chev"/></svg></div>
+                  <div class="item"><span class="ic"><svg class="icon sm"><use href="#i-power"/></svg></span><div class="tx"><b>Power button</b><span>On · Review long messages</span></div><svg class="icon sm chev"><use href="#i-chev"/></svg></div>
                 </div>
                 <div class="group">
                   <div class="item"><span class="ic"><svg class="icon sm"><use href="#i-palette"/></svg></span><div class="tx"><b>Theme</b><span>Cobalt · Follows system</span></div><svg class="icon sm chev"><use href="#i-chev"/></svg></div>
@@ -945,7 +1002,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
                 <div class="group">
                   <div class="item"><span class="ic"><svg class="icon sm"><use href="#i-clip"/></svg></span><div class="tx"><b>Clipboard</b><span>Keep for 1 hour</span></div><svg class="icon sm chev"><use href="#i-chev"/></svg></div>
                   <div class="item"><span class="ic"><svg class="icon sm"><use href="#i-smile"/></svg></span><div class="tx"><b>Emoji</b><span>Skin tone default</span></div><svg class="icon sm chev"><use href="#i-chev"/></svg></div>
-                  <div class="item"><span class="ic"><svg class="icon sm"><use href="#i-split"/></svg></span><div class="tx"><b>Tablet layout</b><span>Split in landscape</span></div><svg class="icon sm chev"><use href="#i-chev"/></svg></div>
+                  <div class="item"><span class="ic"><svg class="icon sm"><use href="#i-fold"/></svg></span><div class="tx"><b>Inner screen</b><span>Full, split or half</span></div><svg class="icon sm chev"><use href="#i-chev"/></svg></div>
                 </div>
               </div>
             </div>
@@ -1004,7 +1061,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
       <li class="rv d1"><svg class="icon sm"><use href="#i-lock"/></svg><span><b>Passwords stay out of history.</b> Clips marked sensitive by password managers are never saved.</span></li>
       <li class="rv"><svg class="icon sm"><use href="#i-key"/></svg><span><b>Password manager, one tap away.</b> 1Password suggestions show as chips in the strip, with a button to open the app.</span></li>
       <li class="rv"><svg class="icon sm"><use href="#i-wave"/></svg><span><b>ElevenLabs speech, if you choose it.</b> With your key, recordings go to ElevenLabs for faster, live transcription. Offline or out of hours, the on-phone model takes over.</span></li>
-      <li class="rv d1"><svg class="icon sm"><use href="#i-spark"/></svg><span><b>Claude cleanup, if you choose it.</b> With your key, the finished text (never audio) goes to Claude to fix misheard words and follow "scratch that".</span></li>
+      <li class="rv d1"><svg class="icon sm"><use href="#i-spark"/></svg><span><b>Claude cleanup, if you choose it.</b> With your key, the finished text (never audio) goes to Claude to fix misheard words and follow "scratch that". If you turn on review, it also suggests words and rewrites, only when you tap.</span></li>
       <li class="rv d1"><svg class="icon sm"><use href="#i-pen"/></svg><span><b>Snippets stay on this phone.</b> Never offered in password fields, and left out of backups.</span></li>
       <li class="rv"><svg class="icon sm"><use href="#i-github"/></svg><span><b>Open source.</b> GPL-3.0, built on HeliBoard and sherpa-onnx. Read every line.</span></li>
     </ul>
@@ -1060,6 +1117,11 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
   var bar = '<div class="gesture-bar"></div>';
   var emoji = ['😀','😂','🥹','😍','🥳','😎','🤔','😴','👍','🙏','👏','🙌','💪','🔥','✨','🎉','❤️','🧡','💛','💚','💙','💜','🤍','💯','😅','😭','😤','🤯','🫶','👀','🤝','✅','🌮','☕','🌞','🎶'];
 
+  // Inner-screen toolbar (app: SuggestionStripView): tools packed left in 48dp slots, layout key lit, mic on the right
+  function foldStrip() {
+    return '<div class="strip" style="padding: 0 12px"><span class="sbtn">' + I('grid', 'sm') + '</span><span class="sbtn on" title="Layout">' + I('split', 'sm') + '</span>' +
+      sugs('pastéis', 'pastéis de nata', 'pastries') + mic + '</div>';
+  }
   var views = {
     tools: function () { return strip(tools, '<span class="sbtn">' + I('chev-up', 'sm') + '</span>') + letters() + bar; },
     typing: function () { return strip(sugs('market', 'market.', 'markets')) + letters() + bar; },
@@ -1093,16 +1155,15 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
     },
     mini: function () { return strip(sugs('the', 'and', 'for')) + letters(); },
     split: function () {
-      var row = function (s) { return s.split('').map(function (c) { return '<span class="key">' + c + '</span>'; }).join(''); };
+      var row = function (str, dup) { return str.split('').map(function (c) { return '<span class="key' + (dup && dup.indexOf(c) > -1 ? ' dup' : '') + '">' + c + '</span>'; }).join(''); };
       var pad = '<span class="key w1"></span>';
-      var left = '<div class="keys">' + row('qwert') + pad + pad + row('asdfg') + '<span class="key fn w3">' + I('shift', 'sm') + '</span>' + row('zxcv') +
-        '<span class="key fn w3">?123</span><span class="key fn">,</span><span class="key space w6">space</span></div>';
-      var right = '<div class="keys">' + row('yuiop') + pad + pad + row('hjkl') + '<span class="key">\'</span>' + row('bnm') + '<span class="key fn w5">' + I('back', 'sm') + '</span>' +
-        '<span class="key space w5">space</span><span class="key fn">.</span><span class="key acc w4">' + I('enter', 'sm') + '</span></div>';
-      return '<div class="strip" style="padding: 0 16px"><span class="sbtn">' + I('grid', 'sm') + '</span>' + sugs('pastéis', 'pastéis de nata', 'pastries') +
-        '<span class="sbtn">' + I('smile', 'sm') + '</span><span class="sbtn">' + I('clip', 'sm') + '</span><span class="sbtn">' + I('gear', 'sm') + '</span></div>' +
-        '<div class="split">' + left + '<div class="mid-col"><span class="grip"></span><span class="mic">' + I('wave') + '</span><small>Dictate</small><span class="grip"></span></div>' + right + '</div>';
-    }
+      var left = '<div class="keys">' + row('qwert') + pad + pad + row('asdfg') + '<span class="key fn w3">' + I('shift', 'sm') + '</span>' + row('zxcv') + '</div>';
+      var right = '<div class="keys">' + row('yuiop') + pad + pad + row('ghjkl', 'g') + row('vbnm', 'v') + '<span class="key fn w3">' + I('back', 'sm') + '</span></div>';
+      var bot = '<div class="sbot"><span class="key fn wide">?123</span><span class="key fn">,</span><span class="key space">English · Español</span><span class="key fn">.</span><span class="key acc wide">' + I('enter', 'sm') + '</span></div>';
+      return foldStrip(true) + '<div class="split">' + left + '<div></div>' + right + bot + '</div>';
+    },
+    full: function () { return foldStrip(true) + letters(); },
+    half: function () { return foldStrip(true) + letters(); }
   };
   document.querySelectorAll('[data-kb]').forEach(function (el) { var v = views[el.getAttribute('data-kb')]; if (v) el.innerHTML = v(); });
 
@@ -1399,6 +1460,70 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
   sw.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setAccent(b.dataset.n); });
   var saved = null; try { saved = localStorage.getItem('murmur-accent'); } catch (e) {}
   setAccent(ACCENTS.some(function (a) { return a[0] === saved; }) ? saved : 'Cobalt');
+
+  /* ---------- Inner-screen layouts ---------- */
+  var FOLD = {
+    full: 'One keyboard across the whole screen, for typing with the phone flat on a table.',
+    split: 'Each half is the size of the cover-screen keyboard, tucked in from the edge for your thumbs. The space bar crosses the middle, and G and V show on both sides, so a reach that overshoots still lands.',
+    half: 'A normal-size keyboard on one side of the fold, pinned just above Android’s buttons. The other side stays clear and tappable. Hold an empty part of the toolbar and drag to move it across.'
+  };
+  var foldSeg = document.getElementById('fold-seg'), foldKb = document.getElementById('fold-kb'), foldDesc = document.getElementById('fold-desc');
+  function setFold(k) {
+    foldKb.innerHTML = views[k]();
+    foldKb.className = 'kb' + (k === 'half' ? ' half' : k === 'full' ? ' full' : '');
+    foldDesc.textContent = FOLD[k];
+    foldSeg.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.k === k)); });
+  }
+  foldSeg.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setFold(b.dataset.k); });
+  setFold('split');
+
+  /* ---------- Review before inserting ---------- */
+  var RV = {
+    original: 'Hey, so I talked to {N} and we’re thinking dinner Thursday around 7 if that works for you. Let me know and I’ll book a table.',
+    shorter: 'Talked to {N}: dinner Thursday around 7? Let me know and I’ll book.',
+    polished: 'Hi! I spoke with {N}, and we’re thinking of dinner on Thursday around 7, if that works for you. Let me know and I’ll reserve a table.',
+    warmer: 'Hey! I was just chatting with {N} and we’d love to get dinner with you Thursday around 7. Let me know and I’ll grab us a table 😊'
+  };
+  var ALTS = { kaitlyn: ['Caitlin', 'Katelyn', 'Kaitlin'], thursday: ['Tuesday'], '7': ['7:30', '8'], dinner: ['lunch', 'drinks'], book: ['reserve'] };
+  var rvText = document.getElementById('rv-text'), rvAlts = document.getElementById('rv-alts'), rvSeg = document.getElementById('rv-seg'), rvLab = document.getElementById('rv-lab');
+  var rvName = 'kaitlyn', rvMode = 'original', rvWords = [], rvPick = -1;
+  function rvLoad() { rvWords = RV[rvMode].replace('{N}', rvName).split(' '); rvPick = -1; rvDraw(); }
+  function bare(w) { return w.replace(/[^\w’'#:]/g, ''); }
+  function rvDraw() {
+    rvText.innerHTML = rvWords.map(function (w, i) {
+      var cls = 'w' + (i === rvPick ? ' sel' : '') + (bare(w) === 'kaitlyn' ? ' sus' : '');
+      return '<button type="button" class="' + cls + '" data-i="' + i + '">' + w + '</button>';
+    }).join(' ');
+  }
+  function rvChips(i) {
+    var key = bare(rvWords[i]).toLowerCase(), alts = (ALTS[key] || []).filter(function (a) { return a.toLowerCase() !== key; });
+    rvAlts.innerHTML = alts.map(function (a) { return '<button type="button" class="chip" data-a="' + a + '">' + a + '</button>'; }).join('') +
+      '<button type="button" class="chip rm" data-rm="1">Remove word</button>';
+  }
+  rvText.addEventListener('click', function (e) {
+    var b = e.target.closest('.w'); if (!b) return;
+    rvPick = +b.dataset.i; rvDraw(); rvChips(rvPick);
+  });
+  rvAlts.addEventListener('click', function (e) {
+    var b = e.target.closest('.chip'); if (!b || rvPick < 0 || b.classList.contains('hint')) return;
+    var w = rvWords[rvPick], core = bare(w);
+    if (b.dataset.rm) rvWords.splice(rvPick, 1);
+    else { rvWords[rvPick] = w.replace(core, b.dataset.a); if (core === rvName) { rvName = b.dataset.a; rvLab.textContent = b.dataset.a + ' added to your dictionary'; } }
+    rvPick = -1; rvDraw(); rvAlts.innerHTML = '';
+  });
+  rvSeg.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    rvSeg.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    rvMode = b.dataset.k; rvAlts.innerHTML = ''; rvLoad();
+  });
+  var rvIns = document.getElementById('rv-ins');
+  rvIns.addEventListener('click', function () { rvIns.textContent = 'Inserted'; setTimeout(function () { rvIns.textContent = 'Insert'; }, 1400); });
+  document.getElementById('rv-x').addEventListener('click', function () {
+    rvName = 'kaitlyn'; rvMode = 'original'; rvLab.textContent = 'Tap a word to fix it';
+    rvSeg.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.k === 'original')); });
+    rvAlts.innerHTML = '<span class="chip hint">Murmur heard “kaitlyn”. Tap it.</span>'; rvLoad();
+  });
+  rvLoad();
 
   /* ---------- Fold frame scales to fit ---------- */
   var foldBox = document.getElementById('fold-box'), foldFrame = document.getElementById('fold-frame');
