@@ -35,6 +35,7 @@ object Cleanup {
     }.let { dev.murmur.dictionary.MurmurDictionary.applyReplacements(context, it) } // your replacements apply at every level
         .let(SpokenEmoji::apply) // "heart emoji" becomes the emoji at every level
         .let { dev.murmur.snippets.Snippets.applySpoken(context, it) } // "paste my address" becomes the snippet
+        .let(VoiceCommands::apply) // "new paragraph", "make that a list", "capitalize that"
 
     private val polisher = java.util.concurrent.Executors.newSingleThreadExecutor { Thread(it, "murmur-claude") }
 
@@ -57,6 +58,7 @@ object Cleanup {
                     .let { dev.murmur.dictionary.MurmurDictionary.applyReplacements(app, it) }
                     .let(SpokenEmoji::apply)
                     .let { dev.murmur.snippets.Snippets.applySpoken(app, it) }
+                    .let(VoiceCommands::apply)
             } catch (e: Exception) {
                 process(app, raw, pkg)
             }

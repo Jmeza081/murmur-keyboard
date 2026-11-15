@@ -69,7 +69,8 @@ private const val MODEST_CONFIDENCE = 0.35f
 
 @Composable
 fun TypingScreen(onBack: () -> Unit) {
-    val prefs = LocalContext.current.prefs()
+    val ctx = LocalContext.current
+    val prefs = ctx.prefs()
     var autocorrect by remember {
         mutableStateOf(when {
             !prefs.getBoolean(Settings.PREF_AUTO_CORRECTION, Defaults.PREF_AUTO_CORRECTION) -> Autocorrect.OFF
@@ -140,7 +141,26 @@ fun TypingScreen(onBack: () -> Unit) {
             GroupDivider()
             PrefSwitch(prefs, Settings.PREF_SOUND_ON, Defaults.PREF_SOUND_ON, "Key sound")
         }
-        Group { Item("Languages", "English and Spanish together, no switching", chevron = false) }
+        GroupLabel("One-time codes")
+        Group {
+            // Re-checked when you come back from the system screen
+            var access by remember { mutableStateOf(dev.murmur.otp.OneTimeCodes.hasAccess(ctx)) }
+            androidx.lifecycle.compose.LifecycleResumeEffect(Unit) { access = dev.murmur.otp.OneTimeCodes.hasAccess(ctx); onPauseOrDispose { } }
+            Item("Codes in the strip", if (access) "On. A sign-in code from a text or notification shows as a chip for 3 minutes. Never in password fields; kept in memory only."
+                else "Off. Allow notification access so Murmur can offer sign-in codes as a chip. Nothing is saved or sent.",
+                onClick = { ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) })
+            if (access) {
+                GroupDivider()
+                val askPost = androidx.activity.compose.rememberLauncherForActivityResult(
+                    androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { ok -> if (ok) dev.murmur.otp.OneTimeCodes.sendTest(ctx) }
+                Item("Send a test code", "Posts a notification with a made-up code. Then open any text field.", chevron = false, onClick = {
+                    if (android.os.Build.VERSION.SDK_INT >= 33 && ctx.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
+                        askPost.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    else dev.murmur.otp.OneTimeCodes.sendTest(ctx)
+                })
+            }
+        }
+        Group { Item("Languages", "English for typing. Dictation also understands Spanish.", chevron = false) }
     }
 }
 
@@ -195,7 +215,8 @@ private val TONES = listOf("" to "Default", "🏻" to "Light", "🏼" to "Medium
 
 @Composable
 fun EmojiScreen(onBack: () -> Unit) {
-    val prefs = LocalContext.current.prefs()
+    val ctx = LocalContext.current
+    val prefs = ctx.prefs()
     val c = LocalSettingsColors.current
     var tone by remember { mutableStateOf(prefs.getString(Settings.PREF_EMOJI_SKIN_TONE, Defaults.PREF_EMOJI_SKIN_TONE) ?: "") }
     var recentsCleared by remember { mutableStateOf(false) }
@@ -240,7 +261,8 @@ private val GAPS = listOf(0.6f to "Narrow", 1.0f to "Medium", 1.6f to "Wide")
 
 @Composable
 fun TabletScreen(onBack: () -> Unit) {
-    val prefs = LocalContext.current.prefs()
+    val ctx = LocalContext.current
+    val prefs = ctx.prefs()
     val gapKey = { i: Int -> createPrefKeyForBooleanSettings(Settings.PREF_SPLIT_SPACER_SCALE_PREFIX, i, 2) }
     var inner by remember { mutableStateOf(INNER.first { it.first == when {
         prefs.getBoolean(dev.murmur.keyboard.PaneMode.PREF, false) -> "half"

@@ -34,7 +34,8 @@ class DictationControls(
         text = context.getString(R.string.murmur_dictation_send)
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
         typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
-        setTextColor(Color.WHITE)
+        setTextColor(dev.murmur.design.MurmurThemes.onAccent(accent)) // dark text on light accents (Moss, Mono)
+        androidx.core.widget.TextViewCompat.setCompoundDrawableTintList(this, android.content.res.ColorStateList.valueOf(dev.murmur.design.MurmurThemes.onAccent(accent)))
         gravity = Gravity.CENTER
         compoundDrawablePadding = px(8)
         setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_murmur_stop, 0, 0, 0)

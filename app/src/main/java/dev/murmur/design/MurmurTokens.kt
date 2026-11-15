@@ -26,7 +26,7 @@ object MurmurTokens {
     const val PREF_ACCENT = "murmur_accent"
 
     /** The accent picked on the Theme screen, cobalt by default. */
-    fun accent(prefs: android.content.SharedPreferences) = prefs.getInt(PREF_ACCENT, ACCENT)
+    fun accent(prefs: android.content.SharedPreferences) = MurmurThemes.current(prefs)?.accent ?: prefs.getInt(PREF_ACCENT, ACCENT)
 
     /** The listening color (dot, stop button, level bars, glow): the accent picked on the Theme screen. */
     fun live(context: android.content.Context) = accent(helium314.keyboard.latin.utils.DeviceProtectedUtils.getSharedPreferences(context))

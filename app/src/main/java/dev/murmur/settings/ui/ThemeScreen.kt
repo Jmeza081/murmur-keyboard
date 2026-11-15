@@ -58,6 +58,7 @@ fun ThemeScreen(onBack: () -> Unit) {
     val ctx = LocalContext.current
     val prefs = remember { ctx.prefs() }
     var mode by remember { mutableStateOf(readMode(prefs)) }
+    var named by remember { mutableStateOf(dev.murmur.design.MurmurThemes.current(prefs)) }
     var accent by remember { mutableIntStateOf(MurmurTokens.accent(prefs)) }
     var borders by remember { mutableStateOf(prefs.getBoolean(Settings.PREF_THEME_KEY_BORDERS, Defaults.PREF_THEME_KEY_BORDERS)) }
     var heightIndex by remember { mutableFloatStateOf(dev.murmur.settings.KeyHeight.readIndex(prefs, ctx.resources).toFloat()) }
@@ -68,8 +69,23 @@ fun ThemeScreen(onBack: () -> Unit) {
     Column(Modifier.verticalScroll(rememberScrollState())) {
         TopBar("Theme", onBack)
         Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            KeyboardPreview(previewMode, accent, borders, HEIGHTS[heightIndex.toInt()].first)
+            KeyboardPreview(previewMode, named?.accent ?: accent, borders, HEIGHTS[heightIndex.toInt()].first, named)
+            // Named themes carry their own colors and accent; they also color dictation and the power-button sheet
             Group {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Themes", fontFamily = RobotoFlex, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = LocalSettingsColors.current.ink)
+                    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        item { ThemeCard("Classic", "Light · Dark · Black", MurmurTokens.Dark.BACKGROUND, MurmurTokens.Dark.KEY, accent, named == null) {
+                            named = null; writeMode(prefs, mode); reload() } }
+                        items(dev.murmur.design.MurmurThemes.ALL.size) { i ->
+                            val t = dev.murmur.design.MurmurThemes.ALL[i]
+                            ThemeCard(t.name, t.tag, t.background, t.key, t.accent, named?.id == t.id) {
+                                named = t; writeNamed(prefs, t); reload() }
+                        }
+                    }
+                }
+            }
+            if (named == null) Group {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Segmented(ThemeMode.entries, mode, { it.label }) { mode = it; writeMode(prefs, it); reload() }
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -112,18 +128,36 @@ private fun Swatch(color: Color, name: String, selected: Boolean, onClick: () ->
     }
 }
 
+/** One named theme: its ground, a key and its accent, with the name below. */
+@Composable
+private fun ThemeCard(name: String, tag: String, bg: Int, key: Int, accent: Int, selected: Boolean, onClick: () -> Unit) {
+    val c = LocalSettingsColors.current
+    Column(Modifier.width(112.dp).clip(RoundedCornerShape(16.dp)).clickable(onClickLabel = name, onClick = onClick)
+        .border(if (selected) 2.dp else 1.dp, if (selected) c.accent else c.line, RoundedCornerShape(16.dp)).padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth().height(52.dp).clip(RoundedCornerShape(10.dp)).background(Color(bg)).padding(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.Bottom) {
+            Box(Modifier.weight(1f).height(18.dp).clip(RoundedCornerShape(4.dp)).background(Color(key)))
+            Box(Modifier.weight(1f).height(18.dp).clip(RoundedCornerShape(4.dp)).background(Color(key)))
+            Box(Modifier.weight(1.4f).height(18.dp).clip(RoundedCornerShape(4.dp)).background(Color(accent)))
+        }
+        Text(name, fontFamily = RobotoFlex, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = c.ink, maxLines = 1)
+        Text(tag, fontFamily = RobotoFlex, fontSize = 11.sp, color = c.sub, maxLines = 1)
+    }
+}
+
 /** A small keyboard drawn with Murmur's colors, so changes show before you open a text field. */
 @Composable
-private fun KeyboardPreview(mode: ThemeMode, accentInt: Int, borders: Boolean, heightScale: Float) {
+private fun KeyboardPreview(mode: ThemeMode, accentInt: Int, borders: Boolean, heightScale: Float, named: dev.murmur.design.MurmurThemes.Palette? = null) {
     val accent = Color(accentInt)
     val dark = mode == ThemeMode.DARK
     val black = mode == ThemeMode.BLACK
-    val bg = Color(if (black) MurmurTokens.Black.background(accentInt) else if (dark) MurmurTokens.Dark.BACKGROUND else MurmurTokens.Light.BACKGROUND)
-    val key = Color(if (black) MurmurTokens.Black.key(accentInt) else if (dark) MurmurTokens.Dark.KEY else MurmurTokens.Light.KEY)
-    val fn = Color(if (black) MurmurTokens.Black.functionKey(accentInt) else if (dark) MurmurTokens.Dark.FUNCTION_KEY else MurmurTokens.Light.FUNCTION_KEY)
-    val ink = Color(if (black) MurmurTokens.Black.text(accentInt) else if (dark) MurmurTokens.Dark.TEXT else MurmurTokens.Light.TEXT)
-    val sub = Color(if (black) MurmurTokens.Black.subtle(accentInt) else if (dark) MurmurTokens.Dark.SUBTLE else MurmurTokens.Light.SUBTLE)
-    val onAccent = if (accent.luminance() > 0.3f) Color(0xFF0D1336) else Color.White
+    val bg = Color(named?.background ?: if (black) MurmurTokens.Black.background(accentInt) else if (dark) MurmurTokens.Dark.BACKGROUND else MurmurTokens.Light.BACKGROUND)
+    val key = Color(named?.key ?: if (black) MurmurTokens.Black.key(accentInt) else if (dark) MurmurTokens.Dark.KEY else MurmurTokens.Light.KEY)
+    val fn = Color(named?.functionKey ?: if (black) MurmurTokens.Black.functionKey(accentInt) else if (dark) MurmurTokens.Dark.FUNCTION_KEY else MurmurTokens.Light.FUNCTION_KEY)
+    val ink = Color(named?.text ?: if (black) MurmurTokens.Black.text(accentInt) else if (dark) MurmurTokens.Dark.TEXT else MurmurTokens.Light.TEXT)
+    val sub = Color(named?.subtle ?: if (black) MurmurTokens.Black.subtle(accentInt) else if (dark) MurmurTokens.Dark.SUBTLE else MurmurTokens.Light.SUBTLE)
+    val onAccent = Color(dev.murmur.design.MurmurThemes.onAccent(accentInt))
     val rowH = (44 * heightScale).dp
     val keyBg = if (borders) key else Color.Transparent
     val fnBg = if (borders) fn else Color.Transparent
@@ -153,7 +187,7 @@ private fun KeyboardPreview(mode: ThemeMode, accentInt: Int, borders: Boolean, h
         Row(Modifier.fillMaxWidth().height(rowH), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
             PreviewKey("?123", fnBg, ink, 1.5f, small = true)
             PreviewKey(",", keyBg, ink)
-            PreviewKey("English · Español", keyBg, sub, 5f, small = true)
+            PreviewKey("English", keyBg, sub, 5f, small = true)
             PreviewKey(".", keyBg, ink)
             PreviewKey("", accent, onAccent, 1.5f, icon = R.drawable.sym_keyboard_return_lxx)
         }
@@ -187,4 +221,10 @@ private fun writeMode(prefs: android.content.SharedPreferences, mode: ThemeMode)
         else -> KeyboardTheme.THEME_MURMUR_LIGHT
     })
     putString(Settings.PREF_THEME_COLORS_NIGHT, KeyboardTheme.THEME_MURMUR_DARK)
+}
+
+/** A named theme pins its own colors by day and night. */
+private fun writeNamed(prefs: android.content.SharedPreferences, t: dev.murmur.design.MurmurThemes.Palette) = prefs.edit {
+    putBoolean(Settings.PREF_THEME_DAY_NIGHT, false)
+    putString(Settings.PREF_THEME_COLORS, t.id)
 }

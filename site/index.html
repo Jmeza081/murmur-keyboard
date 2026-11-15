@@ -43,12 +43,13 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 .l-nav nav { display: flex; gap: 4px; margin-left: auto; }
 .l-nav nav a { text-decoration: none; color: var(--muted); font-size: 14.5px; font-weight: 500; padding: 8px 12px; border-radius: 10px; transition: color 160ms ease; }
 @media (hover: hover) and (pointer: fine) { .l-nav nav a:hover { color: var(--ink); } }
-@media (max-width: 760px) { .l-nav nav a:not(.l-gh) { display: none; } }
+@media (max-width: 760px) { .l-nav nav a:not(.l-gh) { display: none; } .l-nav nav { align-items: center; } .l-nav .l-wrap { gap: 12px; } .l-gh { white-space: nowrap; } }
+@media (max-width: 440px) { .l-gh .l-ghtx { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
 
 /* Buttons */
 .l-btn { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 22px; border-radius: 26px; font: inherit; font-weight: 600; font-size: 16px; text-decoration: none; border: 0; cursor: pointer; transition: transform 160ms var(--ease-out), background 160ms ease; }
 .l-btn:active { transform: scale(0.97); }
-.l-btn.rec { background: var(--rec); color: #fff; box-shadow: 0 10px 30px -10px color-mix(in srgb, var(--rec) 70%, transparent); }
+.l-btn.rec { background: var(--rec); color: var(--on-rec, #fff); box-shadow: 0 10px 30px -10px color-mix(in srgb, var(--rec) 70%, transparent); }
 .l-btn.ghost { background: var(--panel-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
 @media (hover: hover) and (pointer: fine) { .l-btn.rec:hover { background: color-mix(in srgb, var(--rec) 88%, #fff); } .l-btn.ghost:hover { background: #20242C; } }
 
@@ -122,7 +123,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 .msheet canvas { width: 100%; height: 108px; display: block; margin: 8px 0 6px; }
 .mctrls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 8px; }
 .mctrls .round { width: 48px; height: 48px; background: #2A2E37; color: #ECEEF3; }
-.msend { position: relative; width: 68px; height: 68px; border-radius: 50%; display: grid; place-items: center; background: var(--rec); color: #fff; }
+.msend { position: relative; width: 68px; height: 68px; border-radius: 50%; display: grid; place-items: center; background: var(--rec); color: var(--on-rec, #fff); }
 .msend::before { content: ""; position: absolute; inset: -14px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--rec) 45%, transparent), color-mix(in srgb, var(--rec) 0%, transparent)); animation: glow 1.8s ease-in-out infinite alternate; z-index: -1; }
 @keyframes glow { from { opacity: 0.55; transform: scale(0.94); } to { opacity: 1; transform: scale(1.06); } }
 .msend .icon { width: 28px; height: 28px; stroke-width: 2.2; }
@@ -212,7 +213,26 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 @keyframes trace { 0% { stroke-dashoffset: 1; opacity: 0.55; } 35% { stroke-dashoffset: 0; opacity: 0.55; } 70% { stroke-dashoffset: 0; opacity: 0.55; } 85%, 100% { stroke-dashoffset: 0; opacity: 0; } }
 @keyframes dotfade { 0%, 30% { opacity: 0; } 36%, 70% { opacity: 1; } 85%, 100% { opacity: 0; } }
 
+/* Theme picker in the nav, and theme cards (the same six themes as the app) */
+.l-theme { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 6px 0 12px; border-radius: 20px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); color: var(--muted); font-size: 13.5px; font-weight: 500; }
+.l-theme .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--rec); flex: none; }
+.l-theme select { appearance: none; -webkit-appearance: none; background: transparent; border: 0; color: var(--ink); font: inherit; font-weight: 600; padding: 0 22px 0 0; height: 40px; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: right 8px center, right 3px center; background-size: 5px 5px; background-repeat: no-repeat; }
+.l-theme select:focus-visible { outline: 3px solid var(--acc); outline-offset: 2px; border-radius: 8px; }
+.l-theme select option { background: var(--panel); color: var(--ink); }
+.l-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 28px; }
+.l-themes button { all: unset; box-sizing: border-box; cursor: pointer; border-radius: 16px; padding: 8px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); display: grid; gap: 8px; transition: transform 160ms var(--ease-out), box-shadow 160ms ease; }
+.l-themes button:active { transform: scale(0.97); }
+.l-themes button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--rec); }
+.l-themes button:focus-visible { outline: 3px solid var(--acc); outline-offset: 3px; }
+.l-themes .pv { height: 46px; border-radius: 10px; display: flex; align-items: flex-end; gap: 4px; padding: 6px; }
+.l-themes .pv i { flex: 1; height: 16px; border-radius: 4px; }
+.l-themes .pv i:last-child { flex: 1.4; }
+.l-themes b { font-size: 14px; color: var(--ink); }
+.l-themes span { font-size: 12px; color: var(--muted); margin-top: -6px; }
 /* Theme swatches */
+[hidden] { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .l-swatches { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
 .l-swatches button { width: 48px; height: 48px; border-radius: 50%; border: 0; cursor: pointer; background: var(--c); box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px var(--line); transition: transform 160ms var(--ease-out), box-shadow 160ms ease; display: grid; place-items: center; color: #fff; }
 .l-swatches button:active { transform: scale(0.94); }
@@ -336,7 +356,7 @@ footer a { color: var(--ink); }
 }
 .dict-ctrls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 12px; }
 .round { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--k-fn); color: var(--k-ink); }
-.stop { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; background: var(--k-rec); color: #fff; box-shadow: 0 0 0 8px color-mix(in srgb, var(--k-rec) 18%, transparent); }
+.stop { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; background: var(--k-rec); color: var(--on-rec, #fff); box-shadow: 0 0 0 8px color-mix(in srgb, var(--k-rec) 18%, transparent); }
 .stop .sq { width: 22px; height: 22px; border-radius: 5px; background: #fff; }
 .hint { text-align: center; font-size: 12px; color: var(--k-sub); }
 
@@ -376,7 +396,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
 .sheet .transcript { font-size: 17px; line-height: 1.45; min-height: 74px; }
 .snack { position: absolute; left: 12px; right: 12px; bottom: 18px; z-index: 4; border-radius: 14px; background: #24272F; color: #F1F2F5; padding: 12px 14px; display: flex; align-items: center; gap: 12px; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
 .snack .act { margin-left: auto; color: #A9B6FF; font-weight: 600; min-height: 32px; display: inline-flex; align-items: center; }
-.hold-callout { position: absolute; right: 22px; top: 176px; z-index: 4; background: var(--k-rec); color: #fff; padding: 8px 12px; border-radius: 12px 12px 4px 12px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); }
+.hold-callout { position: absolute; right: 22px; top: 176px; z-index: 4; background: var(--k-rec); color: var(--on-rec, #fff); padding: 8px 12px; border-radius: 12px 12px 4px 12px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); }
 .ring { position: absolute; right: -16px; top: 204px; width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--rec); opacity: 0.5; z-index: 0; }
 
 /* Notes-style app (used behind overlays) */
@@ -502,7 +522,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
 .l-review .l-seg button { padding: 0 6px; }
 .rv-acts { display: flex; justify-content: space-between; align-items: center; }
 .rv-x { width: 48px; height: 48px; border-radius: 50%; border: 0; display: grid; place-items: center; background: var(--panel-2); color: var(--ink); cursor: pointer; }
-.rv-ins { height: 48px; padding: 0 28px; border-radius: 24px; border: 0; font: inherit; font-weight: 600; background: var(--rec); color: #fff; cursor: pointer; transition: transform 160ms var(--ease-out); }
+.rv-ins { height: 48px; padding: 0 28px; border-radius: 24px; border: 0; font: inherit; font-weight: 600; background: var(--rec); color: var(--on-rec, #fff); cursor: pointer; transition: transform 160ms var(--ease-out); }
 .rv-x:active, .rv-ins:active { transform: scale(0.97); }
 </style>
 </head>
@@ -566,7 +586,8 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
       <a href="#keyboard">Keyboard</a>
       <a href="#theme">Theme</a>
       <a href="#privacy">Privacy</a>
-      <a class="l-gh" href="https://github.com/Jmeza081/murmur-keyboard"><svg class="icon sm" style="vertical-align: -4px; margin-right: 4px"><use href="#i-github"/></svg>Source</a>
+      <label class="l-theme"><span class="dot" aria-hidden="true"></span><span class="sr-only">Theme</span><select id="theme-select" aria-label="Keyboard theme"></select></label>
+      <a class="l-gh" href="https://github.com/Jmeza081/murmur-keyboard"><svg class="icon sm" style="vertical-align: -4px; margin-right: 4px"><use href="#i-github"/></svg><span class="l-ghtx">Source</span></a>
     </nav>
   </div>
 </header>
@@ -888,8 +909,9 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
   <div class="l-wrap l-split">
     <div>
       <p class="l-kicker rv">Make it yours</p>
-      <h2 class="rv">Five accents. Light, dark, or both.</h2>
-      <p class="l-intro rv">Pick an accent and it colors Enter, the mic, and Send. Every one keeps white icons readable on light and dark keys. Try one here.</p>
+      <h2 class="rv">Six themes, or Classic with your accent.</h2>
+      <p class="l-intro rv">Each theme colors the keys, the mic, dictation and the power-button sheet. Regolith Red borrows the Regolith palette: near-black, grey keys, one red. Pick one here, or use the Theme menu at the top, and the whole page follows.</p>
+      <div class="l-themes rv d1" role="group" aria-label="Keyboard theme" id="theme-cards"></div>
       <div class="l-swatches rv d1" role="group" aria-label="Accent color" id="swatches"></div>
       <p class="l-swname rv d1" id="swname" aria-live="polite"></p>
     </div>
@@ -1105,7 +1127,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
     'zxcvbnm'.split('').forEach(function (c) { h += '<span class="key' + (lit.indexOf(c) > -1 ? ' lit' : '') + '" data-c="' + c + '">' + c + '</span>'; });
     h += '<span class="key fn" style="grid-column: span 3">' + I('back', 'sm') + '</span>';
     h += '<span class="key fn" style="grid-column: span 3">?123</span><span class="key fn">,</span>';
-    h += '<span class="key space" style="grid-column: span 10">English · Español</span>';
+    h += '<span class="key space" style="grid-column: span 10">English</span>';
     h += '<span class="key fn">.</span><span class="key acc" style="grid-column: span 3">' + I('enter', 'sm') + '</span>';
     return h + '</div>';
   }
@@ -1159,7 +1181,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
       var pad = '<span class="key w1"></span>';
       var left = '<div class="keys">' + row('qwert') + pad + pad + row('asdfg') + '<span class="key fn w3">' + I('shift', 'sm') + '</span>' + row('zxcv') + '</div>';
       var right = '<div class="keys">' + row('yuiop') + pad + pad + row('ghjkl', 'g') + row('vbnm', 'v') + '<span class="key fn w3">' + I('back', 'sm') + '</span></div>';
-      var bot = '<div class="sbot"><span class="key fn wide">?123</span><span class="key fn">,</span><span class="key space">English · Español</span><span class="key fn">.</span><span class="key acc wide">' + I('enter', 'sm') + '</span></div>';
+      var bot = '<div class="sbot"><span class="key fn wide">?123</span><span class="key fn">,</span><span class="key space">English</span><span class="key fn">.</span><span class="key acc wide">' + I('enter', 'sm') + '</span></div>';
       return foldStrip(true) + '<div class="split">' + left + '<div></div>' + right + bot + '</div>';
     },
     full: function () { return foldStrip(true) + letters(); },
@@ -1443,7 +1465,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
     // the whole page follows: buttons, glows, waveforms, the listening sheet
     document.documentElement.style.setProperty('--rec', hex);
     REC = hex;
-    try { localStorage.setItem('murmur-accent', name); } catch (e) {}
+    saved = name; try { localStorage.setItem('murmur-accent', name); } catch (e) {}
     document.querySelectorAll('.phone').forEach(function (p) {
       var dark = p.classList.contains('dark');
       if (name === 'Cobalt') { p.style.removeProperty('--k-acc'); p.style.removeProperty('--k-on-acc'); }
@@ -1460,6 +1482,55 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
   sw.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setAccent(b.dataset.n); });
   var saved = null; try { saved = localStorage.getItem('murmur-accent'); } catch (e) {}
   setAccent(ACCENTS.some(function (a) { return a[0] === saved; }) ? saved : 'Cobalt');
+
+  /* ---------- Themes: the app's six named themes recolor every phone and the page ---------- */
+  // id, name, tag, background, key, function key, text, subtle text, accent (same values as MurmurThemes.kt)
+  var THEMES = [
+    ['regolith', 'Regolith', 'Regolith Red · dark', '#0A0A0A', '#1C1C1C', '#2E2E2E', '#FFFFFF', '#8A8A8A', '#E11B17'],
+    ['regolith-dust', 'Regolith Dust', 'Regolith Red · light', '#E6D7B4', '#F7F0DF', '#D3C29C', '#1F1F1F', '#5E523A', '#E11B17'],
+    ['regolith-orbit', 'Regolith Orbit', 'Regolith Red · blue night', '#121820', '#1C2228', '#243040', '#E8EEF7', '#9AA8BE', '#E11B17'],
+    ['paper-cobalt', 'Paper Cobalt', 'Light', '#E4E7EE', '#FFFFFF', '#CDD2DC', '#0B0D11', '#5B6270', '#2F4BE0'],
+    ['moss', 'Moss', 'Dark · green', '#0F1518', '#1A2420', '#1F3A33', '#E7F2EC', '#93AB9F', '#3DDC84'],
+    ['mono', 'Mono', 'AMOLED', '#000000', '#121212', '#0A0A0A', '#FFFFFF', '#8A8A8A', '#FFFFFF']
+  ];
+  var KVARS = ['--k-bg', '--k-key', '--k-fn', '--k-ink', '--k-sub', '--k-acc', '--k-on-acc', '--k-rec'];
+  var PAGE = ['--bg', '--panel', '--panel-2', '--line'];
+  var sel = document.getElementById('theme-select'), cards = document.getElementById('theme-cards');
+  function lum(hex) { var n = parseInt(hex.slice(1), 16), c = [n >> 16, (n >> 8) & 255, n & 255].map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; }
+  function mix(a, b, t) { var x = parseInt(a.slice(1), 16), y = parseInt(b.slice(1), 16); var r = [16, 8, 0].map(function (s) { var p = (x >> s) & 255, q = (y >> s) & 255; return Math.round(p + (q - p) * t); }); return '#' + r.map(function (v) { return ('0' + v.toString(16)).slice(-2); }).join(''); }
+  function setTheme(id) {
+    var t = THEMES.filter(function (x) { return x[0] === id; })[0];
+    var root = document.documentElement.style;
+    try { localStorage.setItem('murmur-theme', t ? id : 'classic'); } catch (e) {}
+    sel.value = t ? id : 'classic';
+    cards.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.t === (t ? id : 'classic'))); });
+    sw.hidden = !!t; swname.hidden = !!t;
+    if (!t) {
+      PAGE.concat(['--on-rec']).forEach(function (v) { root.removeProperty(v); });
+      document.querySelectorAll('.phone').forEach(function (p) { KVARS.forEach(function (v) { p.style.removeProperty(v); }); });
+      setAccent(ACCENTS.some(function (a) { return a[0] === saved; }) ? saved : 'Cobalt');
+      return;
+    }
+    var acc = t[8], onAcc = lum(acc) > 0.3 ? '#0B0D11' : '#FFFFFF', dark = lum(t[3]) < 0.5;
+    root.setProperty('--rec', acc); root.setProperty('--on-rec', onAcc); REC = acc;
+    // the page stage takes the theme's dark ground (light themes keep the dark stage, tinted)
+    var ground = dark ? t[3] : '#0B0D11';
+    root.setProperty('--bg', ground); root.setProperty('--panel', mix(ground, '#FFFFFF', 0.04)); root.setProperty('--panel-2', mix(ground, '#FFFFFF', 0.07)); root.setProperty('--line', mix(ground, '#FFFFFF', 0.13));
+    document.querySelectorAll('.phone').forEach(function (p) {
+      var vals = [t[3], t[4], t[5], t[6], t[7], acc, onAcc, acc];
+      KVARS.forEach(function (v, i) { p.style.setProperty(v, vals[i]); });
+    });
+  }
+  sel.insertAdjacentHTML('beforeend', '<option value="classic">Classic</option>');
+  cards.insertAdjacentHTML('beforeend', '<button type="button" data-t="classic" aria-pressed="false"><span class="pv" style="background: #121419"><i style="background: #2A2E37"></i><i style="background: #2A2E37"></i><i style="background: var(--rec)"></i></span><b>Classic</b><span>Light · Dark · your accent</span></button>');
+  THEMES.forEach(function (t) {
+    sel.insertAdjacentHTML('beforeend', '<option value="' + t[0] + '">' + t[1] + '</option>');
+    cards.insertAdjacentHTML('beforeend', '<button type="button" data-t="' + t[0] + '" aria-pressed="false"><span class="pv" style="background: ' + t[3] + '"><i style="background: ' + t[4] + '"></i><i style="background: ' + t[4] + '"></i><i style="background: ' + t[8] + '"></i></span><b>' + t[1] + '</b><span>' + t[2] + '</span></button>');
+  });
+  sel.addEventListener('change', function () { setTheme(sel.value); });
+  cards.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setTheme(b.dataset.t); });
+  var savedTheme = null; try { savedTheme = localStorage.getItem('murmur-theme'); } catch (e) {}
+  setTheme(savedTheme || 'classic');
 
   /* ---------- Inner-screen layouts ---------- */
   var FOLD = {

@@ -168,7 +168,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
 
         // Opening motion (design/sheet-activation.html, option D): an orange listening capsule pops up,
         // then opens out into the sheet
-        capsuleBars = LevelBarsView(c, Color.WHITE, Color.WHITE, WaveStyle.BARS)
+        capsuleBars = LevelBarsView(c, dev.murmur.design.MurmurThemes.onAccent(recording), dev.murmur.design.MurmurThemes.onAccent(recording), WaveStyle.BARS)
         capsule = FrameLayout(c).apply {
             background = GradientDrawable().apply { cornerRadius = dp(CAPSULE_H_DP / 2f); setColor(recording) }
             setPadding(dp(16), dp(8), dp(16), dp(8))
@@ -361,7 +361,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
     private fun chip(c: Context, label: String, on: Boolean = false, onClick: () -> Unit) = TextView(c).apply {
         text = label
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-        setTextColor(if (on) Color.WHITE else ink)
+        setTextColor(if (on) dev.murmur.design.MurmurThemes.onAccent(accent) else ink)
         gravity = Gravity.CENTER
         setPadding(dp(14), 0, dp(14), 0)
         minHeight = dp(36)
@@ -389,7 +389,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
             text = "Insert"
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
             typeface = android.graphics.Typeface.DEFAULT_BOLD
-            setTextColor(Color.WHITE)
+            setTextColor(dev.murmur.design.MurmurThemes.onAccent(accent))
             gravity = Gravity.CENTER
             background = GradientDrawable().apply { cornerRadius = dp(28f); setColor(accent) }
             setOnClickListener { if (loading == null && respeak == null) { val t = current; dismissBrush(); closeReview(keepText = true); insert(t) } }
@@ -673,11 +673,12 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
                 this.text = label ?: ""
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 14.5f)
                 typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
-                setTextColor(Color.WHITE)
+                val fg = if (primary) dev.murmur.design.MurmurThemes.onAccent(recording) else Color.WHITE
+                setTextColor(fg)
                 gravity = Gravity.CENTER
                 compoundDrawablePadding = dp(6)
                 setCompoundDrawablesRelativeWithIntrinsicBounds(icon, 0, 0, 0)
-                androidx.core.widget.TextViewCompat.setCompoundDrawableTintList(this, android.content.res.ColorStateList.valueOf(Color.WHITE))
+                androidx.core.widget.TextViewCompat.setCompoundDrawableTintList(this, android.content.res.ColorStateList.valueOf(fg))
                 setPadding(dp(14), 0, dp(if (label == null) 8 else 16), 0)
                 minWidth = dp(44)
                 if (primary) background = GradientDrawable().apply { cornerRadius = dp(20f); setColor(recording) }
@@ -758,7 +759,7 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
             text = "Done"
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
             typeface = android.graphics.Typeface.DEFAULT_BOLD
-            setTextColor(Color.WHITE)
+            setTextColor(dev.murmur.design.MurmurThemes.onAccent(recording))
             gravity = Gravity.CENTER
             setPadding(dp(22), 0, dp(22), 0)
             background = GradientDrawable().apply { cornerRadius = dp(22f); setColor(recording) }

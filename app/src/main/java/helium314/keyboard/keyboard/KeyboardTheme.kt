@@ -74,6 +74,7 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         const val THEME_MURMUR_BLACK = "murmur_black"
         fun getAvailableDefaultColors(prefs: SharedPreferences, isNight: Boolean) = listOfNotNull(
             if (!isNight) THEME_MURMUR_LIGHT else null, THEME_MURMUR_DARK, THEME_MURMUR_BLACK,
+            *dev.murmur.design.MurmurThemes.ALL.filter { !isNight || it.dark }.map { it.id }.toTypedArray(),
             if (!isNight) THEME_LIGHT else null, THEME_DARK,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) THEME_DYNAMIC else null,
             if (prefs.getString(Settings.PREF_THEME_STYLE, Defaults.PREF_THEME_STYLE) == STYLE_HOLO) THEME_HOLO_WHITE else null,
@@ -155,6 +156,12 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         private fun getThemeColors(themeName: String, themeStyle: String, context: Context, prefs: SharedPreferences, isNight: Boolean): Colors {
             val hasBorders = prefs.getBoolean(Settings.PREF_THEME_KEY_BORDERS, Defaults.PREF_THEME_KEY_BORDERS)
             val backgroundImage = Settings.readUserBackgroundImage(context, isNight)
+            // Murmur: named themes with their own accent (Regolith, Moss, Mono, ...)
+            dev.murmur.design.MurmurThemes.byId(themeName)?.let { t ->
+                return DefaultColors(themeStyle, hasBorders, accent = t.accent, background = t.background,
+                    keyBackground = t.key, functionalKey = t.functionKey, spaceBar = t.key,
+                    keyText = t.text, keyHintText = t.subtle, keyboardBackground = backgroundImage)
+            }
             return when (themeName) {
                 THEME_DYNAMIC -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) DynamicColors(context, themeStyle, hasBorders, backgroundImage)

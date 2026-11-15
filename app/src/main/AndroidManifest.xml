@@ -8,6 +8,7 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" /><!-- Murmur: test one-time code only -->
     <uses-permission android:name="android.permission.READ_USER_DICTIONARY" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -33,6 +34,15 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
             tools:targetApi="33">
 
         <!-- Services -->
+        <!-- Murmur: one-time codes from notifications, offered in the strip (in memory only) -->
+        <service android:name="dev.murmur.otp.OneTimeCodes$Listener"
+                android:label="Murmur one-time codes"
+                android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+                android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
         <service android:name="LatinIME"
                 android:label="@string/english_ime_name"
                 android:permission="android.permission.BIND_INPUT_METHOD"

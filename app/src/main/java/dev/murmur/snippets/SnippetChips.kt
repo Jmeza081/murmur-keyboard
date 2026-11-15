@@ -33,13 +33,88 @@ object SnippetChips {
     @Volatile var field: Snippets.Kind? = null
         private set
 
+    private var strip: WeakReference<SuggestionStripView>? = null
+
     @JvmStatic
     fun onStartInput(ime: LatinIME, info: EditorInfo?, restarting: Boolean, strip: SuggestionStripView?) {
         this.ime = WeakReference(ime)
+        this.strip = strip?.let { WeakReference(it) }
         field = Snippets.kindFor(info)
+        // A code that arrives while this field is open shows right away
+        dev.murmur.otp.OneTimeCodes.onNew = { showCode(it) }
         if (restarting || strip == null || strip.hasExternalSuggestions) return
+        dev.murmur.otp.OneTimeCodes.fresh()?.let { if (showCode(it)) return }
         val row = chipRow(ime) ?: return
         strip.setExternalSuggestionView(row, true)
+    }
+
+    /** One-time code chip (never in password fields): tap types the code once. */
+    private fun showCode(c: dev.murmur.otp.OneTimeCodes.Code): Boolean {
+        val ime = ime?.get() ?: return false
+        val strip = strip?.get() ?: return false
+        if (!ime.isInputViewShown || ime.currentInputEditorInfo == null || isPasswordField()) return false
+        // Styled like the password-manager chips: key-colored 10 dp rounded rectangle, 40 dp tall,
+        // an icon on a small accent-tinted square, the code as the title and the sender below
+        val colors = Settings.getValues().mColors
+        val d = ime.resources.displayMetrics.density
+        fun px(v: Float) = (v * d).toInt()
+        val accent = colors.get(ColorType.ACTION_KEY_BACKGROUND)
+        val ink = colors.get(ColorType.KEY_TEXT)
+        val sub = colors.get(ColorType.KEY_HINT_TEXT)
+        val shown = if (c.code.length == 6) c.code.substring(0, 3) + " " + c.code.substring(3) else c.code
+        val icon = android.widget.ImageView(ime).apply {
+            setImageResource(R.drawable.ic_murmur_key)
+            setColorFilter(accent)
+            scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
+            setPadding(px(5f), px(5f), px(5f), px(5f))
+            background = GradientDrawable().apply { cornerRadius = 7 * d; setColor(ColorUtils.setAlphaComponent(accent, 40)) }
+        }
+        val texts = LinearLayout(ime).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(TextView(ime).apply {
+                text = shown
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+                setTextColor(ink)
+                maxLines = 1
+                includeFontPadding = false
+            })
+            addView(TextView(ime).apply {
+                text = "Code from ${c.from}"
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f)
+                setTextColor(sub)
+                maxLines = 1
+                ellipsize = TextUtils.TruncateAt.END
+                includeFontPadding = false
+                setPadding(0, px(2f), 0, 0)
+            })
+        }
+        val chip = LinearLayout(ime).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(px(8f), 0, px(16f), 0)
+            background = GradientDrawable().apply { cornerRadius = 10 * d; setColor(colors.get(ColorType.KEY_BACKGROUND)) }
+            addView(icon, LinearLayout.LayoutParams(px(26f), px(26f)).apply { marginEnd = px(10f) })
+            addView(texts, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            contentDescription = "Insert code ${c.code} from ${c.from}"
+            isClickable = true
+            setOnClickListener {
+                dev.murmur.otp.OneTimeCodes.consume()
+                ime.currentInputConnection?.commitText(c.code, 1)
+                ime.removeExternalSuggestions()
+            }
+            // same vertical center as the suggestion pills and the mic (the key rows add space below the strip)
+            translationY = 3 * d
+        }
+        // starts at the left, like the password chips (the dismiss button sits at the right)
+        val row = LinearLayout(ime).apply {
+            gravity = Gravity.START or Gravity.CENTER_VERTICAL
+            setPadding(px(6f), 0, 0, 0)
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            addView(chip, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(40f)))
+        }
+        strip.setExternalSuggestionView(row, true)
+        return true
     }
 
     /** The chips for the current field, in a row; null when there are none. */
