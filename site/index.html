@@ -44,6 +44,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 .l-nav nav a { text-decoration: none; color: var(--muted); font-size: 14.5px; font-weight: 500; padding: 8px 12px; border-radius: 10px; transition: color 160ms ease; }
 @media (hover: hover) and (pointer: fine) { .l-nav nav a:hover { color: var(--ink); } }
 @media (max-width: 760px) { .l-nav nav a:not(.l-gh) { display: none; } .l-nav nav { align-items: center; } .l-nav .l-wrap { gap: 12px; } .l-gh { white-space: nowrap; } }
+@media (max-width: 520px) { .l-wrap { padding: 0 18px; } .l-nav .l-wrap { gap: 8px; } .l-brand { font-size: 21px; } }
 @media (max-width: 440px) { .l-gh .l-ghtx { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
 
 /* Buttons */
@@ -147,7 +148,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 .l-sec .l-intro { color: var(--muted); max-width: 40em; margin: 0; font-size: 18.5px; text-wrap: pretty; }
 .l-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; align-items: center; }
 @media (max-width: 960px) {
-  .l-hero .l-wrap, .l-split { grid-template-columns: 1fr; }
+  .l-hero .l-wrap, .l-split { grid-template-columns: minmax(0, 1fr); }
   .l-hero { padding-top: 40px; }
   .l-said { left: 0; top: 40px; }
 }
@@ -220,6 +221,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
   background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: right 8px center, right 3px center; background-size: 5px 5px; background-repeat: no-repeat; }
 .l-theme select:focus-visible { outline: 3px solid var(--acc); outline-offset: 2px; border-radius: 8px; }
 .l-theme select option { background: var(--panel); color: var(--ink); }
+.phone.kbfloat { width: min(100%, 420px); height: auto; padding: 0; border-radius: 22px; overflow: hidden; background: var(--k-bg); zoom: 1; box-shadow: 0 40px 80px -36px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08); }
+.phone.kbfloat .kb { padding-top: 4px; }
 .l-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 28px; }
 .l-themes button { all: unset; box-sizing: border-box; cursor: pointer; border-radius: 16px; padding: 8px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line); display: grid; gap: 8px; transition: transform 160ms var(--ease-out), box-shadow 160ms ease; }
 .l-themes button:active { transform: scale(0.97); }
@@ -244,7 +247,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 .phone, .phone * { transition-property: background-color, color, border-color; transition-duration: 260ms; transition-timing-function: ease; }
 
 /* Fold */
-.l-fold { margin-top: 56px; display: grid; justify-items: center; overflow: hidden; }
+.l-fold { margin-top: 56px; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; overflow: hidden; }
 .l-fold-frame { transform-origin: top center; }
 
 /* Privacy */
@@ -824,7 +827,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
   <div class="l-wrap">
     <p class="l-kicker rv">The keyboard</p>
     <h2 class="rv">A full keyboard, not just a mic.</h2>
-    <p class="l-intro rv">Built on HeliBoard, the open-source Android keyboard: swipe typing, suggestions in every field except passwords, English and Spanish together, emoji, a clipboard you can pin, a number pad sized like the letters, and a one-tap 1Password button.</p>
+    <p class="l-intro rv">Built on HeliBoard, the open-source Android keyboard: swipe typing, suggestions in every field except passwords, emoji, a clipboard you can pin, a number pad sized like the letters, and a one-tap 1Password button.</p>
   </div>
   <div class="l-bleed">
     <div class="l-gallery">
@@ -916,28 +919,8 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
       <p class="l-swname rv d1" id="swname" aria-live="polite"></p>
     </div>
     <div style="display: grid; justify-items: center" class="rv d1">
-      <div class="phone" id="theme-phone">
-        <div class="punch"></div>
-        <div class="screen">
-          <div class="sapp">
-            <div class="stop-bar"><span class="sbtn" style="color: var(--s-ink)"><svg class="icon"><use href="#i-arrow-l"/></svg></span><span class="t">Theme</span></div>
-            <div class="sbody">
-              <div class="phone dark mini-wrap" style="width: auto; height: auto; padding: 0; background: none; box-shadow: none; border-radius: 16px; overflow: hidden">
-                <div class="kb mini-kb" data-kb="mini" style="padding-top: 2px"></div>
-              </div>
-              <div class="group" style="padding: 14px 16px; display: grid; gap: 14px">
-                <div class="seg"><span>Light</span><span>Dark</span><span class="on">System</span></div>
-                <div style="display: grid; gap: 8px"><span style="font-size: 13px; font-weight: 500">Accent</span>
-                  <div class="swatches" id="phone-sw"></div>
-                </div>
-              </div>
-              <div class="group">
-                <div class="item"><div class="tx"><b>Key borders</b><span>Separate each key</span></div><span class="switch on"></span></div>
-                <div class="item"><div class="tx"><b>Key height</b><span>Medium</span><div class="slider" style="margin-top: 6px"><span class="fill" style="width: 50%"></span><span class="knob" style="left: 50%"></span></div></div></div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="phone dark kbfloat" id="theme-phone" aria-label="Keyboard preview">
+        <div class="kb" data-kb="mini"></div>
       </div>
     </div>
   </div>
@@ -1459,7 +1442,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
 
   /* ---------- Accent swatches recolor every phone ---------- */
   var ACCENTS = [['Cobalt', '#2F4BE0'], ['Teal', '#0B7A75'], ['Ember', '#C2410C'], ['Violet', '#7C3AED'], ['Slate', '#4B5563']];
-  var sw = document.getElementById('swatches'), psw = document.getElementById('phone-sw'), swname = document.getElementById('swname');
+  var sw = document.getElementById('swatches'), swname = document.getElementById('swname');
   function setAccent(name) {
     var hex = ACCENTS.filter(function (a) { return a[0] === name; })[0][1];
     // the whole page follows: buttons, glows, waveforms, the listening sheet
@@ -1472,12 +1455,10 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
       else { p.style.setProperty('--k-acc', dark ? hex : hex); p.style.setProperty('--k-on-acc', '#FFFFFF'); }
     });
     sw.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.n === name)); });
-    psw.querySelectorAll('.sw').forEach(function (s) { s.classList.toggle('on', s.dataset.n === name); });
     swname.innerHTML = '<b>' + name + '</b> across the whole page.';
   }
   ACCENTS.forEach(function (a) {
     sw.insertAdjacentHTML('beforeend', '<button type="button" data-n="' + a[0] + '" style="--c: ' + a[1] + '" aria-label="' + a[0] + '" aria-pressed="false">' + I('check', 'sm') + '</button>');
-    psw.insertAdjacentHTML('beforeend', '<span class="sw" data-n="' + a[0] + '" style="background: ' + a[1] + '"></span>');
   });
   sw.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setAccent(b.dataset.n); });
   var saved = null; try { saved = localStorage.getItem('murmur-accent'); } catch (e) {}
