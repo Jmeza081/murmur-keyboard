@@ -262,6 +262,7 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
         if (start > end) return
         gestureMoveBackHaptics()
         connection.setSelection(start, end)
+        dev.murmur.keyboard.SwipeFx.setSelected(connection.getSelectedText(0), settings.current.mDeleteSwipe == 2)
     }
 
     private fun actualSteps(steps: Int): Int {
@@ -327,7 +328,13 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
         return true
     }
 
-    private fun onMoveCursorHorizontally(rawSteps: Int): Boolean {
+    private fun onMoveCursorHorizontally(rawSteps: Int): Boolean =
+        moveCursorHorizontally(rawSteps).also {
+            if (it && dev.murmur.keyboard.SwipeFx.active)
+                dev.murmur.keyboard.SwipeFx.setContext(connection.getTextBeforeCursor(8, 0), connection.getTextAfterCursor(8, 0))
+        }
+
+    private fun moveCursorHorizontally(rawSteps: Int): Boolean {
         if (rawSteps == 0) return false
         // for RTL languages we want to invert pointer movement
         val rtl = RichInputMethodManager.getInstance().currentSubtype.isRtlSubtype

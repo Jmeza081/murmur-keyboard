@@ -177,6 +177,95 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 .phone { box-shadow: 0 40px 80px -40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08); }
 @media (max-width: 440px) { .phone { zoom: 0.82; } .l-gallery { gap: 20px; padding: 8px 16px 24px; } }
 
+/* Gesture demos: delete swipe and space-bar cursor (5 s loops) */
+.key.del, .key.space { overflow: visible; }
+.gx-trail { position: absolute; right: 50%; top: 50%; height: 8px; margin-top: -4px; width: 0; border-radius: 4px; background: rgba(217, 58, 43, 0.38); pointer-events: none; }
+.gx-trail .fdot { position: absolute; left: -19px; top: -15px; width: 38px; height: 38px; border-radius: 50%; background: rgba(128,128,128,0.22); box-shadow: 0 0 0 2px rgba(128,128,128,0.55); }
+.gx-badge { position: absolute; left: 0; bottom: 40px; transform: translateX(-50%); height: 26px; padding: 0 11px; border-radius: 13px; background: #D93A2B; color: #fff; font-size: 12px; font-weight: 600; white-space: nowrap; display: grid; align-items: center; }
+.gx-badge span { grid-area: 1 / 1; opacity: 0; }
+.gw { display: inline-block; white-space: pre; overflow: hidden; vertical-align: bottom; border-radius: 4px; }
+.gx-ctx { position: absolute; inset: 0; display: grid; place-items: center; font-size: 13px; color: var(--k-ink); white-space: pre; border-radius: inherit; overflow: hidden; }
+.gx-ctx > span { grid-area: 1 / 1; opacity: 0; }
+.gx-ctx i { font-style: normal; color: var(--k-sub); }
+.gx-ctx b { display: inline-block; width: 2px; height: 15px; background: var(--k-acc); vertical-align: -3px; margin: 0 2px; border-radius: 1px; }
+.gx-ruler { position: absolute; top: 0; bottom: 0; left: -140px; right: -140px; background-image: repeating-linear-gradient(90deg, color-mix(in srgb, var(--k-acc) 50%, transparent) 0 1.5px, transparent 1.5px 12px); background-size: 12px 6px; background-repeat: repeat-x; background-position: 0 calc(100% - 3px); }
+.gx-win { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; background: color-mix(in srgb, var(--k-acc) 22%, var(--k-key)); opacity: 0; }
+.gx-fdot { position: absolute; left: 50%; top: 50%; width: 38px; height: 38px; margin: -19px; border-radius: 50%; background: rgba(128,128,128,0.22); box-shadow: 0 0 0 2px rgba(128,128,128,0.55); opacity: 0; }
+.gcr { display: inline-block; width: 0; height: 1.15em; vertical-align: -0.2em; position: relative; }
+.gcr::after { content: ""; position: absolute; left: -1px; top: 0; width: 2px; height: 100%; background: var(--k-acc); opacity: 0; }
+@media (prefers-reduced-motion: no-preference) {
+.gx-trail { animation: gxt 5s cubic-bezier(0.77, 0, 0.175, 1) infinite; }
+@keyframes gxt { 0% { width: 0; opacity: 0; } 10% { width: 0; opacity: 0; } 12% { width: 0; opacity: 1; } 22% { width: 48px; opacity: 1; } 32% { width: 96px; opacity: 1; } 42% { width: 144px; opacity: 1; } 50% { width: 184px; opacity: 1; } 60% { width: 184px; opacity: 1; } 66% { width: 184px; opacity: 0; } 100% { width: 0; opacity: 0; } }
+.key.del { animation: gxd 5s ease infinite; }
+@keyframes gxd { 0% {  } 10% { background: var(--k-fn); color: var(--k-ink); } 13% { background: #D93A2B; color: #fff; } 62% { background: #D93A2B; color: #fff; } 66% { background: var(--k-fn); color: var(--k-ink); } }
+.gb0 { animation: gb0 5s steps(1) infinite; }
+@keyframes gb0 { 0% { opacity: 0; } 22% { opacity: 1; } 32% { opacity: 0; } }
+.gb1 { animation: gb1 5s steps(1) infinite; }
+@keyframes gb1 { 0% { opacity: 0; } 32% { opacity: 1; } 42% { opacity: 0; } }
+.gb2 { animation: gb2 5s steps(1) infinite; }
+@keyframes gb2 { 0% { opacity: 0; } 42% { opacity: 1; } 50% { opacity: 0; } }
+.gb3 { animation: gb3 5s steps(1) infinite; }
+@keyframes gb3 { 0% { opacity: 0; } 50% { opacity: 1; } 63% { opacity: 0; } }
+.gw0 { animation: gw0 5s ease-out infinite; }
+@keyframes gw0 { 0% { max-width: 1.64em; background: transparent; opacity: 1; } 50% { max-width: 1.64em; background: transparent; } 53% { max-width: 1.64em; background: color-mix(in srgb, var(--k-acc) 28%, transparent); } 62% { max-width: 1.64em; background: color-mix(in srgb, var(--k-acc) 28%, transparent); opacity: 1; } 68% { max-width: 0em; opacity: 0; } 90% { max-width: 0em; opacity: 0; background: transparent; } 96% { max-width: 1.64em; opacity: 1; } 100% { max-width: 1.64em; opacity: 1; } }
+.gw1 { animation: gw1 5s ease-out infinite; }
+@keyframes gw1 { 0% { max-width: 4.12em; background: transparent; opacity: 1; } 42% { max-width: 4.12em; background: transparent; } 45% { max-width: 4.12em; background: color-mix(in srgb, var(--k-acc) 28%, transparent); } 62% { max-width: 4.12em; background: color-mix(in srgb, var(--k-acc) 28%, transparent); opacity: 1; } 68% { max-width: 0em; opacity: 0; } 90% { max-width: 0em; opacity: 0; background: transparent; } 96% { max-width: 4.12em; opacity: 1; } 100% { max-width: 4.12em; opacity: 1; } }
+.gw2 { animation: gw2 5s ease-out infinite; }
+@keyframes gw2 { 0% { max-width: 2.88em; background: transparent; opacity: 1; } 32% { max-width: 2.88em; background: transparent; } 35% { max-width: 2.88em; background: color-mix(in srgb, var(--k-acc) 28%, transparent); } 62% { max-width: 2.88em; background: color-mix(in srgb, var(--k-acc) 28%, transparent); opacity: 1; } 68% { max-width: 0em; opacity: 0; } 90% { max-width: 0em; opacity: 0; background: transparent; } 96% { max-width: 2.88em; opacity: 1; } 100% { max-width: 2.88em; opacity: 1; } }
+.gw3 { animation: gw3 5s ease-out infinite; }
+@keyframes gw3 { 0% { max-width: 2.26em; background: transparent; opacity: 1; } 22% { max-width: 2.26em; background: transparent; } 25% { max-width: 2.26em; background: color-mix(in srgb, var(--k-acc) 28%, transparent); } 62% { max-width: 2.26em; background: color-mix(in srgb, var(--k-acc) 28%, transparent); opacity: 1; } 68% { max-width: 0em; opacity: 0; } 90% { max-width: 0em; opacity: 0; background: transparent; } 96% { max-width: 2.26em; opacity: 1; } 100% { max-width: 2.26em; opacity: 1; } }
+.gx-win { animation: gxw 5s ease-out infinite; }
+@keyframes gxw { 0% { opacity: 0; } 12% { opacity: 0; } 15% { opacity: 1; } 76% { opacity: 1; } 80% { opacity: 0; } }
+.gx-ruler { animation: gxr 5s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+@keyframes gxr { 0% { transform: translateX(0); } 15% { transform: translateX(0); } 70% { transform: translateX(90px); } 100% { transform: translateX(90px); } }
+.gx-fdot { animation: gxf 5s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+@keyframes gxf { 0% { opacity: 0; transform: translateX(0) scale(0.8); } 10% { opacity: 0; transform: translateX(0) scale(0.8); } 13% { opacity: 1; transform: translateX(0) scale(1); } 70% { opacity: 1; transform: translateX(-80px) scale(1); } 76% { opacity: 1; transform: translateX(-80px) scale(1); } 79% { opacity: 0; transform: translateX(-80px) scale(0.85); } 100% { opacity: 0; } }
+.gx0 { animation: gx0 5s steps(1) infinite; }
+@keyframes gx0 { 0% { opacity: 0; } 15% { opacity: 1; } 23.2% { opacity: 0; } }
+.gx1 { animation: gx1 5s steps(1) infinite; }
+@keyframes gx1 { 0% { opacity: 0; } 23.2% { opacity: 1; } 28.4% { opacity: 0; } }
+.gx2 { animation: gx2 5s steps(1) infinite; }
+@keyframes gx2 { 0% { opacity: 0; } 28.4% { opacity: 1; } 33.6% { opacity: 0; } }
+.gx3 { animation: gx3 5s steps(1) infinite; }
+@keyframes gx3 { 0% { opacity: 0; } 33.6% { opacity: 1; } 38.8% { opacity: 0; } }
+.gx4 { animation: gx4 5s steps(1) infinite; }
+@keyframes gx4 { 0% { opacity: 0; } 38.8% { opacity: 1; } 44.0% { opacity: 0; } }
+.gx5 { animation: gx5 5s steps(1) infinite; }
+@keyframes gx5 { 0% { opacity: 0; } 44.0% { opacity: 1; } 49.2% { opacity: 0; } }
+.gx6 { animation: gx6 5s steps(1) infinite; }
+@keyframes gx6 { 0% { opacity: 0; } 49.2% { opacity: 1; } 54.4% { opacity: 0; } }
+.gx7 { animation: gx7 5s steps(1) infinite; }
+@keyframes gx7 { 0% { opacity: 0; } 54.4% { opacity: 1; } 59.6% { opacity: 0; } }
+.gx8 { animation: gx8 5s steps(1) infinite; }
+@keyframes gx8 { 0% { opacity: 0; } 59.6% { opacity: 1; } 64.8% { opacity: 0; } }
+.gx9 { animation: gx9 5s steps(1) infinite; }
+@keyframes gx9 { 0% { opacity: 0; } 64.8% { opacity: 1; } 70.0% { opacity: 0; } }
+.gx10 { animation: gx10 5s steps(1) infinite; }
+@keyframes gx10 { 0% { opacity: 0; } 70.0% { opacity: 1; } 76% { opacity: 0; } }
+.gc14::after { animation: gc14 5s steps(1) infinite; }
+@keyframes gc14 { 0% { opacity: 1; } 23.2% { opacity: 0; } 94% { opacity: 1; } }
+.gc13::after { animation: gc13 5s steps(1) infinite; }
+@keyframes gc13 { 0% { opacity: 0; } 23.2% { opacity: 1; } 28.4% { opacity: 0; } }
+.gc12::after { animation: gc12 5s steps(1) infinite; }
+@keyframes gc12 { 0% { opacity: 0; } 28.4% { opacity: 1; } 33.6% { opacity: 0; } }
+.gc11::after { animation: gc11 5s steps(1) infinite; }
+@keyframes gc11 { 0% { opacity: 0; } 33.6% { opacity: 1; } 38.8% { opacity: 0; } }
+.gc10::after { animation: gc10 5s steps(1) infinite; }
+@keyframes gc10 { 0% { opacity: 0; } 38.8% { opacity: 1; } 44.0% { opacity: 0; } }
+.gc9::after { animation: gc9 5s steps(1) infinite; }
+@keyframes gc9 { 0% { opacity: 0; } 44.0% { opacity: 1; } 49.2% { opacity: 0; } }
+.gc8::after { animation: gc8 5s steps(1) infinite; }
+@keyframes gc8 { 0% { opacity: 0; } 49.2% { opacity: 1; } 54.4% { opacity: 0; } }
+.gc7::after { animation: gc7 5s steps(1) infinite; }
+@keyframes gc7 { 0% { opacity: 0; } 54.4% { opacity: 1; } 59.6% { opacity: 0; } }
+.gc6::after { animation: gc6 5s steps(1) infinite; }
+@keyframes gc6 { 0% { opacity: 0; } 59.6% { opacity: 1; } 64.8% { opacity: 0; } }
+.gc5::after { animation: gc5 5s steps(1) infinite; }
+@keyframes gc5 { 0% { opacity: 0; } 64.8% { opacity: 1; } 70.0% { opacity: 0; } }
+.gc4::after { animation: gc4 5s steps(1) infinite; }
+@keyframes gc4 { 0% { opacity: 0; } 70.0% { opacity: 1; } 94% { opacity: 0; } }
+}
+@media (prefers-reduced-motion: reduce) { .gx-win { opacity: 1; } .gx0 { opacity: 1; } .gc14::after { opacity: 1; } }
 /* Cleanup diff */
 .l-diff { background: var(--panel); border: 1px solid var(--line); border-radius: 28px; padding: 28px; display: grid; gap: 18px; }
 .l-diff .row { display: grid; gap: 8px; }
@@ -827,7 +916,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
   <div class="l-wrap">
     <p class="l-kicker rv">The keyboard</p>
     <h2 class="rv">A full keyboard, not just a mic.</h2>
-    <p class="l-intro rv">Built on HeliBoard, the open-source Android keyboard: swipe typing, suggestions in every field except passwords, emoji, a clipboard you can pin, a number pad sized like the letters, and a one-tap 1Password button.</p>
+    <p class="l-intro rv">Built on HeliBoard, the open-source Android keyboard: swipe typing, swipe-to-delete words, a space bar that moves the cursor, suggestions in every field except passwords, emoji, a clipboard you can pin, a number pad sized like the letters, and a one-tap 1Password button.</p>
   </div>
   <div class="l-bleed">
     <div class="l-gallery">
@@ -846,6 +935,36 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
           </div>
         </div>
         <figcaption><b>Swipe typing</b><span>Glide through the letters. The trail follows your finger and fades when you lift.</span></figcaption>
+      </figure>
+      <figure class="rv d1">
+        <div class="phone">
+          <div class="punch"></div>
+          <div class="screen">
+            <div class="appbar"><span class="avatar">SR</span><div><div class="t">Sam Rivera</div><div class="s">Online</div></div></div>
+            <div class="thread">
+              <div class="bubble in">Where should we meet?</div>
+              <div class="bubble out">Pick a spot, I’ll be there</div>
+            </div>
+            <div class="composer"><div class="field">Running 10 min late. Grab<span class="gw gw0"> a</span><span class="gw gw1"> table</span><span class="gw gw2"> for</span><span class="gw gw3"> us</span><span class="caret"></span></div><span class="send"><svg class="icon sm"><use href="#i-send"/></svg></span></div>
+            <div class="kb" data-kb="delswipe"></div>
+          </div>
+        </div>
+        <figcaption><b>Swipe to delete words</b><span>Drag left from backspace. The key turns red and a count rides your finger. Lift to delete.</span></figcaption>
+      </figure>
+      <figure class="rv d2">
+        <div class="phone">
+          <div class="punch"></div>
+          <div class="screen">
+            <div class="appbar"><span class="avatar">SR</span><div><div class="t">Sam Rivera</div><div class="s">Online</div></div></div>
+            <div class="thread">
+              <div class="bubble in">Where should we meet?</div>
+              <div class="bubble out">Pick a spot, I’ll be there</div>
+            </div>
+            <div class="composer"><div class="field">See you at the cafe<i class="gcr gc4"></i> <i class="gcr gc5"></i>o<i class="gcr gc6"></i>n<i class="gcr gc7"></i> <i class="gcr gc8"></i>F<i class="gcr gc9"></i>r<i class="gcr gc10"></i>i<i class="gcr gc11"></i>d<i class="gcr gc12"></i>a<i class="gcr gc13"></i>y<i class="gcr gc14"></i></div><span class="send"><svg class="icon sm"><use href="#i-send"/></svg></span></div>
+            <div class="kb" data-kb="cursor"></div>
+          </div>
+        </div>
+        <figcaption><b>Slide to move the cursor</b><span>Slide on the space bar and it becomes a window on your text, caret in the middle, a ruler under your thumb.</span></figcaption>
       </figure>
       <figure class="rv d1">
         <div class="phone">
@@ -1108,9 +1227,9 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
     h += '<span style="grid-column: span 1"></span>';
     h += '<span class="key fn" style="grid-column: span 3">' + I('shift', 'sm') + '</span>';
     'zxcvbnm'.split('').forEach(function (c) { h += '<span class="key' + (lit.indexOf(c) > -1 ? ' lit' : '') + '" data-c="' + c + '">' + c + '</span>'; });
-    h += '<span class="key fn" style="grid-column: span 3">' + I('back', 'sm') + '</span>';
+    h += '<span class="key fn' + (opts.del ? ' del' : '') + '" style="grid-column: span 3">' + I('back', 'sm') + (opts.del || '') + '</span>';
     h += '<span class="key fn" style="grid-column: span 3">?123</span><span class="key fn">,</span>';
-    h += '<span class="key space" style="grid-column: span 10">English</span>';
+    h += '<span class="key space" style="grid-column: span 10">English' + (opts.space || '') + '</span>';
     h += '<span class="key fn">.</span><span class="key acc" style="grid-column: span 3">' + I('enter', 'sm') + '</span>';
     return h + '</div>';
   }
@@ -1129,6 +1248,8 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
   }
   var views = {
     tools: function () { return strip(tools, '<span class="sbtn">' + I('chev-up', 'sm') + '</span>') + letters() + bar; },
+    delswipe: function () { return strip(sugs('for', 'a', 'the')) + letters({ del: '<span class="gx-trail"><span class="fdot"></span><span class="gx-badge"><span class="gb0">1 word</span><span class="gb1">2 words</span><span class="gb2">3 words</span><span class="gb3">4 words</span></span></span>' }) + bar; },
+    cursor: function () { return strip(sugs('cafe', 'café', 'cafes')) + letters({ space: '<span class="gx-win"><span class="gx-ruler"></span><span class="gx-ctx"><span class="gx0"><i>ri</i>day<b></b><i></i></span><span class="gx1"><i>Fr</i>ida<b></b>y<i></i></span><span class="gx2"><i> F</i>rid<b></b>ay<i></i></span><span class="gx3"><i>n </i>Fri<b></b>day<i></i></span><span class="gx4"><i>on</i> Fr<b></b>ida<i>y</i></span><span class="gx5"><i> o</i>n F<b></b>rid<i>ay</i></span><span class="gx6"><i>e </i>on <b></b>Fri<i>da</i></span><span class="gx7"><i>fe</i> on<b></b> Fr<i>id</i></span><span class="gx8"><i>af</i>e o<b></b>n F<i>ri</i></span><span class="gx9"><i>ca</i>fe <b></b>on <i>Fr</i></span><span class="gx10"><i> c</i>afe<b></b> on<i> F</i></span></span></span><span class="gx-fdot"></span>' }) + bar; },
     typing: function () { return strip(sugs('market', 'market.', 'markets')) + letters() + bar; },
     typing2: function () { return strip(sugs('I', 'See', 'It’s')) + letters() + bar; },
     swipe: function () { return strip(sugs('there', 'then', 'the')) + letters({ lit: 'then' }) + bar; },

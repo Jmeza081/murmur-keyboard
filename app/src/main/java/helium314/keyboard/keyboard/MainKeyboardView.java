@@ -702,6 +702,12 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
     }
 
     @Override
+    protected void onDraw(@NonNull final Canvas canvas) {
+        super.onDraw(canvas);
+        dev.murmur.keyboard.SwipeFx.INSTANCE.draw(canvas, this);
+    }
+
+    @Override
     protected void onDrawKeyTopVisuals(@NonNull final Key key, @NonNull final Canvas canvas,
             @NonNull final Paint paint, @NonNull final KeyDrawParams params) {
         if (key.altCodeWhileTyping() && key.isEnabled()) {

@@ -973,7 +973,10 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
                 if (!mInHorizontalSwipe) {
                     sTimerProxy.cancelKeyTimersOf(this);
                     mInHorizontalSwipe = true;
+                    if (sv.mSpaceSwipeHorizontal == KeyboardActionListener.SwipeAction.MOVE_CURSOR && sDrawingProxy instanceof android.view.View v)
+                        dev.murmur.keyboard.SwipeFx.INSTANCE.begin(v, mCurrentKey, dev.murmur.keyboard.SwipeFx.Mode.CURSOR, mStartX);
                 } else if (oneShotSwipe(sv.mSpaceSwipeHorizontal)) return;
+                dev.murmur.keyboard.SwipeFx.INSTANCE.move(x);
                 if (sListener.onHorizontalSpaceSwipe(stepsX)) {
                     mStartX += stepsX * sPointerStep;
                 }
@@ -981,10 +984,13 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         } else if (code == KeyCode.DELETE) {
             // Delete slider
             int steps = (x - mStartX) / (sPointerStep * sv.mDeleteSwipe); // half speed for word delete
+            if (mInHorizontalSwipe) dev.murmur.keyboard.SwipeFx.INSTANCE.move(x);
             if (steps != 0) {
                 if (!mInHorizontalSwipe) {
                     sTimerProxy.cancelKeyTimersOf(this);
                     mInHorizontalSwipe = true;
+                    if (sDrawingProxy instanceof android.view.View v)
+                        dev.murmur.keyboard.SwipeFx.INSTANCE.begin(v, mCurrentKey, dev.murmur.keyboard.SwipeFx.Mode.DELETE, x);
                 }
                 mStartX += steps * sPointerStep;
                 sListener.onMoveDeletePointer(steps);
@@ -1105,6 +1111,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
 
             // Touchpad mode
             mTouchpadHandler.disableTouchpadMode();
+            dev.murmur.keyboard.SwipeFx.INSTANCE.end();
 
             if (mInHorizontalSwipe || mInVerticalSwipe) {
                 mInHorizontalSwipe = false;
@@ -1219,6 +1226,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
     }
 
     private void onCancelEventInternal() {
+        dev.murmur.keyboard.SwipeFx.INSTANCE.end();
         sTimerProxy.cancelKeyTimersOf(this);
         setReleasedKeyGraphics(mCurrentKey, true);
         resetKeySelectionByDraggingFinger();
