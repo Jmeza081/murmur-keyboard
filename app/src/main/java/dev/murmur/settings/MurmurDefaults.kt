@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.core.content.edit
 import helium314.keyboard.keyboard.KeyboardActionListener
+import helium314.keyboard.latin.common.Constants.Separators
 import helium314.keyboard.latin.common.Constants.Subtype.ExtraValue
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.settings.SettingsSubtype.Companion.toSettingsSubtype
@@ -18,7 +19,7 @@ import helium314.keyboard.latin.utils.prefs
  * Bump [VERSION] when a default changes and should reach existing installs.
  */
 object MurmurDefaults {
-    private const val VERSION = 5
+    private const val VERSION = 7
     private const val KEY = "murmur_defaults_version"
 
     fun applyOnce(context: Context) {
@@ -40,6 +41,16 @@ object MurmurDefaults {
             putBoolean(Settings.PREF_SHOW_EMOJI_KEY, true)
             putInt(KEY, VERSION)
         }
+        if (applied < 6) prefs.edit {
+            // v6: still missed simple typos at 0.7; 0.9 is "Very aggressive"
+            putFloat(Settings.PREF_AUTO_CORRECT_CONFIDENCE, AUTOCORRECT_VERY_AGGRESSIVE)
+            putInt(KEY, VERSION)
+        }
+        if (applied < 7) {
+            // v7: typing is English only; Spanish words were letting English typos through autocorrect (dictation still does Spanish)
+            runCatching { removeSpanish(context) }.onFailure { Log.w("MurmurDefaults", "Couldn't remove Spanish", it) }
+            prefs.edit { putInt(KEY, VERSION) }
+        }
         if (applied >= 1) return
         prefs.edit {
             putBoolean(Settings.PREF_VIBRATE_ON, true)
@@ -55,19 +66,22 @@ object MurmurDefaults {
             putBoolean(Settings.PREF_SUGGEST_CLIPBOARD_CONTENT, true)
             putBoolean(Settings.PREF_BLOCK_POTENTIALLY_OFFENSIVE, false)
         }
-        runCatching { addSpanish(context) }.onFailure { Log.w("MurmurDefaults", "Couldn't add Spanish", it) }
     }
 
-    /** English and Spanish in one keyboard: Spanish as a secondary language of each English subtype. */
-    private fun addSpanish(context: Context) {
+    /** Typing is English only: drops Spanish from the secondary languages of each English subtype. */
+    private fun removeSpanish(context: Context) {
         SubtypeSettings.getEnabledSubtypes().filter { it.locale().language == "en" }.forEach {
             val subtype = it.toSettingsSubtype()
-            if (subtype.getExtraValueOf(ExtraValue.SECONDARY_LOCALES)?.contains("es") == true) return@forEach
-            SubtypeUtilsAdditional.changeAdditionalSubtype(subtype, subtype.with(ExtraValue.SECONDARY_LOCALES, "es"), context)
+            val secondary = subtype.getExtraValueOf(ExtraValue.SECONDARY_LOCALES) ?: return@forEach
+            val rest = secondary.split(Separators.KV).filter { l -> !l.startsWith("es") }
+            val updated = if (rest.isEmpty()) subtype.without(ExtraValue.SECONDARY_LOCALES)
+                else subtype.with(ExtraValue.SECONDARY_LOCALES, rest.joinToString(Separators.KV))
+            if (rest.size != secondary.split(Separators.KV).size) SubtypeUtilsAdditional.changeAdditionalSubtype(subtype, updated, context)
         }
     }
 
     const val LIGHT_HAPTIC_MS = 15
     const val AUTOCORRECT_AGGRESSIVE = 0.7f
+    const val AUTOCORRECT_VERY_AGGRESSIVE = 0.9f
     const val DELETE_SWIPE_WORDS = 2
 }
