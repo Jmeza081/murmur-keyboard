@@ -184,10 +184,13 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 .gx-badge { position: absolute; left: 0; bottom: 40px; transform: translateX(-50%); height: 26px; padding: 0 11px; border-radius: 13px; background: #D93A2B; color: #fff; font-size: 12px; font-weight: 600; white-space: nowrap; display: grid; align-items: center; }
 .gx-badge span { grid-area: 1 / 1; opacity: 0; }
 .gw { display: inline-block; white-space: pre; overflow: hidden; vertical-align: bottom; border-radius: 4px; }
-.gx-ctx { position: absolute; inset: 0; display: grid; place-items: center; font-size: 13px; color: var(--k-ink); white-space: pre; border-radius: inherit; overflow: hidden; }
+.gx-loupe { position: absolute; left: 50%; bottom: calc(100% + 16px); width: 164px; height: 54px; margin-left: -82px; border-radius: 18px; background: var(--k-key); box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--k-acc) 60%, transparent), 0 12px 28px rgba(0, 0, 0, 0.35); overflow: hidden; opacity: 0; transform-origin: 50% 100%; z-index: 3; pointer-events: none; }
+.gx-loupe::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--k-key), transparent 24%, transparent 76%, var(--k-key)); }
+.gx-lr { position: absolute; left: -140px; right: -140px; bottom: 0; height: 12px; background-image: repeating-linear-gradient(90deg, color-mix(in srgb, var(--k-acc) 50%, transparent) 0 2px, transparent 2px 16px); background-size: 16px 7px; background-repeat: repeat-x; background-position: 0 calc(100% - 4px); }
+.gx-ctx { position: absolute; left: 0; right: 0; top: 0; bottom: 8px; display: grid; place-items: center; font-size: 22px; font-weight: 500; color: var(--k-ink); white-space: pre; }
 .gx-ctx > span { grid-area: 1 / 1; opacity: 0; }
 .gx-ctx i { font-style: normal; color: var(--k-sub); }
-.gx-ctx b { display: inline-block; width: 2px; height: 15px; background: var(--k-acc); vertical-align: -3px; margin: 0 2px; border-radius: 1px; }
+.gx-ctx b { display: inline-block; width: 2.5px; height: 24px; background: var(--k-acc); vertical-align: -3px; margin: 0 2px; border-radius: 1px; }
 .gx-ruler { position: absolute; top: 0; bottom: 0; left: -140px; right: -140px; background-image: repeating-linear-gradient(90deg, color-mix(in srgb, var(--k-acc) 50%, transparent) 0 1.5px, transparent 1.5px 12px); background-size: 12px 6px; background-repeat: repeat-x; background-position: 0 calc(100% - 3px); }
 .gx-win { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; background: color-mix(in srgb, var(--k-acc) 22%, var(--k-key)); opacity: 0; }
 .gx-fdot { position: absolute; left: 50%; top: 50%; width: 38px; height: 38px; margin: -19px; border-radius: 50%; background: rgba(128,128,128,0.22); box-shadow: 0 0 0 2px rgba(128,128,128,0.55); opacity: 0; }
@@ -218,6 +221,10 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 @keyframes gxw { 0% { opacity: 0; } 12% { opacity: 0; } 15% { opacity: 1; } 76% { opacity: 1; } 80% { opacity: 0; } }
 .gx-ruler { animation: gxr 5s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
 @keyframes gxr { 0% { transform: translateX(0); } 15% { transform: translateX(0); } 70% { transform: translateX(90px); } 100% { transform: translateX(90px); } }
+.gx-loupe { animation: gxl 5s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+@keyframes gxl { 0% { opacity: 0; transform: translate(0, 10px) scale(0.92); } 12% { opacity: 0; transform: translate(0, 10px) scale(0.92); } 15% { opacity: 1; transform: translate(0, 0) scale(1); } 70% { opacity: 1; transform: translate(-80px, 0) scale(1); } 76% { opacity: 1; transform: translate(-80px, 0) scale(1); } 80% { opacity: 0; transform: translate(-80px, 6px) scale(0.96); } 100% { opacity: 0; transform: translate(-80px, 6px) scale(0.96); } }
+.gx-lr { animation: gxlr 5s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+@keyframes gxlr { 0% { transform: translateX(0); } 15% { transform: translateX(0); } 70% { transform: translateX(112px); } 100% { transform: translateX(112px); } }
 .gx-fdot { animation: gxf 5s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
 @keyframes gxf { 0% { opacity: 0; transform: translateX(0) scale(0.8); } 10% { opacity: 0; transform: translateX(0) scale(0.8); } 13% { opacity: 1; transform: translateX(0) scale(1); } 70% { opacity: 1; transform: translateX(-80px) scale(1); } 76% { opacity: 1; transform: translateX(-80px) scale(1); } 79% { opacity: 0; transform: translateX(-80px) scale(0.85); } 100% { opacity: 0; } }
 .gx0 { animation: gx0 5s steps(1) infinite; }
@@ -265,7 +272,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--acc); outline-o
 .gc4::after { animation: gc4 5s steps(1) infinite; }
 @keyframes gc4 { 0% { opacity: 0; } 70.0% { opacity: 1; } 94% { opacity: 0; } }
 }
-@media (prefers-reduced-motion: reduce) { .gx-win { opacity: 1; } .gx0 { opacity: 1; } .gc14::after { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .gx-win, .gx-loupe { opacity: 1; } .gx0 { opacity: 1; } .gc14::after { opacity: 1; } }
 /* Cleanup diff */
 .l-diff { background: var(--panel); border: 1px solid var(--line); border-radius: 28px; padding: 28px; display: grid; gap: 18px; }
 .l-diff .row { display: grid; gap: 8px; }
@@ -964,7 +971,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
             <div class="kb" data-kb="cursor"></div>
           </div>
         </div>
-        <figcaption><b>Slide to move the cursor</b><span>Slide on the space bar and it becomes a window on your text, caret in the middle, a ruler under your thumb.</span></figcaption>
+        <figcaption><b>Slide to move the cursor</b><span>Slide on the space bar and a magnified loupe floats above your thumb, caret in the middle, so you can see exactly where it lands.</span></figcaption>
       </figure>
       <figure class="rv d1">
         <div class="phone">
@@ -1249,7 +1256,7 @@ ins { text-decoration: none; background: color-mix(in srgb, var(--k-acc) 16%, tr
   var views = {
     tools: function () { return strip(tools, '<span class="sbtn">' + I('chev-up', 'sm') + '</span>') + letters() + bar; },
     delswipe: function () { return strip(sugs('for', 'a', 'the')) + letters({ del: '<span class="gx-trail"><span class="fdot"></span><span class="gx-badge"><span class="gb0">1 word</span><span class="gb1">2 words</span><span class="gb2">3 words</span><span class="gb3">4 words</span></span></span>' }) + bar; },
-    cursor: function () { return strip(sugs('cafe', 'café', 'cafes')) + letters({ space: '<span class="gx-win"><span class="gx-ruler"></span><span class="gx-ctx"><span class="gx0"><i>ri</i>day<b></b><i></i></span><span class="gx1"><i>Fr</i>ida<b></b>y<i></i></span><span class="gx2"><i> F</i>rid<b></b>ay<i></i></span><span class="gx3"><i>n </i>Fri<b></b>day<i></i></span><span class="gx4"><i>on</i> Fr<b></b>ida<i>y</i></span><span class="gx5"><i> o</i>n F<b></b>rid<i>ay</i></span><span class="gx6"><i>e </i>on <b></b>Fri<i>da</i></span><span class="gx7"><i>fe</i> on<b></b> Fr<i>id</i></span><span class="gx8"><i>af</i>e o<b></b>n F<i>ri</i></span><span class="gx9"><i>ca</i>fe <b></b>on <i>Fr</i></span><span class="gx10"><i> c</i>afe<b></b> on<i> F</i></span></span></span><span class="gx-fdot"></span>' }) + bar; },
+    cursor: function () { return strip(sugs('cafe', 'café', 'cafes')) + letters({ space: '<span class="gx-win"><span class="gx-ruler"></span></span><span class="gx-loupe"><span class="gx-lr"></span><span class="gx-ctx"><span class="gx0"><i>ri</i>day<b></b><i></i></span><span class="gx1"><i>Fr</i>ida<b></b>y<i></i></span><span class="gx2"><i> F</i>rid<b></b>ay<i></i></span><span class="gx3"><i>n </i>Fri<b></b>day<i></i></span><span class="gx4"><i>on</i> Fr<b></b>ida<i>y</i></span><span class="gx5"><i> o</i>n F<b></b>rid<i>ay</i></span><span class="gx6"><i>e </i>on <b></b>Fri<i>da</i></span><span class="gx7"><i>fe</i> on<b></b> Fr<i>id</i></span><span class="gx8"><i>af</i>e o<b></b>n F<i>ri</i></span><span class="gx9"><i>ca</i>fe <b></b>on <i>Fr</i></span><span class="gx10"><i> c</i>afe<b></b> on<i> F</i></span></span></span><span class="gx-fdot"></span>' }) + bar; },
     typing: function () { return strip(sugs('market', 'market.', 'markets')) + letters() + bar; },
     typing2: function () { return strip(sugs('I', 'See', 'It’s')) + letters() + bar; },
     swipe: function () { return strip(sugs('there', 'then', 'the')) + letters({ lit: 'then' }) + bar; },

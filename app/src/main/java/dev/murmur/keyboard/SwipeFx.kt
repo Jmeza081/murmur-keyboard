@@ -39,6 +39,9 @@ object SwipeFx {
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.LEFT }
     private val rect = RectF()
+    private val loupe = RectF()
+    private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+    private val fade = Paint()
 
     val active get() = mode != Mode.NONE
 
@@ -160,24 +163,65 @@ object SwipeFx {
             canvas.drawRect(tx, rect.bottom - 6 * d, tx + 1.5f * d, rect.bottom - 2 * d, fill)
             tx += gap
         }
-        // text around the caret, caret in the middle; outer letters fade
-        text.textSize = 15 * d
+        canvas.restore()
+        drawLoupe(canvas, v, d, accent, ink, hint)
+    }
+
+    /** A magnified window on the text, floating above the thumb: caret in the middle, a ruler along the bottom. */
+    private fun drawLoupe(canvas: Canvas, v: View, d: Float, accent: Int, ink: Int, hint: Int) {
+        val colors = Settings.getValues().mColors
+        val w = 210 * d; val h = 66 * d; val r = 22 * d
+        val cx = x.toFloat().coerceIn(w / 2 + 8 * d, v.width - w / 2 - 8 * d)
+        val bottom = (rect.top - 22 * d).coerceAtLeast(h + 2 * d)
+        val lift = (1f - alpha) * 10 * d
+        val scale = 0.92f + 0.08f * alpha
+        canvas.save()
+        canvas.translate(0f, lift)
+        canvas.scale(scale, scale, cx, bottom)
+        loupe.set(cx - w / 2, bottom - h, cx + w / 2, bottom)
+        val bg = ColorUtils.setAlphaComponent(colors.get(ColorType.KEY_BACKGROUND), 255)
+        fill.color = a(bg, 1f)
+        fill.setShadowLayer(14 * d, 0f, 6 * d, a(0x8C000000.toInt(), 1f))
+        canvas.drawRoundRect(loupe, r, r, fill)
+        fill.clearShadowLayer()
+        stroke.color = a(accent, 0.6f); stroke.strokeWidth = 1.5f * d
+        canvas.drawRoundRect(loupe, r, r, stroke)
+        canvas.clipRect(loupe.left + 2 * d, loupe.top + 2 * d, loupe.right - 2 * d, loupe.bottom - 2 * d)
+        // ruler, moving a little faster than the thumb
+        val gap = 20 * d
+        var off = ((x - startX) * 1.4f) % gap
+        if (off < 0) off += gap
+        fill.color = a(accent, 0.5f)
+        var tx = loupe.left - gap + off
+        while (tx < loupe.right + gap) {
+            canvas.drawRect(tx, loupe.bottom - 10 * d, tx + 2 * d, loupe.bottom - 4 * d, fill)
+            tx += gap
+        }
+        // text, about twice the key size; outer letters in the hint color
+        text.textSize = 26 * d
         text.isFakeBoldText = false
-        val cx = rect.centerX()
-        val base = rect.centerY() - (text.ascent() + text.descent()) / 2 - 1 * d
-        val nearB = before.takeLast(3); val farB = before.dropLast(3)
-        val nearA = after.take(3); val farA = after.drop(3)
+        val mid = loupe.centerY() - 4 * d
+        val base = mid - (text.ascent() + text.descent()) / 2
+        val nearB = before.takeLast(4); val farB = before.dropLast(4)
+        val nearA = after.take(4); val farA = after.drop(4)
         var px = cx - 4 * d - text.measureText(nearB)
         text.color = a(ink, 1f); canvas.drawText(nearB, px, base, text)
         px -= text.measureText(farB)
-        text.color = a(hint, 0.8f); canvas.drawText(farB, px, base, text)
+        text.color = a(hint, 0.85f); canvas.drawText(farB, px, base, text)
         px = cx + 4 * d
         text.color = a(ink, 1f); canvas.drawText(nearA, px, base, text)
         px += text.measureText(nearA)
-        text.color = a(hint, 0.8f); canvas.drawText(farA, px, base, text)
+        text.color = a(hint, 0.85f); canvas.drawText(farA, px, base, text)
+        // edges fade into the loupe
+        val edge = w * 0.22f
+        fade.shader = android.graphics.LinearGradient(loupe.left, 0f, loupe.left + edge, 0f, a(bg, 1f), ColorUtils.setAlphaComponent(bg, 0), android.graphics.Shader.TileMode.CLAMP)
+        canvas.drawRect(loupe.left, loupe.top, loupe.left + edge, loupe.bottom, fade)
+        fade.shader = android.graphics.LinearGradient(loupe.right - edge, 0f, loupe.right, 0f, ColorUtils.setAlphaComponent(bg, 0), a(bg, 1f), android.graphics.Shader.TileMode.CLAMP)
+        canvas.drawRect(loupe.right - edge, loupe.top, loupe.right, loupe.bottom, fade)
+        // caret
         fill.color = a(accent, 1f)
-        val ch = 18 * d
-        canvas.drawRoundRect(cx - 1 * d, rect.centerY() - ch / 2, cx + 1 * d, rect.centerY() + ch / 2, d, d, fill)
+        val ch = 30 * d
+        canvas.drawRoundRect(cx - 1.25f * d, mid - ch / 2, cx + 1.25f * d, mid + ch / 2, d, d, fill)
         canvas.restore()
     }
 }
