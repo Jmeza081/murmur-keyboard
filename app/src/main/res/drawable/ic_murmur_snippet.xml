@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Murmur: snippets, saved text you insert often -->
+<!-- Murmur: snippets, saved text you insert often (scissors) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
     <path android:strokeColor="#FFFFFFFF" android:strokeWidth="1.9" android:strokeLineCap="round" android:strokeLineJoin="round"
-        android:pathData="M5,6h14M5,12h9M5,18h6M16,16l2,2 3.5,-4" />
+        android:pathData="M6,6m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0M6,18m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0M20,4L8.12,15.88M14.47,14.48L20,20M8.12,8.12L12,12" />
 </vector>

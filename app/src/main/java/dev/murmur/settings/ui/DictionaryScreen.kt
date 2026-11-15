@@ -48,6 +48,15 @@ fun DictionaryScreen(onBack: () -> Unit) {
     var query by remember { mutableStateOf("") }
     var adding by remember { mutableStateOf(false) }
     val refresh = { words = MurmurDictionary.words(ctx); reps = MurmurDictionary.replacements(ctx) }
+    // Learn from your writing: text files (notes, exported messages) teach suggestions on this phone
+    val learnFiles = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        var n = 0
+        for (u in uris) runCatching {
+            ctx.contentResolver.openInputStream(u)?.bufferedReader()?.use { n += dev.murmur.learn.Learn.queue(ctx, it.readText()) }
+        }
+        if (n > 0) android.widget.Toast.makeText(ctx, "Learning $n words. Suggestions update next time the keyboard opens.", android.widget.Toast.LENGTH_LONG).show()
+    }
 
     Column(Modifier.verticalScroll(rememberScrollState())) {
         TopBar("Dictionary", onBack)
@@ -76,6 +85,11 @@ fun DictionaryScreen(onBack: () -> Unit) {
                 Item(if (tab == DictTab.WORDS) "Add a word" else "Add a replacement",
                     if (tab == DictTab.WORDS) "Names, places, slang: anything you want suggested"
                     else "Fixes words the speech model mishears", R.drawable.ic_murmur_plus, onClick = { adding = true }, chevron = false)
+                if (tab == DictTab.WORDS) {
+                    GroupDivider()
+                    Item("Learn from your writing", "Pick text files, like notes or exported messages. Suggestions learn your words and phrases. Stays on this phone.",
+                        R.drawable.ic_murmur_plus, onClick = { learnFiles.launch(arrayOf("text/*")) }, chevron = false)
+                }
             }
 
             val q = query.trim()

@@ -19,11 +19,9 @@ import helium314.keyboard.latin.settings.Settings
 @SuppressLint("ViewConstructor")
 class DictationPanel(
     context: Context,
-    onCancel: () -> Unit,
     onStop: () -> Unit,
-    /** Murmur: the cleanup toggle at the right of the controls; returns whether cleanup is now on. */
-    private val onToggleCleanup: () -> Boolean,
-    cleanupOn: Boolean,
+    /** Murmur: Pause on the left of the controls (option C). */
+    onPause: () -> Unit,
     /** Murmur: the app being dictated into, for the writing style chip. */
     stylePkg: () -> String? = { null },
 ) : LinearLayout(context) {
@@ -66,12 +64,11 @@ class DictationPanel(
         addView(status)
     }
     val headerEnd: android.view.View get() = styleChip
-    private lateinit var cleanupButton: ImageButton
     private val waveform = LevelBarsView(context, recording, subtle)
-    private val glow = StopGlowView(context, recording, 34f)
-    /** Ring around Send while the transcript is on its way (design/send-loading.html, A). */
-    private val ring = SendRingView(context, recording)
-    private val sending = SendingIndicator(ring, glow) { status.text = context.getString(R.string.murmur_dictation_slow) }
+    /** Pause and the Send pill; the ring around Send shows while the transcript is on its way (design/send-loading.html, A). */
+    private val controls = DictationControls(context, recording, fnBackground, ink, onPause, onStop)
+    private val glow = controls.glow
+    private val sending = SendingIndicator(controls.ring, glow) { status.text = context.getString(R.string.murmur_dictation_slow) }
 
     init {
         orientation = VERTICAL
@@ -88,28 +85,16 @@ class DictationPanel(
         }, LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f).apply { topMargin = dp(4); bottomMargin = dp(12) })
         clipChildren = false // the Send glow spills past the controls row
         clipToPadding = false // ...and into the bottom padding, instead of being cut where the padding starts
-        addView(FrameLayout(context).apply {
-            clipChildren = false
-            addView(glow, FrameLayout.LayoutParams(dp(132), dp(132), Gravity.CENTER))
-            addView(ring, FrameLayout.LayoutParams(dp(84), dp(84), Gravity.CENTER))
-            addView(roundButton(context, R.drawable.ic_murmur_close, R.string.murmur_dictation_cancel, fnBackground, ink, 52, onCancel),
-                FrameLayout.LayoutParams(dp(52), dp(52), Gravity.START or Gravity.CENTER_VERTICAL))
-            addView(roundButton(context, R.drawable.ic_murmur_stop, R.string.murmur_dictation_stop, recording, Color.WHITE, 68, onStop),
-                FrameLayout.LayoutParams(dp(68), dp(68), Gravity.CENTER))
-            cleanupButton = roundButton(context, R.drawable.ic_murmur_spark, R.string.murmur_cleanup_on, fnBackground, ink, 52) {
-                styleCleanup(onToggleCleanup()); styleChip.refresh()
-            }
-            addView(cleanupButton, FrameLayout.LayoutParams(dp(52), dp(52), Gravity.END or Gravity.CENTER_VERTICAL))
-            styleCleanup(cleanupOn)
-        }, LayoutParams(LayoutParams.MATCH_PARENT, dp(72)))
+        addView(controls, LayoutParams(LayoutParams.MATCH_PARENT, dp(72)).apply { marginStart = dp(4); marginEnd = dp(4) })
     }
 
-    /** On: accent icon on an accent-tinted circle. Off: plain function-key circle. */
-    fun styleCleanup(on: Boolean) {
-        cleanupButton.setColorFilter(if (on) accent else subtle)
-        (cleanupButton.background as GradientDrawable).setColor(
-            if (on) androidx.core.graphics.ColorUtils.blendARGB(fnBackground, accent, 0.16f) else fnBackground)
-        cleanupButton.contentDescription = context.getString(if (on) R.string.murmur_cleanup_on else R.string.murmur_cleanup_off)
+    /** Paused: the timer stops and says so, the dot goes grey, and the button offers to keep talking. */
+    fun showPaused(paused: Boolean) {
+        controls.setPaused(paused, accent)
+        timing = !paused
+        if (paused) status.text = context.getString(R.string.murmur_dictation_paused)
+        (dot.background as GradientDrawable).setColor(if (paused) subtle else recording)
+        waveform.animate().alpha(if (paused) 0.35f else if (words.visibility == VISIBLE) 0.25f else 1f).setDuration(160).start()
     }
 
     fun showWords(final: String, draft: String) {
@@ -121,6 +106,8 @@ class DictationPanel(
     fun reset() {
         words.clear(); words.visibility = GONE
         sending.reset()
+        controls.setPaused(false); controls.setPauseVisible(true)
+        (dot.background as GradientDrawable).setColor(recording)
         waveform.animate().cancel(); waveform.alpha = 1f
         waveform.clear()
         glow.clear()
@@ -150,6 +137,7 @@ class DictationPanel(
         dot.visibility = GONE
         status.text = context.getString(R.string.murmur_dictation_transcribing)
         styleChip.dismissMenu()
+        controls.setPauseVisible(false)
         sending.start()
     }
 

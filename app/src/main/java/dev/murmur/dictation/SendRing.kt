@@ -21,6 +21,25 @@ class SendRingView(context: Context, private val color: Int) : View(context) {
         style = Paint.Style.STROKE; strokeWidth = 3 * density; strokeCap = Paint.Cap.ROUND; this.color = this@SendRingView.color
     }
     private val oval = RectF()
+    // Murmur: the Send pill (option C). The same comet runs around a rounded rectangle instead of a circle.
+    private val pillPath = android.graphics.Path()
+    private val segment = android.graphics.Path()
+    private var measure: android.graphics.PathMeasure? = null
+    private val isPill get() = width - height > 4 * density
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        val inset = paint.strokeWidth / 2
+        val r = (h - 2 * inset) / 2
+        pillPath.reset()
+        // starts at the top middle and runs clockwise, like the arc
+        pillPath.moveTo(w / 2f, inset)
+        pillPath.lineTo(w - inset - r, inset)
+        pillPath.arcTo(RectF(w - inset - 2 * r, inset, w - inset, h - inset), -90f, 180f)
+        pillPath.lineTo(inset + r, h - inset)
+        pillPath.arcTo(RectF(inset, inset, inset + 2 * r, h - inset), 90f, 180f)
+        pillPath.close()
+        measure = android.graphics.PathMeasure(pillPath, true)
+    }
     private var startedAt = 0L
     private val ease = PathInterpolator(0.77f, 0f, 0.175f, 1f)
 
@@ -47,9 +66,20 @@ class SendRingView(context: Context, private val color: Int) : View(context) {
         val shrink = if (p < 0.5f) 0f else ease.getInterpolation((p - 0.5f) * 2)
         val sweep = MIN_SWEEP + (MAX_SWEEP - MIN_SWEEP) * (grow - shrink)
         val start = cycle * (MAX_SWEEP - MIN_SWEEP) + (MAX_SWEEP - MIN_SWEEP) * shrink + t * 360f / SPIN_MS - 90f
-        val inset = paint.strokeWidth / 2
-        oval.set(inset, inset, width - inset, height - inset)
-        canvas.drawArc(oval, start % 360f, sweep, false, paint)
+        val m = measure
+        if (isPill && m != null) {
+            val len = m.length
+            val from = (((start + 90f) % 360f + 360f) % 360f) / 360f * len
+            val to = from + sweep / 360f * len
+            segment.reset()
+            m.getSegment(from, minOf(to, len), segment, true)
+            if (to > len) m.getSegment(0f, to - len, segment, true)
+            canvas.drawPath(segment, paint)
+        } else {
+            val inset = paint.strokeWidth / 2
+            oval.set(inset, inset, width - inset, height - inset)
+            canvas.drawArc(oval, start % 360f, sweep, false, paint)
+        }
         postInvalidateOnAnimation()
     }
 

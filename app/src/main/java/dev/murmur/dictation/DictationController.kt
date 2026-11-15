@@ -119,6 +119,7 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
         val prefix = if (!before.isNullOrEmpty() && !before.last().isWhitespace()) " " else ""
         ic.finishComposingText()
         ic.commitText(prefix + text, 1)
+        ime.murmurLearn(text)
         Log.i(TAG, "Typed ${text.length} chars into ${ime.currentInputEditorInfo?.packageName}")
     }
 
@@ -157,6 +158,15 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
         startedAt = SystemClock.elapsedRealtime()
         tick()
     }
+
+    /** Murmur: Pause keeps the recording open but stops listening and the auto-send; tap again to add more. */
+    private fun togglePause() {
+        if (state != State.LISTENING) return
+        val now = SystemClock.elapsedRealtime()
+        if (recorder.paused) { startedAt += now - pausedAt; recorder.paused = false } else { pausedAt = now; recorder.paused = true }
+        panel?.showPaused(recorder.paused)
+    }
+    private var pausedAt = 0L
 
     /** Stops recording, transcribes, and types the result. */
     private fun finish() {
@@ -201,6 +211,7 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
         val before = ime.currentInputConnection?.getTextBeforeCursor(1, 0)
         val prefix = if (!before.isNullOrEmpty() && !before.last().isWhitespace()) " " else ""
         ime.onTextInput(prefix + text)
+        ime.murmurLearn(text)
     }
 
     private fun showFailure(message: String) {
@@ -214,7 +225,7 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
 
     private fun tick() {
         if (state != State.LISTENING) return
-        panel?.setElapsed(SystemClock.elapsedRealtime() - startedAt)
+        if (!recorder.paused) panel?.setElapsed(SystemClock.elapsedRealtime() - startedAt)
         main.postDelayed({ tick() }, 250)
     }
 
@@ -230,18 +241,13 @@ class DictationController(private val ime: LatinIME) : MicRecorder.Listener {
     private fun showPanel(): DictationPanel? {
         val keyboardView = KeyboardSwitcher.getInstance().mainKeyboardView ?: return null
         val wrapper = keyboardView.parent as? ViewGroup ?: return null
-        val p = panel ?: DictationPanel(ime, onCancel = { cancel() }, onStop = { onMicKey() },
-            onToggleCleanup = {
-                Cleanup.toggle(ime)
-            },
-            cleanupOn = Cleanup.level(ime) != Cleanup.Level.OFF,
+        val p = panel ?: DictationPanel(ime, onStop = { onMicKey() }, onPause = { togglePause() },
             stylePkg = { ime.currentInputEditorInfo?.packageName },
         ).also { panel = it }
         // Exactly the keyboard's height: MATCH_PARENT would let the wrapper grow to fill the screen.
         val params = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, keyboardView.height)
         if (p.parent == null) wrapper.addView(p, params) else p.layoutParams = params
         p.reset()
-        p.styleCleanup(Cleanup.level(ime) != Cleanup.Level.OFF) // may have changed in settings
         // Keep Cancel and Stop above Android's nav buttons, like the keys (the keyboard's bottom padding)
         val bottomPad = keyboardView.keyboard?.let { kb -> kb.mOccupiedHeight - (kb.sortedKeys.maxOfOrNull { it.y + it.height } ?: kb.mOccupiedHeight) }?.coerceAtLeast(0) ?: 0
         // Android draws its keyboard-switch and hide buttons ~48 dp tall over the keyboard's bottom edge

@@ -128,7 +128,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
 
     private val toolbarKeyLayoutParams = LinearLayout.LayoutParams(
         (48 * resources.displayMetrics.density).toInt(), // Murmur: one 48 dp slot per tool on every screen
-        LinearLayout.LayoutParams.MATCH_PARENT
+        LinearLayout.LayoutParams.MATCH_PARENT,
+        1f // Murmur: spare width is shared, so the tools spread evenly across the strip
     )
 
     init {
@@ -175,10 +176,10 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             if (pinnedKeyInToolbar != null && Settings.getValues().mQuickPinToolbarKeys)
                 pinnedKeyInToolbar.background = enabledToolKeyBackground
         }
-        toolbarContainer.doOnNextLayout {
-            // set min with of the toolbar so the weight of the toolbar keys actually does something
-            // todo: results in requestLayout() improperly called by android.widget.LinearLayout during layout: running second layout pass
-            // Murmur: no minimum width, so the tools stay packed at the start
+        // Murmur: the tools row fills the strip (weights spread the keys evenly); tracks fold/unfold width changes
+        toolbarContainer.addOnLayoutChangeListener { _, l, _, r, _, _, _, oldR, _ ->
+            val w = r - l
+            if (w > 0 && toolbar.minimumWidth != w) toolbar.post { toolbar.minimumWidth = w; toolbar.requestLayout() }
         }
 
         updateKeys()
@@ -627,11 +628,12 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
                 // the mic pill (62 dp) is wider than the keyboard button (48 dp): nudge so the label centers in the strip
                 setPadding((14 * density).toInt(), 0, 0, 0)
             }
+            // Murmur (option C): Cancel sits in the top-left corner, away from Send; it also brings the keys back
             val keys = ImageButton(context).apply {
-                setImageResource(R.drawable.ic_murmur_keyboard)
+                setImageResource(R.drawable.ic_murmur_close)
                 setColorFilter(colors.get(ColorType.KEY_TEXT))
                 background = null
-                contentDescription = context.getString(R.string.murmur_dictation_back_to_keys)
+                contentDescription = context.getString(R.string.murmur_dictation_cancel)
             }
             val bar = FrameLayout(context).apply {
                 addView(keys, FrameLayout.LayoutParams((48 * density).toInt(), LayoutParams.MATCH_PARENT, android.view.Gravity.START))
@@ -681,7 +683,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             addState(intArrayOf(android.R.attr.state_pressed), pressed)
             addState(intArrayOf(), pill)
         }
-        return android.graphics.drawable.InsetDrawable(states, (2 * d).toInt(), (5 * d).toInt(), (2 * d).toInt(), (5 * d).toInt())
+        // Murmur: more space above than below, since the key rows add their own gap underneath; the gaps look even
+        return android.graphics.drawable.InsetDrawable(states, (2 * d).toInt(), (8 * d).toInt(), (2 * d).toInt(), (2 * d).toInt())
     }
 
     /** Murmur: opens 1Password, for sites where autofill doesn't offer the right login. Only if it's installed. */

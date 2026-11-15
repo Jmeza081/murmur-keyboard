@@ -708,10 +708,16 @@ public class LatinIME extends InputMethodService implements
         mDictation.onStartInput(editorInfo); // Murmur: track the app's field for the power-button assistant
     }
 
+    /** Murmur: dictated text teaches suggestions the way typed words do (same field and incognito rules). */
+    public void murmurLearn(final String text) {
+        if (dev.murmur.learn.Learn.INSTANCE.allowed()) dev.murmur.learn.Learn.INSTANCE.fromText(mDictionaryFacilitator, text);
+    }
+
     @Override
     public void onStartInputView(final EditorInfo editorInfo, final boolean restarting) {
         mHandler.onStartInputView(editorInfo, restarting);
         mDictation.preload(); // Murmur: load the speech model while the keyboard is open
+        dev.murmur.learn.Learn.INSTANCE.drainPending(this, mDictionaryFacilitator); // Murmur: learn imported writing
         mStatsUtilsManager.onStartInputView();
     }
 

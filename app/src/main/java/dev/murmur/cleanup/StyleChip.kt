@@ -46,15 +46,15 @@ class StyleChip(
         setOnClickListener { if (popup?.isShowing == true) popup?.dismiss() else open() }
     }
 
-    /** Re-reads the style for the current app; hidden when cleanup is off (styles need cleanup). */
+    /** Re-reads the style for the current app. With cleanup off it says "No cleanup" (the menu also turns it back on). */
     fun refresh() {
         val pkg = target()
         val on = Cleanup.level(context) != Cleanup.Level.OFF
-        visibility = if ((pkg != null || allowDefault) && on) VISIBLE else GONE
+        visibility = if (pkg != null || allowDefault) VISIBLE else GONE
         if (pkg == null && !allowDefault) return
         val s = if (pkg != null) WritingStyle.forApp(context, pkg) else WritingStyle.default(context)
-        text = s.label
-        contentDescription = "Writing style ${s.label}. Opens a menu to change it for this app."
+        text = if (on) s.label else "No cleanup"
+        contentDescription = "Writing style ${text}. Opens a menu to change it, or to turn cleanup off."
     }
 
     fun dismissMenu() { popup?.dismiss() }
@@ -62,7 +62,8 @@ class StyleChip(
     private fun open() {
         val pkg = target()
         if (pkg == null && !allowDefault) return
-        val current = if (pkg != null) WritingStyle.forApp(context, pkg) else WritingStyle.default(context)
+        val cleanupOn = Cleanup.level(context) != Cleanup.Level.OFF
+        val current = if (!cleanupOn) null else if (pkg != null) WritingStyle.forApp(context, pkg) else WritingStyle.default(context)
         val auto = if (pkg != null) WritingStyle.automatic(context, pkg) else null
         val app = pkg?.let { p -> runCatching { context.packageManager.run { getApplicationLabel(getApplicationInfo(p, 0)).toString() } }.getOrDefault("this app") }
         val pop = if (light) 0xFFFFFFFF.toInt() else ColorUtils.blendARGB(surface, 0xFFFFFFFF.toInt(), 0.06f)
@@ -104,11 +105,38 @@ class StyleChip(
                 contentDescription = s.label + (if (s == auto) ", automatic" else "") + (if (chosen) ", selected" else "")
                 setOnClickListener {
                     if (pkg != null) WritingStyle.setForApp(context, pkg, s) else WritingStyle.setDefault(context, s)
+                    if (Cleanup.level(context) == Cleanup.Level.OFF) Cleanup.toggle(context) // a style needs cleanup on
                     refresh()
                     window.dismiss()
                 }
             }, LinearLayout.LayoutParams(px(232), ViewGroup.LayoutParams.WRAP_CONTENT))
         }
+        // Murmur (option C): the cleanup on/off button left the controls row; turning it off lives here now
+        list.addView(View(context).apply { setBackgroundColor(ColorUtils.setAlphaComponent(ink, 20)) },
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, px(1)).apply { setMargins(px(4), px(4), px(4), px(4)) })
+        list.addView(LinearLayout(context).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = px(48)
+            setPadding(px(10), px(6), px(10), px(6))
+            background = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(ColorUtils.setAlphaComponent(ink, 30)), null,
+                GradientDrawable().apply { cornerRadius = 12 * d; setColor(0xFFFFFFFF.toInt()) })
+            addView(LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(text("No cleanup", 14.5f, if (!cleanupOn) label else ink).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) })
+                addView(text("Your exact words", 12f, sub))
+            }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            addView(ImageView(context).apply {
+                setImageResource(R.drawable.ic_murmur_check)
+                setColorFilter(label)
+                visibility = if (!cleanupOn) VISIBLE else INVISIBLE
+            }, LinearLayout.LayoutParams(px(18), px(18)))
+            contentDescription = "No cleanup" + if (!cleanupOn) ", selected" else ""
+            setOnClickListener {
+                if (Cleanup.level(context) != Cleanup.Level.OFF) Cleanup.toggle(context)
+                refresh()
+                window.dismiss()
+            }
+        }, LinearLayout.LayoutParams(px(232), ViewGroup.LayoutParams.WRAP_CONTENT))
         list.addView(View(context).apply { setBackgroundColor(ColorUtils.setAlphaComponent(ink, 20)) },
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, px(1)).apply { setMargins(px(4), px(4), px(4), 0) })
         list.addView(text(if (pkg != null) "Remembered for this app." else "Used in apps without their own style.", 11.5f, sub).apply { setPadding(px(10), px(8), px(10), px(4)) })

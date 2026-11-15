@@ -18,6 +18,11 @@ class MicRecorder(private val listener: Listener) {
     var silenceStopMs = SILENCE_STOP_MS
     /** Each 100 ms of 16-bit audio as it's recorded (for streaming to ElevenLabs). Called on the recording thread. */
     @Volatile var onChunk: ((ShortArray) -> Unit)? = null
+    /**
+     * Murmur: Pause. The mic stays open but nothing is kept: no audio, no auto-stop on silence, no "didn't hear
+     * anything". ElevenLabs gets silence so its connection stays up. Resuming adds to the same recording.
+     */
+    @Volatile var paused = false
 
     interface Listener {
         /** Loudness of the last 100 ms, roughly 0..0.3 for speech. */
@@ -48,6 +53,7 @@ class MicRecorder(private val listener: Listener) {
         if (rec.state != AudioRecord.STATE_INITIALIZED) { rec.release(); return false }
 
         running = true
+        paused = false
         onFinished = null
         thread = thread(name = "murmur-mic") {
             val audio = Samples()
@@ -59,6 +65,12 @@ class MicRecorder(private val listener: Listener) {
                 while (running) {
                     val n = rec.read(chunk, 0, chunk.size)
                     if (n <= 0) continue
+                    if (paused) {
+                        onChunk?.invoke(ShortArray(n))
+                        listener.onLevel(0f)
+                        quietMs = 0
+                        continue
+                    }
                     onChunk?.invoke(chunk.copyOf(n))
                     var sum = 0.0
                     for (i in 0 until n) {
