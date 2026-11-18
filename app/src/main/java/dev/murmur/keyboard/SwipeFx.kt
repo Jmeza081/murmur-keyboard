@@ -42,6 +42,7 @@ object SwipeFx {
     private val loupe = RectF()
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val fade = Paint()
+    private val clip = android.graphics.Path()
 
     val active get() = mode != Mode.NONE
 
@@ -184,9 +185,11 @@ object SwipeFx {
         fill.setShadowLayer(14 * d, 0f, 6 * d, a(0x8C000000.toInt(), 1f))
         canvas.drawRoundRect(loupe, r, r, fill)
         fill.clearShadowLayer()
-        stroke.color = a(accent, 0.6f); stroke.strokeWidth = 1.5f * d
-        canvas.drawRoundRect(loupe, r, r, stroke)
-        canvas.clipRect(loupe.left + 2 * d, loupe.top + 2 * d, loupe.right - 2 * d, loupe.bottom - 2 * d)
+        // contents are clipped to the rounded shape so the edge fades never cover the border
+        canvas.save()
+        clip.reset()
+        clip.addRoundRect(loupe, r, r, android.graphics.Path.Direction.CW)
+        canvas.clipPath(clip)
         // ruler, moving a little faster than the thumb
         val gap = 20 * d
         var off = ((x - startX) * 1.4f) % gap
@@ -222,6 +225,11 @@ object SwipeFx {
         fill.color = a(accent, 1f)
         val ch = 30 * d
         canvas.drawRoundRect(cx - 1.25f * d, mid - ch / 2, cx + 1.25f * d, mid + ch / 2, d, d, fill)
+        canvas.restore()
+        // the border goes on top of everything inside
+        stroke.color = a(accent, 0.6f); stroke.strokeWidth = 1.5f * d
+        val hw = stroke.strokeWidth / 2
+        canvas.drawRoundRect(loupe.left + hw, loupe.top + hw, loupe.right - hw, loupe.bottom - hw, r - hw, r - hw, stroke)
         canvas.restore()
     }
 }
