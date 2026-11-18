@@ -267,6 +267,9 @@ class MurmurSession(context: Context) : VoiceInteractionSession(context), MicRec
         state = State.IDLE
         if (::sending.isInitialized) sending.reset()
         main.removeCallbacksAndMessages(null) // pending typing lives in the keyboard, not here
+        // End the session instead of keeping it hidden: Android reuses a hidden session, and its colors and views
+        // were read once, so a theme changed in settings never reached the sheet. The next hold builds a fresh one.
+        finish()
     }
 
     /** Murmur: Pause keeps the recording open but stops listening and the auto-send; tap again to add more. */
