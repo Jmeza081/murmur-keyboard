@@ -59,4 +59,5 @@
     <string name="murmur_emoji_symbols" translatable="false">Symbols</string>
     <string name="murmur_emoji_flags" translatable="false">Flags</string>
     <string name="murmur_emoji_emoticons" translatable="false">Emoticons</string>
+    <string name="murmur_word_saved" translatable="false">Saved “%1$s” to your dictionary</string>
 </resources>

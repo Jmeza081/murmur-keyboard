@@ -366,6 +366,11 @@ public final class InputLogic {
         return inputTransaction;
     }
 
+    /** Murmur: whether the leading capital of the word being typed came from auto-caps rather than the user. */
+    public boolean wasTypedWordAutoCapitalized() {
+        return mWordComposer.wasAutoCapitalized() && !mWordComposer.isMostlyCaps();
+    }
+
     /** indicates that the next selection update is expected to be a cursor move (though not needed for arrow keys) */
     public void setExpectCursorMove() {
         mCursorMoveExpectedUntil = SystemClock.elapsedRealtime() + 500;

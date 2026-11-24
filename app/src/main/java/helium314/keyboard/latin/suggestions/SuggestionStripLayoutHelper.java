@@ -184,6 +184,9 @@ final class SuggestionStripLayoutHelper {
         return bitmapDrawable;
     }
 
+    /** Murmur: index of the unknown typed word that a tap will save, or -1. It is shown with a leading "+". */
+    public int mSaveWordIndex = -1;
+
     private CharSequence getStyledSuggestedWord(SuggestedWords suggestedWords, int indexInSuggestedWords) {
         if (indexInSuggestedWords >= suggestedWords.size()) {
             return null;
@@ -481,7 +484,8 @@ final class SuggestionStripLayoutHelper {
             // {@link TextView#getTag()} is used to get the index in suggestedWords at
             // {@link SuggestionStripView#onClick(View)}.
             wordView.setTag(indexInSuggestedWords);
-            wordView.setText(getStyledSuggestedWord(suggestedWords, indexInSuggestedWords));
+            final CharSequence styled = getStyledSuggestedWord(suggestedWords, indexInSuggestedWords);
+            wordView.setText(indexInSuggestedWords == mSaveWordIndex ? TextUtils.concat("+ ", styled) : styled);
             wordView.setTextColor(getSuggestionTextColor(suggestedWords, indexInSuggestedWords));
             KeyboardTypeface.applyToTextView(wordView);
             if (SuggestionStripView.DEBUG_SUGGESTIONS) {

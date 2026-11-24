@@ -1455,6 +1455,24 @@ public class LatinIME extends InputMethodService implements
         }
     }
 
+    // Murmur: the "+" slot in the suggestion strip keeps the word as typed and saves it
+    @Override
+    public boolean canSaveWord(final String word) {
+        return mDictionaryFacilitator.canAddToPersonalDictionary(word);
+    }
+
+    @Override
+    public void saveAndPickSuggestion(final SuggestedWordInfo suggestionInfo) {
+        String word = suggestionInfo.getWord();
+        // a capital that came from auto-caps is not part of the word
+        if (mInputLogic.wasTypedWordAutoCapitalized())
+            word = helium314.keyboard.latin.common.StringUtilsKt.decapitalize(word, mDictionaryFacilitator.getMainLocale());
+        final boolean saved = mDictionaryFacilitator.addToPersonalDictionary(word);
+        pickSuggestionManually(suggestionInfo);
+        if (saved)
+            mKeyboardSwitcher.showToast(getString(R.string.murmur_word_saved, word), true);
+    }
+
     @Override
     public void removeSuggestion(final String word) {
         mDictionaryFacilitator.removeWord(word);

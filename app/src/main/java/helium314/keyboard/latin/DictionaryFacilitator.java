@@ -100,6 +100,12 @@ public interface DictionaryFacilitator {
     /** removes the word from all editable dictionaries, and adds it to a blacklist in case it's in a read-only dictionary */
     void removeWord(String word);
 
+    /** Murmur: saves the word to the personal dictionary. Returns false if there is no personal dictionary. */
+    boolean addToPersonalDictionary(String word);
+
+    /** Murmur: whether the word is in no dictionary and could be saved to the personal one. */
+    boolean canAddToPersonalDictionary(String word);
+
     void closeDictionaries();
 
     /** main dictionaries are loaded asynchronously after resetDictionaries */

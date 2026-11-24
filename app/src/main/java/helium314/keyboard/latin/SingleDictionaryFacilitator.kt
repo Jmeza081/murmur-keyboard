@@ -119,6 +119,10 @@ class SingleDictionaryFacilitator(private val dict: Dictionary) : DictionaryFaci
 
     override fun removeWord(word: String) {}
 
+    override fun addToPersonalDictionary(word: String) = false
+
+    override fun canAddToPersonalDictionary(word: String) = false
+
     override fun clearUserHistoryDictionary(context: Context) {}
 
     override fun localesAndConfidences(): String? = null

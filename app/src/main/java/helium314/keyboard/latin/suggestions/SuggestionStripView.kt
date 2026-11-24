@@ -78,6 +78,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         fun pickSuggestionManually(word: SuggestedWordInfo?)
         fun onCodeInput(primaryCode: Int, x: Int, y: Int, isKeyRepeat: Boolean)
         fun removeSuggestion(word: String?)
+        fun canSaveWord(word: String): Boolean // Murmur
+        fun saveAndPickSuggestion(word: SuggestedWordInfo) // Murmur
         fun removeExternalSuggestions()
         fun onSwipeDownOnToolbar()
     }
@@ -271,6 +273,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         clear()
         setRtl(isRtlLanguage)
         suggestedWords = reserveEmojiSlot(suggestions)
+        layoutHelper.mSaveWordIndex = saveWordIndex(suggestedWords)
         startIndexOfMoreSuggestions = layoutHelper.layoutAndReturnStartIndexOfMoreSuggestions(
             context, suggestedWords, suggestionsStrip, this
         )
@@ -381,7 +384,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
                 return
             }
             val wordInfo = suggestedWords.getInfo(tag)
-            listener.pickSuggestionManually(wordInfo)
+            if (tag == layoutHelper.mSaveWordIndex) listener.saveAndPickSuggestion(wordInfo) // Murmur
+            else listener.pickSuggestionManually(wordInfo)
         }
     }
 
@@ -497,7 +501,9 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     private fun removeSuggestion(wordView: TextView) {
-        val word = wordView.text.toString()
+        // Murmur: from the suggestion itself, since the shown text can carry a "+"
+        val word = (wordView.tag as? Int)?.takeIf { it < suggestedWords.size }?.let { suggestedWords.getInfo(it).word }
+            ?: wordView.text.toString()
         listener.removeSuggestion(word)
         moreSuggestionsView.dismissPopupKeysPanel()
         // show suggestions, but without the removed word
@@ -672,6 +678,20 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         val reordered = list.toMutableList().apply { this[right] = list[emoji]; this[emoji] = list[right] }
         return SuggestedWords(reordered, words.rawSuggestions, words.typedWordInfo, words.typedWordValid,
             words.willAutoCorrect, words.isObsoleteSuggestions, words.inputStyle, words.sequenceNumber)
+    }
+
+    /**
+     * Murmur: when the word being typed is in no dictionary and the strip shows it (left slot, when a
+     * correction is pending), that slot becomes "+ word": a tap keeps the word and saves it.
+     */
+    private fun saveWordIndex(words: SuggestedWords): Int {
+        if (words.javaClass != SuggestedWords::class.java || words.inputStyle != helium314.keyboard.latin.InputStyle.TYPING) return -1
+        val typed = words.typedWordInfo?.word ?: return -1
+        if (typed.length < 2 || typed.none { it.isLetter() } || typed.any { it.isWhitespace() }) return -1
+        val index = (1 until words.size).firstOrNull {
+            words.getInfo(it).word.equals(typed, ignoreCase = true) && layoutHelper.isShownInStrip(it, words)
+        } ?: return -1
+        return if (listener.canSaveWord(words.getInfo(index).word)) index else -1
     }
 
     /** Murmur: each suggestion sits on its own rounded key-colored pill, inset from the strip (iOS-style). */

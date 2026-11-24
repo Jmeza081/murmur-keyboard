@@ -594,6 +594,25 @@ class DictionaryFacilitatorImpl : DictionaryFacilitator {
 
     private fun isBlacklisted(word: String): Boolean = dictionaryGroups.any { it.isBlacklisted(word) }
 
+    // Murmur: explicit "save this word" from the suggestion strip
+    override fun canAddToPersonalDictionary(word: String): Boolean {
+        val group = currentlyPreferredDictionaryGroup
+        if (group.getSubDict(Dictionary.TYPE_USER) == null) return false
+        val lowercase = word.lowercase(group.locale)
+        return !isValidSpellingWord(word) && !isValidSpellingWord(lowercase)
+    }
+
+    override fun addToPersonalDictionary(word: String): Boolean {
+        val group = currentlyPreferredDictionaryGroup
+        val userDict = group.getSubDict(Dictionary.TYPE_USER) ?: return false
+        dictionaryGroups.forEach { it.removeFromBlacklist(word) }
+        scope.launch(Dispatchers.IO) {
+            // adding can throw, see addToPersonalDictionaryIfInvalidButInHistory
+            runCatching { UserDictionary.Words.addWord(userDict.mContext, word, 250, null, group.locale) }
+        }
+        return true
+    }
+
     override fun removeWord(word: String) {
         for (dictionaryGroup in dictionaryGroups) {
             dictionaryGroup.removeWord(word)
